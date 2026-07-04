@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drip - Class 8 Physics Formulas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Class 8 Physics Labs</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         :root {
@@ -13,8 +13,8 @@
             --glass: rgba(255, 255, 255, 0.08);
             --glass-border: rgba(255, 255, 255, 0.15);
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            --radius: 20px;
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -43,6 +43,12 @@
                 linear-gradient(rgba(255, 107, 107, 0.04) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 107, 107, 0.04) 1px, transparent 1px);
             background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
         }
 
         .orb {
@@ -59,6 +65,7 @@
             background: radial-gradient(circle, rgba(255, 107, 107, 0.25), transparent 70%);
             top: -150px;
             right: -150px;
+            animation: orbFloat 12s ease-in-out infinite;
         }
 
         .orb-2 {
@@ -67,6 +74,12 @@
             background: radial-gradient(circle, rgba(255, 142, 142, 0.2), transparent 70%);
             bottom: -100px;
             left: -100px;
+            animation: orbFloat 12s ease-in-out infinite reverse;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
         }
 
         .main-container {
@@ -74,7 +87,7 @@
             z-index: 2;
             min-height: 100vh;
             padding: 30px 24px 50px;
-            max-width: 1500px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -146,12 +159,18 @@
             font-size: 14px;
             margin-left: auto;
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            animation: pulse 3s ease-in-out infinite;
         }
 
-        /* Header */
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+            50% { box-shadow: 0 8px 30px rgba(255, 107, 107, 0.7); }
+        }
+
+        /* Page Header */
         .page-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
             animation: fadeInUp 0.8s ease-out;
         }
 
@@ -167,7 +186,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .page-header .subtitle {
@@ -176,331 +195,257 @@
             letter-spacing: 3px;
         }
 
-        /* Search and Sort Bar */
-        .controls-bar {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            animation: fadeInUp 0.8s ease-out 0.2s both;
-        }
-
-        .search-wrapper {
-            flex: 1;
-            min-width: 280px;
-            position: relative;
-        }
-
-        .search-wrapper i {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 18px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 16px 20px 16px 52px;
-            border-radius: 16px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1.5px solid var(--glass-border);
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s;
-            outline: none;
-        }
-
-        .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .search-input:focus {
-            border-color: rgba(255, 107, 107, 0.6);
-            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.2);
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .sort-btn {
-            padding: 16px 24px;
-            border-radius: 16px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1.5px solid var(--glass-border);
-            color: white;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .sort-btn:hover {
-            background: rgba(255, 107, 107, 0.2);
-            border-color: rgba(255, 107, 107, 0.5);
-            box-shadow: 0 8px 24px rgba(255, 107, 107, 0.2);
-        }
-
-        .sort-btn.active {
-            background: rgba(255, 107, 107, 0.3);
-            border-color: rgba(255, 107, 107, 0.7);
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            animation: fadeInUp 0.8s ease-out 0.3s both;
-        }
-
-        .stat-card {
-            padding: 14px 22px;
-            border-radius: 14px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .stat-card i {
-            color: #FF6B6B;
-            font-size: 18px;
-        }
-
-        .stat-card .count {
-            font-weight: 700;
-            color: #FF8E8E;
-            font-size: 18px;
-        }
-
-        /* Chapter Sections */
-        .formulas-container {
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        .chapter-section {
-            animation: fadeInUp 0.6s ease-out both;
-        }
-
-        .chapter-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 20px;
-            padding: 16px 24px;
-            border-radius: 18px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .chapter-header:hover {
-            background: rgba(255, 107, 107, 0.15);
-            border-color: rgba(255, 107, 107, 0.4);
-        }
-
-        .chapter-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: white;
-        }
-
-        .chapter-info {
-            flex: 1;
-        }
-
-        .chapter-name {
-            font-size: 20px;
-            font-weight: 700;
-            color: white;
-        }
-
-        .chapter-count {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 2px;
-        }
-
-        .chapter-toggle {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.5);
-            transition: transform 0.3s;
-        }
-
-        .chapter-section.collapsed .chapter-toggle {
-            transform: rotate(-90deg);
-        }
-
-        .chapter-section.collapsed .formulas-grid {
-            display: none;
-        }
-
-        /* Formulas Grid */
-        .formulas-grid {
+        /* Labs Grid */
+        .labs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 16px;
-            padding: 0 8px;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 28px;
+            animation: fadeInUp 1s ease-out 0.3s both;
         }
 
-        .formula-card {
+        /* Lab Card */
+        .lab-card {
             background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 18px;
-            padding: 22px;
-            transition: all 0.3s;
-            cursor: default;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 36px 28px;
+            cursor: pointer;
+            transition: all var(--transition);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 340px;
         }
 
-        .formula-card:hover {
-            background: rgba(255, 107, 107, 0.12);
-            border-color: rgba(255, 107, 107, 0.4);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(255, 107, 107, 0.15);
-        }
-
-        .formula-card::before {
+        .lab-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(180deg, #FF6B6B, #FF8E8E);
-            border-radius: 4px 0 0 4px;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B6B, #FF8E8E, #FF6B6B);
+            background-size: 200% 100%;
+            animation: gradientSlide 3s linear infinite;
+            transition: all 0.5s;
         }
 
-        .formula-name {
-            font-size: 15px;
+        @keyframes gradientSlide {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .lab-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(255, 107, 107, 0.2), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .lab-card:hover::after {
+            opacity: 1;
+        }
+
+        .lab-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: rgba(255, 107, 107, 0.5);
+            box-shadow: 0 24px 70px rgba(255, 107, 107, 0.3);
+        }
+
+        .lab-card:active {
+            transform: scale(0.97);
+            transition: transform 0.1s;
+        }
+
+        .lab-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            margin-bottom: 20px;
+            transition: all 0.4s;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 8px 24px rgba(255, 107, 107, 0.4);
+        }
+
+        .lab-card:hover .lab-icon-wrapper {
+            transform: scale(1.1) rotate(-5deg);
+            border-radius: 28px;
+        }
+
+        .lab-title {
+            font-size: 24px;
             font-weight: 700;
-            color: #FF8E8E;
-            margin-bottom: 10px;
-            letter-spacing: 0.5px;
-        }
-
-        .formula-expression {
-            font-size: 20px;
-            font-weight: 800;
             color: white;
             margin-bottom: 8px;
-            font-family: 'Courier New', monospace;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 12px 16px;
-            border-radius: 10px;
-            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
         }
 
-        .formula-desc {
+        .lab-chapter {
             font-size: 13px;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.5;
-        }
-
-        .formula-tags {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .formula-tag {
-            padding: 4px 10px;
-            border-radius: 100px;
-            font-size: 11px;
-            background: rgba(255, 107, 107, 0.2);
             color: #FF8E8E;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
             font-weight: 600;
         }
 
-        /* No results */
-        .no-results {
-            text-align: center;
-            padding: 60px 20px;
-            color: rgba(255, 255, 255, 0.5);
+        .lab-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.7;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+            flex: 1;
         }
 
-        .no-results i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            color: rgba(255, 107, 107, 0.4);
+        .lab-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
-        .no-results h3 {
-            font-size: 20px;
-            margin-bottom: 8px;
+        .feature-tag {
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(255, 107, 107, 0.15);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #FF8E8E;
         }
 
-        /* Highlight search match */
-        .highlight {
-            background: rgba(255, 107, 107, 0.4);
-            padding: 2px 4px;
-            border-radius: 4px;
+        .launch-btn {
+            padding: 14px 24px;
+            border-radius: 100px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: 100%;
         }
 
-        @media (max-width: 768px) {
-            .formulas-grid {
+        .launch-btn:hover {
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .launch-btn i {
+            transition: transform 0.3s;
+        }
+
+        .launch-btn:hover i {
+            transform: translateX(5px);
+        }
+
+        /* Particles on hover */
+        .card-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 0;
+        }
+
+        .lab-card:hover .card-particles {
+            opacity: 1;
+        }
+
+        .particle-dot {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #FF8E8E;
+            border-radius: 50%;
+            animation: particleRise 2s ease-out infinite;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes particleRise {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .labs-grid {
                 grid-template-columns: 1fr;
+                max-width: 550px;
+                margin: 0 auto;
             }
             
             .page-header h1 {
-                font-size: 32px;
-            }
-            
-            .controls-bar {
-                flex-direction: column;
-            }
-            
-            .search-wrapper {
-                min-width: 100%;
-            }
-            
-            .sort-btn {
-                justify-content: center;
+                font-size: 36px;
             }
         }
 
         @media (max-width: 500px) {
             .main-container {
-                padding: 16px 10px 40px;
+                padding: 16px 12px 40px;
             }
             
-            .formula-card {
-                padding: 16px;
+            .lab-card {
+                padding: 28px 20px;
+                min-height: auto;
             }
             
-            .formula-expression {
-                font-size: 16px;
-                padding: 10px 12px;
+            .lab-icon-wrapper {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+                border-radius: 18px;
+            }
+            
+            .lab-title {
+                font-size: 20px;
+            }
+            
+            .page-header h1 {
+                font-size: 28px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Background -->
     <div class="bg-grid"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -519,560 +464,178 @@
                 <span class="current">Physics</span>
             </div>
             <div class="class-badge">
-                <i class="fas fa-bolt"></i> Physics Formulas
+                <i class="fas fa-flask"></i> Interactive Labs
             </div>
         </div>
 
         <!-- Page Header -->
         <div class="page-header">
-            <h1>⚡ Class 8 Physics Formulas</h1>
-            <p class="subtitle">✦ 300+ Essential Formulas ✦</p>
+            <h1>⚡ Class 8 Physics Labs</h1>
+            <p class="subtitle">✦ 6 Interactive Simulations ✦</p>
         </div>
 
-        <!-- Search and Sort Controls -->
-        <div class="controls-bar">
-            <div class="search-wrapper">
-                <i class="fas fa-search"></i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search formulas, topics, or keywords... (e.g., force, pressure, ohm)" oninput="filterFormulas()">
+        <!-- Labs Grid -->
+        <div class="labs-grid">
+            <!-- Lab 1: Force & Pressure -->
+            <div class="lab-card" onclick="launchLab('force-pressure')">
+                <div class="card-particles" id="particles1"></div>
+                <div class="lab-icon-wrapper">
+                    <i class="fas fa-hand-fist"></i>
+                </div>
+                <div class="lab-title">Force & Pressure Lab</div>
+                <div class="lab-chapter">Chapter 1</div>
+                <div class="lab-description">
+                    Explore different types of forces and understand how pressure works. Calculate pressure by changing force and area.
+                </div>
+                <div class="lab-features">
+                    <span class="feature-tag">🔢 Pressure Calculator</span>
+                    <span class="feature-tag">🎯 Force Type Sorter</span>
+                    <span class="feature-tag">📊 Visual Demo</span>
+                </div>
+                <button class="launch-btn">
+                    Launch Lab <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
-            <button class="sort-btn" id="sortBtn" onclick="toggleSort()">
-                <i class="fas fa-sort-alpha-down"></i>
-                <span id="sortLabel">Sort: By Chapter</span>
-            </button>
-        </div>
 
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stat-card">
-                <i class="fas fa-calculator"></i>
-                <span>Total Formulas:</span>
-                <span class="count" id="totalCount">312</span>
+            <!-- Lab 2: Sound Studio -->
+            <div class="lab-card" onclick="launchLab('sound')">
+                <div class="card-particles" id="particles2"></div>
+                <div class="lab-icon-wrapper">
+                    <i class="fas fa-volume-high"></i>
+                </div>
+                <div class="lab-title">Sound Studio</div>
+                <div class="lab-chapter">Chapter 2</div>
+                <div class="lab-description">
+                    Discover how sound is produced through vibrations. Visualize pitch, loudness, and see how sound needs a medium to travel.
+                </div>
+                <div class="lab-features">
+                    <span class="feature-tag">🎵 Vibration Visualizer</span>
+                    <span class="feature-tag">📈 Pitch Explorer</span>
+                    <span class="feature-tag">🔔 Bell Jar Experiment</span>
+                </div>
+                <button class="launch-btn">
+                    Launch Lab <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-book"></i>
-                <span>Chapters:</span>
-                <span class="count">10</span>
-            </div>
-            <div class="stat-card" id="visibleCountCard">
-                <i class="fas fa-eye"></i>
-                <span>Showing:</span>
-                <span class="count" id="visibleCount">312</span>
-            </div>
-        </div>
 
-        <!-- Formulas Container -->
-        <div class="formulas-container" id="formulasContainer">
-            <!-- Dynamically filled by JavaScript -->
-        </div>
+            <!-- Lab 3: Light Lab -->
+            <div class="lab-card" onclick="launchLab('light')">
+                <div class="card-particles" id="particles3"></div>
+                <div class="lab-icon-wrapper">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="lab-title">Light Lab</div>
+                <div class="lab-chapter">Chapter 3</div>
+                <div class="lab-description">
+                    Experiment with reflection of light. Draw ray diagrams and explore how light passes through different materials.
+                </div>
+                <div class="lab-features">
+                    <span class="feature-tag">📐 Ray Diagram Tool</span>
+                    <span class="feature-tag">🪟 Transparent/Opaque Demo</span>
+                    <span class="feature-tag">🪞 Mirror Reflection</span>
+                </div>
+                <button class="launch-btn">
+                    Launch Lab <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
 
-        <!-- No Results -->
-        <div class="no-results" id="noResults" style="display: none;">
-            <i class="fas fa-search"></i>
-            <h3>No formulas found</h3>
-            <p>Try a different search term</p>
+            <!-- Lab 4: Friction Tester -->
+            <div class="lab-card" onclick="launchLab('friction')">
+                <div class="card-particles" id="particles4"></div>
+                <div class="lab-icon-wrapper">
+                    <i class="fas fa-arrows-left-right"></i>
+                </div>
+                <div class="lab-title">Friction Tester</div>
+                <div class="lab-chapter">Chapter 4</div>
+                <div class="lab-description">
+                    Test how different surfaces affect friction. Learn advantages, disadvantages, and methods to increase or decrease friction.
+                </div>
+                <div class="lab-features">
+                    <span class="feature-tag">🏔️ Surface Comparator</span>
+                    <span class="feature-tag">✅ Advantages/Disadvantages</span>
+                    <span class="feature-tag">🔧 Friction Control</span>
+                </div>
+                <button class="launch-btn">
+                    Launch Lab <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Lab 5: Solar System Explorer -->
+            <div class="lab-card" onclick="launchLab('solar-system')">
+                <div class="card-particles" id="particles5"></div>
+                <div class="lab-icon-wrapper">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
+                <div class="lab-title">Solar System Explorer</div>
+                <div class="lab-chapter">Chapter 5</div>
+                <div class="lab-description">
+                    Journey through our solar system! See planets in order, watch moon phases change, and explore constellations.
+                </div>
+                <div class="lab-features">
+                    <span class="feature-tag">🪐 Orbiting Planets</span>
+                    <span class="feature-tag">🌙 Moon Phases</span>
+                    <span class="feature-tag">⭐ Constellations</span>
+                </div>
+                <button class="launch-btn">
+                    Launch Lab <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Lab 6: Optical Fun -->
+            <div class="lab-card" onclick="launchLab('optics')">
+                <div class="card-particles" id="particles6"></div>
+                <div class="lab-icon-wrapper">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="lab-title">Optical Fun</div>
+                <div class="lab-chapter">Chapter 6</div>
+                <div class="lab-description">
+                    Build a kaleidoscope and periscope virtually! See how multiple reflections create beautiful patterns and bend light.
+                </div>
+                <div class="lab-features">
+                    <span class="feature-tag">🔮 Kaleidoscope Builder</span>
+                    <span class="feature-tag">🔭 Periscope Simulator</span>
+                    <span class="feature-tag">🪞 Multiple Reflections</span>
+                </div>
+                <button class="launch-btn">
+                    Launch Lab <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Complete formula database organized by chapters
-        const formulaData = [
-            {
-                chapter: "Force and Pressure",
-                icon: "fa-hand-fist",
-                formulas: [
-                    { name: "Force Formula", expr: "F = m × a", desc: "Force equals mass times acceleration. SI unit: Newton (N)", tags: ["force", "mass", "acceleration", "newton"] },
-                    { name: "Weight Formula", expr: "W = m × g", desc: "Weight is the force of gravity on an object. g = 9.8 m/s² on Earth", tags: ["weight", "gravity", "mass"] },
-                    { name: "Pressure Formula", expr: "P = F / A", desc: "Pressure is force per unit area. SI unit: Pascal (Pa) = N/m²", tags: ["pressure", "force", "area", "pascal"] },
-                    { name: "Pressure in Liquids", expr: "P = h × ρ × g", desc: "Pressure at depth h in a liquid of density ρ. g = 9.8 m/s²", tags: ["pressure", "liquid", "depth", "density"] },
-                    { name: "Atmospheric Pressure", expr: "1 atm = 101,325 Pa", desc: "Standard atmospheric pressure at sea level", tags: ["atmospheric", "pressure", "atm"] },
-                    { name: "Pressure Conversion", expr: "1 bar = 10⁵ Pa", desc: "Bar to Pascal conversion. 1 millibar = 100 Pa", tags: ["bar", "pascal", "conversion"] },
-                    { name: "Force from Pressure", expr: "F = P × A", desc: "Force exerted by pressure on a surface area A", tags: ["force", "pressure", "area"] },
-                    { name: "Gravitational Force", expr: "F = G(m₁m₂)/r²", desc: "Newton's law of gravitation. G = 6.67 × 10⁻¹¹ Nm²/kg²", tags: ["gravity", "gravitational", "newton"] },
-                    { name: "Net Force", expr: "F_net = F₁ + F₂ + ...", desc: "Net force is the vector sum of all forces acting on an object", tags: ["net", "force", "vector", "sum"] },
-                    { name: "Equilibrium Condition", expr: "ΣF = 0", desc: "An object is in equilibrium when net force is zero", tags: ["equilibrium", "balance", "net force"] },
-                    { name: "Moment of Force", expr: "τ = F × d", desc: "Torque or moment of force. d is perpendicular distance from pivot", tags: ["torque", "moment", "pivot", "lever"] },
-                    { name: "Pressure in Solids", expr: "P = mg/A", desc: "Pressure exerted by a solid object on a surface", tags: ["pressure", "solid", "weight"] },
-                    { name: "Buoyant Force", expr: "F_b = ρ_fluid × V × g", desc: "Buoyant force equals weight of fluid displaced (Archimedes' principle)", tags: ["buoyancy", "archimedes", "fluid"] },
-                    { name: "Contact Force", expr: "F_contact = F_applied", desc: "Contact force between surfaces equals applied force perpendicular to surface", tags: ["contact", "normal", "reaction"] },
-                    { name: "Frictional Force", expr: "f = μ × N", desc: "Friction force equals coefficient of friction times normal force", tags: ["friction", "coefficient", "normal"] },
-                    { name: "Spring Force", expr: "F = -k × x", desc: "Hooke's law: spring force proportional to displacement", tags: ["spring", "hooke", "elastic"] },
-                    { name: "Tension Formula", expr: "T = mg + ma", desc: "Tension in a rope accelerating upward with mass m", tags: ["tension", "rope", "acceleration"] },
-                    { name: "Pressure in Gases", expr: "P ∝ 1/V (constant T)", desc: "Boyle's law: pressure inversely proportional to volume", tags: ["boyle", "gas", "pressure", "volume"] },
-                    { name: "Force and Momentum", expr: "F = Δp/Δt", desc: "Force equals rate of change of momentum", tags: ["force", "momentum", "impulse"] },
-                    { name: "Centripetal Force", expr: "F_c = mv²/r", desc: "Force needed for circular motion. Directed toward center", tags: ["centripetal", "circular", "motion"] },
-                    { name: "Lever Principle", expr: "F₁ × d₁ = F₂ × d₂", desc: "Principle of moments for a lever in equilibrium", tags: ["lever", "moment", "equilibrium"] },
-                    { name: "Pressure in Hydraulic System", expr: "F₁/A₁ = F₂/A₂", desc: "Pascal's law: pressure transmitted equally in enclosed fluid", tags: ["pascal", "hydraulic", "pressure"] },
-                    { name: "Thrust", expr: "Thrust = F_perpendicular", desc: "Thrust is force acting perpendicular to a surface", tags: ["thrust", "perpendicular", "force"] },
-                    { name: "Unit of Pressure", expr: "1 Pa = 1 N/m²", desc: "One Pascal equals one Newton per square meter", tags: ["pascal", "unit", "pressure"] },
-                    { name: "Kilopascal Conversion", expr: "1 kPa = 1000 Pa", desc: "Kilopascal to Pascal conversion", tags: ["kilopascal", "conversion", "pressure"] },
-                    { name: "Megapascal Conversion", expr: "1 MPa = 10⁶ Pa", desc: "Megapascal to Pascal conversion", tags: ["megapascal", "conversion"] },
-                    { name: "Force Unit Conversion", expr: "1 kgf = 9.8 N", desc: "Kilogram-force to Newton conversion", tags: ["kgf", "newton", "conversion"] },
-                    { name: "Dyne to Newton", expr: "1 N = 10⁵ dyne", desc: "Newton to dyne conversion (CGS to SI)", tags: ["dyne", "newton", "conversion"] },
-                    { name: "Pressure Head", expr: "h = P/(ρg)", desc: "Height of liquid column corresponding to pressure P", tags: ["pressure", "head", "height"] },
-                    { name: "Resultant Force", expr: "R = √(F₁² + F₂² + 2F₁F₂cosθ)", desc: "Resultant of two forces at angle θ", tags: ["resultant", "vector", "angle"] }
-                ]
-            },
-            {
-                chapter: "Friction",
-                icon: "fa-arrows-left-right",
-                formulas: [
-                    { name: "Static Friction", expr: "f_s ≤ μ_s × N", desc: "Static friction is less than or equal to μ_s times normal force", tags: ["static", "friction", "coefficient"] },
-                    { name: "Kinetic Friction", expr: "f_k = μ_k × N", desc: "Kinetic (sliding) friction equals μ_k times normal force", tags: ["kinetic", "sliding", "friction"] },
-                    { name: "Rolling Friction", expr: "f_r < f_k < f_s", desc: "Rolling friction is less than kinetic, which is less than static", tags: ["rolling", "friction", "comparison"] },
-                    { name: "Normal Force on Flat Surface", expr: "N = mg", desc: "Normal force on a horizontal surface equals weight", tags: ["normal", "flat", "weight"] },
-                    { name: "Normal Force on Incline", expr: "N = mg × cosθ", desc: "Normal force on an inclined plane at angle θ", tags: ["normal", "incline", "angle"] },
-                    { name: "Friction on Incline", expr: "f = μ × mg × cosθ", desc: "Friction force on an inclined plane", tags: ["friction", "incline", "angle"] },
-                    { name: "Angle of Repose", expr: "θ = tan⁻¹(μ_s)", desc: "Maximum angle before object starts sliding", tags: ["repose", "angle", "static"] },
-                    { name: "Work Against Friction", expr: "W = f × d", desc: "Work done against friction over distance d", tags: ["work", "friction", "distance"] },
-                    { name: "Heat from Friction", expr: "Q = μ × N × d", desc: "Heat generated due to friction over distance d", tags: ["heat", "friction", "energy"] },
-                    { name: "Coefficient of Friction", expr: "μ = f/N", desc: "Coefficient of friction is ratio of friction to normal force", tags: ["coefficient", "ratio", "friction"] },
-                    { name: "Limiting Friction", expr: "f_max = μ_s × N", desc: "Maximum static friction before motion begins", tags: ["limiting", "maximum", "static"] },
-                    { name: "Friction Factor in Pipes", expr: "h_f = f(L/D)(v²/2g)", desc: "Head loss due to friction in pipes (Darcy-Weisbach)", tags: ["pipe", "head loss", "darcy"] },
-                    { name: "Fluid Friction", expr: "F_d = 6πηrv", desc: "Stokes' law: drag force on sphere in viscous fluid", tags: ["stokes", "drag", "viscous"] },
-                    { name: "Terminal Velocity", expr: "v_t = (2r²(ρ_s-ρ_f)g)/(9η)", desc: "Terminal velocity of sphere falling in fluid", tags: ["terminal", "velocity", "sphere"] },
-                    { name: "Advantage of Friction", expr: "No motion without friction", desc: "Friction is essential for walking, driving, and holding objects", tags: ["advantage", "essential", "grip"] },
-                    { name: "Reducing Friction", expr: "Use lubricants/ball bearings", desc: "Friction can be reduced using oil, grease, or ball bearings", tags: ["reduce", "lubricant", "bearing"] },
-                    { name: "Streamlining", expr: "Reduced drag = streamlined shape", desc: "Streamlined shapes reduce fluid friction (air/water resistance)", tags: ["streamline", "drag", "aerodynamic"] }
-                ]
-            },
-            {
-                chapter: "Sound",
-                icon: "fa-volume-high",
-                formulas: [
-                    { name: "Speed of Sound", expr: "v = f × λ", desc: "Speed equals frequency times wavelength", tags: ["speed", "frequency", "wavelength"] },
-                    { name: "Frequency Formula", expr: "f = 1/T", desc: "Frequency is reciprocal of time period. Unit: Hertz (Hz)", tags: ["frequency", "period", "hertz"] },
-                    { name: "Time Period", expr: "T = 1/f", desc: "Time period is reciprocal of frequency. Unit: seconds", tags: ["period", "frequency", "time"] },
-                    { name: "Wavelength", expr: "λ = v/f", desc: "Wavelength equals speed divided by frequency", tags: ["wavelength", "speed", "frequency"] },
-                    { name: "Speed of Sound in Air", expr: "v = 331 + 0.6T", desc: "Speed in m/s at temperature T in °C. At 0°C, v ≈ 331 m/s", tags: ["speed", "temperature", "air"] },
-                    { name: "Sound Intensity", expr: "I = P/A", desc: "Intensity is power per unit area. Unit: W/m²", tags: ["intensity", "power", "area"] },
-                    { name: "Sound Level (Decibel)", expr: "dB = 10 log₁₀(I/I₀)", desc: "Sound level in decibels. I₀ = 10⁻¹² W/m² (threshold of hearing)", tags: ["decibel", "level", "intensity"] },
-                    { name: "Echo Formula", expr: "d = (v × t)/2", desc: "Distance to reflecting surface. t is echo time. Divide by 2 for round trip", tags: ["echo", "distance", "reflection"] },
-                    { name: "Audible Range", expr: "20 Hz to 20,000 Hz", desc: "Human audible frequency range", tags: ["audible", "range", "hearing"] },
-                    { name: "Ultrasonic Frequency", expr: "f > 20,000 Hz", desc: "Ultrasound has frequency above human hearing range", tags: ["ultrasonic", "ultrasound", "frequency"] },
-                    { name: "Infrasonic Frequency", expr: "f < 20 Hz", desc: "Infrasonic sound has frequency below human hearing range", tags: ["infrasonic", "frequency", "low"] },
-                    { name: "Loudness and Amplitude", expr: "L ∝ A²", desc: "Loudness is proportional to square of amplitude", tags: ["loudness", "amplitude", "proportional"] },
-                    { name: "Pitch and Frequency", expr: "Pitch ∝ f", desc: "Higher frequency gives higher pitch", tags: ["pitch", "frequency", "high"] },
-                    { name: "Velocity of Sound in Solid", expr: "v = √(E/ρ)", desc: "Speed in solids depends on elasticity E and density ρ", tags: ["solid", "elasticity", "density"] },
-                    { name: "Velocity of Sound in Liquid", expr: "v = √(B/ρ)", desc: "Speed in liquids depends on bulk modulus B and density ρ", tags: ["liquid", "bulk modulus", "density"] },
-                    { name: "Velocity of Sound in Gas", expr: "v = √(γP/ρ)", desc: "Speed in gases. γ = Cp/Cv for the gas", tags: ["gas", "gamma", "pressure"] },
-                    { name: "Doppler Effect", expr: "f' = f(v±v_o)/(v∓v_s)", desc: "Observed frequency when source or observer moves", tags: ["doppler", "frequency", "moving"] },
-                    { name: "Resonance Frequency", expr: "f = nv/(2L)", desc: "Resonance in open pipe. n = 1,2,3... L is length", tags: ["resonance", "pipe", "harmonic"] },
-                    { name: "Closed Pipe Resonance", expr: "f = nv/(4L)", desc: "Resonance in closed pipe. n = 1,3,5... (odd harmonics)", tags: ["closed", "pipe", "odd harmonics"] },
-                    { name: "Beat Frequency", expr: "f_beat = |f₁ - f₂|", desc: "Beat frequency is absolute difference of two frequencies", tags: ["beat", "difference", "interference"] },
-                    { name: "Wavelength in Medium", expr: "λ_med = λ_air/n", desc: "Wavelength in medium with refractive index n", tags: ["wavelength", "medium", "refractive"] },
-                    { name: "Sound Energy", expr: "E = ½mω²A²", desc: "Energy of sound wave. ω = 2πf, A is amplitude", tags: ["energy", "wave", "amplitude"] },
-                    { name: "Sound Power", expr: "P = E/t", desc: "Sound power is energy per unit time", tags: ["power", "energy", "time"] },
-                    { name: "Shock Wave", expr: "Mach = v/v_sound", desc: "Mach number equals object speed divided by speed of sound", tags: ["mach", "shock", "supersonic"] },
-                    { name: "Sonic Boom", expr: "v > 343 m/s at sea level", desc: "Sonic boom occurs when object exceeds speed of sound", tags: ["sonic boom", "supersonic", "speed"] },
-                    { name: "Vibration Frequency (String)", expr: "f = (1/2L)√(T/μ)", desc: "Frequency of vibrating string. T is tension, μ is mass per length", tags: ["string", "vibration", "tension"] },
-                    { name: "Quality of Sound", expr: "Timbre = harmonics mix", desc: "Quality (timbre) depends on mixture of harmonics", tags: ["quality", "timbre", "harmonics"] },
-                    { name: "Reflection of Sound", expr: "θ_i = θ_r", desc: "Angle of incidence equals angle of reflection for sound", tags: ["reflection", "angle", "incidence"] },
-                    { name: "Reverberation Time", expr: "T = 0.16V/A", desc: "Sabine formula: reverberation time. V is volume, A is absorption", tags: ["reverberation", "sabine", "absorption"] }
-                ]
-            },
-            {
-                chapter: "Light",
-                icon: "fa-lightbulb",
-                formulas: [
-                    { name: "Speed of Light", expr: "c = 3 × 10⁸ m/s", desc: "Speed of light in vacuum", tags: ["speed", "light", "vacuum"] },
-                    { name: "Law of Reflection", expr: "∠i = ∠r", desc: "Angle of incidence equals angle of reflection", tags: ["reflection", "angle", "mirror"] },
-                    { name: "Refractive Index", expr: "n = c/v", desc: "Refractive index is ratio of speed in vacuum to speed in medium", tags: ["refractive", "index", "speed"] },
-                    { name: "Snell's Law", expr: "n₁ sin θ₁ = n₂ sin θ₂", desc: "Relationship between angles and refractive indices at interface", tags: ["snell", "refraction", "angle"] },
-                    { name: "Critical Angle", expr: "θ_c = sin⁻¹(n₂/n₁)", desc: "Angle above which total internal reflection occurs (n₁ > n₂)", tags: ["critical", "total internal reflection", "angle"] },
-                    { name: "Lens Formula", expr: "1/f = 1/v - 1/u", desc: "Relationship between focal length f, image distance v, object distance u", tags: ["lens", "focal", "image", "object"] },
-                    { name: "Magnification (Lens)", expr: "m = v/u = h_i/h_o", desc: "Magnification equals image distance/object distance or heights ratio", tags: ["magnification", "lens", "height"] },
-                    { name: "Mirror Formula", expr: "1/f = 1/v + 1/u", desc: "Relationship for spherical mirrors", tags: ["mirror", "focal", "spherical"] },
-                    { name: "Magnification (Mirror)", expr: "m = -v/u", desc: "Magnification for mirrors. Negative sign indicates inverted image", tags: ["magnification", "mirror", "inverted"] },
-                    { name: "Power of Lens", expr: "P = 1/f (in meters)", desc: "Power in diopters (D). f must be in meters", tags: ["power", "diopter", "focal length"] },
-                    { name: "Combined Lens Power", expr: "P = P₁ + P₂", desc: "Power of lenses in contact adds", tags: ["combined", "lens", "power", "contact"] },
-                    { name: "Lens Maker Formula", expr: "1/f = (n-1)(1/R₁ - 1/R₂)", desc: "Focal length from refractive index and radii of curvature", tags: ["lens maker", "radius", "curvature"] },
-                    { name: "Prism Deviation", expr: "δ = i + e - A", desc: "Angle of deviation in prism. i=incidence, e=emergence, A=prism angle", tags: ["prism", "deviation", "angle"] },
-                    { name: "Minimum Deviation", expr: "n = sin((A+δ_m)/2)/sin(A/2)", desc: "Refractive index from minimum deviation and prism angle", tags: ["minimum", "deviation", "prism"] },
-                    { name: "Dispersion", expr: "δ_v - δ_r = (n_v - n_r)A", desc: "Angular dispersion between violet and red light", tags: ["dispersion", "violet", "red", "prism"] },
-                    { name: "Plane Mirror Image", expr: "Image distance = Object distance", desc: "Image formed by plane mirror is same distance behind mirror", tags: ["plane", "mirror", "image", "virtual"] },
-                    { name: "Convex Mirror Image", expr: "Always virtual, diminished", desc: "Convex mirror always produces virtual, diminished, erect image", tags: ["convex", "mirror", "virtual", "diminished"] },
-                    { name: "Concave Mirror Ray", expr: "Parallel ray → through focus", desc: "Ray parallel to principal axis passes through focus after reflection", tags: ["concave", "ray", "focus", "parallel"] },
-                    { name: "Real Image", expr: "Can be projected on screen", desc: "Real image formed by actual intersection of light rays", tags: ["real", "image", "screen", "intersection"] },
-                    { name: "Virtual Image", expr: "Cannot be projected", desc: "Virtual image formed by apparent intersection of light rays", tags: ["virtual", "image", "apparent"] },
-                    { name: "Lateral Inversion", expr: "Left ↔ Right", desc: "Plane mirror causes left-right reversal of image", tags: ["lateral", "inversion", "mirror", "left", "right"] },
-                    { name: "Multiple Reflections", expr: "n = 360/θ - 1", desc: "Number of images between two mirrors at angle θ", tags: ["multiple", "images", "mirrors", "angle"] },
-                    { name: "Kaleidoscope", expr: "θ = 60° → 5 images", desc: "With 60° between mirrors, 5 images are formed", tags: ["kaleidoscope", "images", "60 degree"] },
-                    { name: "Periscope", expr: "Two parallel mirrors", desc: "Periscope uses two parallel plane mirrors at 45°", tags: ["periscope", "parallel", "mirror", "45 degree"] },
-                    { name: "Illuminance", expr: "E = I/d²", desc: "Illuminance (lux) equals luminous intensity divided by distance squared", tags: ["illuminance", "lux", "intensity", "distance"] },
-                    { name: "Luminous Flux", expr: "Φ = I × ω", desc: "Luminous flux (lumens). I is intensity, ω is solid angle", tags: ["flux", "lumen", "solid angle"] },
-                    { name: "Shadow Formation", expr: "Opaque object blocks light", desc: "Shadow formed when opaque object blocks light path", tags: ["shadow", "opaque", "block"] },
-                    { name: "Solar Eclipse", expr: "Moon between Sun & Earth", desc: "Solar eclipse occurs when moon blocks sunlight", tags: ["solar", "eclipse", "moon", "sun"] },
-                    { name: "Lunar Eclipse", expr: "Earth between Sun & Moon", desc: "Lunar eclipse occurs when Earth's shadow falls on moon", tags: ["lunar", "eclipse", "earth", "shadow"] },
-                    { name: "Color Addition", expr: "R + G + B = White", desc: "Red, Green, Blue are primary colors of light. Sum gives white", tags: ["color", "RGB", "white", "primary"] }
-                ]
-            },
-            {
-                chapter: "Electric Current and Circuits",
-                icon: "fa-bolt",
-                formulas: [
-                    { name: "Ohm's Law", expr: "V = I × R", desc: "Voltage equals current times resistance. V in volts, I in amperes, R in ohms", tags: ["ohm", "voltage", "current", "resistance"] },
-                    { name: "Current Formula", expr: "I = Q/t", desc: "Current is charge per unit time. Unit: Ampere (A)", tags: ["current", "charge", "time", "ampere"] },
-                    { name: "Resistance Formula", expr: "R = ρL/A", desc: "Resistance depends on resistivity ρ, length L, and cross-section A", tags: ["resistance", "resistivity", "length", "area"] },
-                    { name: "Resistivity", expr: "ρ = RA/L", desc: "Resistivity is material property. Unit: Ω·m", tags: ["resistivity", "material", "property"] },
-                    { name: "Conductance", expr: "G = 1/R", desc: "Conductance is reciprocal of resistance. Unit: Siemens (S)", tags: ["conductance", "reciprocal", "siemens"] },
-                    { name: "Conductivity", expr: "σ = 1/ρ", desc: "Conductivity is reciprocal of resistivity", tags: ["conductivity", "resistivity", "reciprocal"] },
-                    { name: "Series Resistance", expr: "R_s = R₁ + R₂ + R₃ + ...", desc: "Total resistance in series is sum of individual resistances", tags: ["series", "total", "sum"] },
-                    { name: "Parallel Resistance", expr: "1/R_p = 1/R₁ + 1/R₂ + 1/R₃", desc: "Reciprocal of total parallel resistance equals sum of reciprocals", tags: ["parallel", "reciprocal", "sum"] },
-                    { name: "Two Parallel Resistors", expr: "R_p = (R₁×R₂)/(R₁+R₂)", desc: "Simplified formula for two resistors in parallel", tags: ["parallel", "two", "product", "sum"] },
-                    { name: "Electric Power", expr: "P = V × I", desc: "Power equals voltage times current. Unit: Watt (W)", tags: ["power", "watt", "voltage", "current"] },
-                    { name: "Power from Resistance", expr: "P = I²R = V²/R", desc: "Alternative power formulas using Ohm's law", tags: ["power", "resistance", "current", "voltage"] },
-                    { name: "Electric Energy", expr: "E = P × t", desc: "Energy equals power times time. Unit: Joule (J) or kWh", tags: ["energy", "power", "time", "joule", "kwh"] },
-                    { name: "Kilowatt-hour", expr: "1 kWh = 3.6 × 10⁶ J", desc: "Commercial unit of electrical energy", tags: ["kwh", "joule", "commercial", "unit"] },
-                    { name: "Electric Charge", expr: "Q = n × e", desc: "Charge is integer multiple of elementary charge e = 1.6 × 10⁻¹⁹ C", tags: ["charge", "electron", "elementary"] },
-                    { name: "Coulomb's Law", expr: "F = k(q₁q₂)/r²", desc: "Force between two charges. k = 9 × 10⁹ Nm²/C²", tags: ["coulomb", "charge", "force", "distance"] },
-                    { name: "Electric Field", expr: "E = F/q", desc: "Electric field is force per unit charge. Unit: N/C or V/m", tags: ["field", "force", "charge"] },
-                    { name: "Electric Potential", expr: "V = W/q", desc: "Potential is work done per unit charge. Unit: Volt (V)", tags: ["potential", "work", "charge", "volt"] },
-                    { name: "Potential Difference", expr: "ΔV = V₂ - V₁", desc: "Potential difference between two points", tags: ["potential difference", "voltage", "points"] },
-                    { name: "EMF Formula", expr: "ε = V + Ir", desc: "EMF equals terminal voltage plus internal voltage drop", tags: ["emf", "internal", "resistance", "terminal"] },
-                    { name: "Internal Resistance", expr: "r = (ε - V)/I", desc: "Internal resistance of a cell or battery", tags: ["internal", "cell", "battery"] },
-                    { name: "Cells in Series", expr: "ε_s = ε₁ + ε₂", desc: "EMF adds when cells connected in series", tags: ["series", "cells", "emf"] },
-                    { name: "Cells in Parallel", expr: "ε_p = ε (same EMF)", desc: "Parallel connection keeps same EMF, increases current capacity", tags: ["parallel", "cells", "same emf"] },
-                    { name: "Joule Heating", expr: "H = I²Rt", desc: "Heat produced by current in resistor. Joule's law of heating", tags: ["joule", "heating", "current", "resistance", "time"] },
-                    { name: "Fuse Rating", expr: "I_fuse > I_circuit", desc: "Fuse current rating should be slightly above normal circuit current", tags: ["fuse", "rating", "safety"] },
-                    { name: "Circuit Breaker", expr: "Auto cutoff on overload", desc: "MCB trips when current exceeds rated value", tags: ["circuit breaker", "mcb", "overload"] },
-                    { name: "Earthing Resistance", expr: "Low resistance path to ground", desc: "Earthing provides safe path for leakage current", tags: ["earthing", "ground", "safety"] },
-                    { name: "Voltage Divider", expr: "V_out = V_in × R₂/(R₁+R₂)", desc: "Output voltage from voltage divider circuit", tags: ["voltage divider", "output", "ratio"] },
-                    { name: "Current Divider", expr: "I₁ = I × R₂/(R₁+R₂)", desc: "Current through R₁ in parallel circuit", tags: ["current divider", "parallel", "branch"] },
-                    { name: "Wheatstone Bridge", expr: "R₁/R₂ = R₃/R₄ (balanced)", desc: "Balanced condition for Wheatstone bridge", tags: ["wheatstone", "bridge", "balanced"] },
-                    { name: "Kirchhoff Current Law", expr: "ΣI_in = ΣI_out", desc: "Sum of currents entering junction equals sum leaving", tags: ["kirchhoff", "current", "junction"] },
-                    { name: "Kirchhoff Voltage Law", expr: "ΣV = 0 around loop", desc: "Sum of voltages around any closed loop is zero", tags: ["kirchhoff", "voltage", "loop"] }
-                ]
-            },
-            {
-                chapter: "Magnetism",
-                icon: "fa-magnet",
-                formulas: [
-                    { name: "Magnetic Force on Charge", expr: "F = qvB sin θ", desc: "Force on moving charge in magnetic field. θ is angle between v and B", tags: ["magnetic", "force", "charge", "moving"] },
-                    { name: "Magnetic Force on Wire", expr: "F = BIL sin θ", desc: "Force on current-carrying wire in magnetic field", tags: ["magnetic", "wire", "current", "field"] },
-                    { name: "Magnetic Field around Wire", expr: "B = μ₀I/(2πr)", desc: "Field at distance r from straight current-carrying wire", tags: ["magnetic field", "wire", "distance"] },
-                    { name: "Solenoid Field", expr: "B = μ₀nI", desc: "Magnetic field inside solenoid. n = turns per unit length", tags: ["solenoid", "field", "turns"] },
-                    { name: "Torque on Current Loop", expr: "τ = NIAB sin θ", desc: "Torque on N-turn coil in magnetic field. A is area", tags: ["torque", "coil", "loop", "magnetic"] },
-                    { name: "Magnetic Flux", expr: "Φ = BA cos θ", desc: "Magnetic flux through area A. θ is angle between B and normal", tags: ["flux", "magnetic", "area", "weber"] },
-                    { name: "Faraday's Law", expr: "ε = -N(ΔΦ/Δt)", desc: "Induced EMF equals negative rate of change of flux", tags: ["faraday", "induction", "emf", "flux"] },
-                    { name: "Lenz's Law", expr: "Induced current opposes change", desc: "Direction of induced current opposes the change causing it", tags: ["lenz", "oppose", "direction"] },
-                    { name: "Self Inductance", expr: "ε = -L(dI/dt)", desc: "Self-induced EMF. L is self-inductance. Unit: Henry (H)", tags: ["self", "inductance", "henry"] },
-                    { name: "Mutual Inductance", expr: "ε₂ = -M(dI₁/dt)", desc: "Mutually induced EMF. M is mutual inductance", tags: ["mutual", "inductance", "coupled"] },
-                    { name: "Transformer Equation", expr: "V_s/V_p = N_s/N_p", desc: "Voltage ratio equals turns ratio in transformer", tags: ["transformer", "voltage", "turns", "ratio"] },
-                    { name: "Ideal Transformer", expr: "V_pI_p = V_sI_s", desc: "Power in primary equals power in secondary (ideal)", tags: ["transformer", "power", "ideal"] },
-                    { name: "Magnetic Moment", expr: "μ = NIA", desc: "Magnetic moment of current loop. Direction perpendicular to plane", tags: ["moment", "loop", "current"] },
-                    { name: "Earth's Magnetic Field", expr: "B_earth ≈ 25-65 μT", desc: "Earth's magnetic field strength varies by location", tags: ["earth", "magnetic", "field"] },
-                    { name: "Magnetic Declination", expr: "Angle between true & magnetic north", desc: "Declination varies by location on Earth", tags: ["declination", "true north", "magnetic north"] },
-                    { name: "Magnetic Inclination", expr: "Angle with horizontal plane", desc: "Dip angle. 0° at equator, 90° at magnetic poles", tags: ["inclination", "dip", "angle"] },
-                    { name: "Permeability", expr: "μ = B/H", desc: "Permeability is ratio of B to H. μ₀ = 4π × 10⁻⁷ H/m", tags: ["permeability", "free space", "constant"] },
-                    { name: "Relative Permeability", expr: "μ_r = μ/μ₀", desc: "Relative permeability of a material", tags: ["relative", "permeability", "material"] },
-                    { name: "Magnetic Susceptibility", expr: "χ = μ_r - 1", desc: "Magnetic susceptibility of material", tags: ["susceptibility", "magnetic", "material"] },
-                    { name: "Curie Temperature", expr: "Above Tc, ferromagnet → paramagnet", desc: "Curie temperature: ferromagnetic materials lose permanent magnetism", tags: ["curie", "temperature", "ferromagnetic"] }
-                ]
-            },
-            {
-                chapter: "Work, Energy and Power",
-                icon: "fa-fire",
-                formulas: [
-                    { name: "Work Done", expr: "W = F × d × cos θ", desc: "Work is force times displacement times cosine of angle. Unit: Joule (J)", tags: ["work", "force", "displacement", "joule"] },
-                    { name: "Kinetic Energy", expr: "KE = ½mv²", desc: "Energy due to motion. m is mass, v is velocity", tags: ["kinetic", "energy", "velocity", "mass"] },
-                    { name: "Potential Energy", expr: "PE = mgh", desc: "Gravitational potential energy at height h", tags: ["potential", "energy", "height", "gravity"] },
-                    { name: "Mechanical Energy", expr: "ME = KE + PE", desc: "Total mechanical energy is sum of kinetic and potential", tags: ["mechanical", "total", "sum"] },
-                    { name: "Conservation of Energy", expr: "KE₁ + PE₁ = KE₂ + PE₂", desc: "Energy cannot be created or destroyed, only transformed", tags: ["conservation", "energy", "constant"] },
-                    { name: "Power Formula", expr: "P = W/t", desc: "Power is work done per unit time. Unit: Watt (W)", tags: ["power", "work", "time", "watt"] },
-                    { name: "Power from Force", expr: "P = F × v", desc: "Power equals force times velocity (constant force)", tags: ["power", "force", "velocity"] },
-                    { name: "Work-Energy Theorem", expr: "W_net = ΔKE", desc: "Net work done equals change in kinetic energy", tags: ["work-energy", "theorem", "change", "kinetic"] },
-                    { name: "Elastic Potential Energy", expr: "PE_spring = ½kx²", desc: "Energy stored in spring. k is spring constant, x is displacement", tags: ["elastic", "spring", "potential"] },
-                    { name: "Gravitational Potential", expr: "V = -GM/r", desc: "Gravitational potential at distance r from mass M", tags: ["gravitational", "potential", "distance"] },
-                    { name: "Escape Velocity", expr: "v_esc = √(2GM/R)", desc: "Minimum velocity to escape gravitational field", tags: ["escape", "velocity", "gravity"] },
-                    { name: "Orbital Velocity", expr: "v_orb = √(GM/r)", desc: "Velocity for circular orbit at distance r", tags: ["orbital", "velocity", "circular"] },
-                    { name: "Efficiency", expr: "η = (Output/Input) × 100%", desc: "Efficiency as percentage of useful output to input", tags: ["efficiency", "output", "input", "percentage"] },
-                    { name: "Horsepower", expr: "1 HP = 746 W", desc: "One horsepower equals 746 Watts", tags: ["horsepower", "watt", "conversion"] },
-                    { name: "Calorie to Joule", expr: "1 cal = 4.18 J", desc: "Conversion between calorie and joule", tags: ["calorie", "joule", "conversion"] },
-                    { name: "Food Calorie", expr: "1 kcal = 4180 J", desc: "Food calorie (kilocalorie) to joule conversion", tags: ["food", "calorie", "kilocalorie"] },
-                    { name: "Electron Volt", expr: "1 eV = 1.6 × 10⁻¹⁹ J", desc: "Energy unit for atomic scale", tags: ["electron volt", "joule", "atomic"] },
-                    { name: "Kinetic Energy and Momentum", expr: "KE = p²/(2m)", desc: "Relationship between kinetic energy and momentum p", tags: ["kinetic", "momentum", "relation"] },
-                    { name: "Work by Gravity", expr: "W = mg(h₁ - h₂)", desc: "Work done by gravity depends only on height difference", tags: ["work", "gravity", "height", "difference"] },
-                    { name: "Non-conservative Work", expr: "W_nc = ΔME", desc: "Work by non-conservative forces equals change in mechanical energy", tags: ["non-conservative", "friction", "energy loss"] }
-                ]
-            },
-            {
-                chapter: "Motion and Kinematics",
-                icon: "fa-car",
-                formulas: [
-                    { name: "Speed Formula", expr: "v = d/t", desc: "Average speed is distance divided by time", tags: ["speed", "distance", "time"] },
-                    { name: "Velocity", expr: "v = Δx/Δt", desc: "Velocity is displacement over time (vector quantity)", tags: ["velocity", "displacement", "vector"] },
-                    { name: "Acceleration", expr: "a = Δv/Δt", desc: "Acceleration is rate of change of velocity. Unit: m/s²", tags: ["acceleration", "change", "velocity"] },
-                    { name: "Equation of Motion 1", expr: "v = u + at", desc: "Final velocity equals initial velocity plus acceleration × time", tags: ["equation", "motion", "velocity", "acceleration"] },
-                    { name: "Equation of Motion 2", expr: "s = ut + ½at²", desc: "Displacement with initial velocity and constant acceleration", tags: ["displacement", "initial velocity", "acceleration"] },
-                    { name: "Equation of Motion 3", expr: "v² = u² + 2as", desc: "Velocity-displacement relation for constant acceleration", tags: ["velocity", "displacement", "squared"] },
-                    { name: "Average Velocity", expr: "v_avg = (u+v)/2", desc: "Average velocity for uniform acceleration", tags: ["average", "velocity", "uniform"] },
-                    { name: "Distance in nth Second", expr: "s_n = u + ½a(2n-1)", desc: "Distance traveled in nth second", tags: ["nth second", "distance", "acceleration"] },
-                    { name: "Momentum", expr: "p = mv", desc: "Momentum equals mass times velocity. Unit: kg·m/s", tags: ["momentum", "mass", "velocity"] },
-                    { name: "Impulse", expr: "J = F × Δt = Δp", desc: "Impulse equals change in momentum. Unit: N·s", tags: ["impulse", "force", "time", "change"] },
-                    { name: "Conservation of Momentum", expr: "m₁u₁+m₂u₂ = m₁v₁+m₂v₂", desc: "Total momentum before collision equals after collision", tags: ["conservation", "momentum", "collision"] },
-                    { name: "Relative Velocity", expr: "v_AB = v_A - v_B", desc: "Velocity of A relative to B", tags: ["relative", "velocity", "difference"] },
-                    { name: "Circular Motion Speed", expr: "v = 2πr/T", desc: "Speed in uniform circular motion. T is period", tags: ["circular", "period", "radius"] },
-                    { name: "Angular Velocity", expr: "ω = θ/t = 2πf", desc: "Angular velocity. Unit: rad/s", tags: ["angular", "velocity", "radian"] },
-                    { name: "Centripetal Acceleration", expr: "a_c = v²/r = ω²r", desc: "Acceleration toward center in circular motion", tags: ["centripetal", "acceleration", "circular"] },
-                    { name: "Frequency of Rotation", expr: "f = 1/T = ω/(2π)", desc: "Rotational frequency in Hz", tags: ["frequency", "rotation", "period"] },
-                    { name: "Displacement-Time Graph", expr: "Slope = velocity", desc: "Slope of s-t graph gives instantaneous velocity", tags: ["graph", "displacement", "slope", "velocity"] },
-                    { name: "Velocity-Time Graph", expr: "Slope = acceleration, Area = displacement", desc: "Slope of v-t graph gives acceleration; area gives displacement", tags: ["graph", "velocity", "acceleration", "area"] },
-                    { name: "Free Fall Time", expr: "t = √(2h/g)", desc: "Time to fall from height h under gravity", tags: ["free fall", "time", "height", "gravity"] },
-                    { name: "Free Fall Velocity", expr: "v = √(2gh)", desc: "Velocity after falling from height h", tags: ["free fall", "velocity", "height"] },
-                    { name: "Maximum Height (Projectile)", expr: "H = u²sin²θ/(2g)", desc: "Maximum height of projectile launched at angle θ", tags: ["projectile", "maximum", "height", "angle"] },
-                    { name: "Range of Projectile", expr: "R = u²sin(2θ)/g", desc: "Horizontal range of projectile", tags: ["range", "projectile", "horizontal"] },
-                    { name: "Time of Flight", expr: "T = 2u sin θ/g", desc: "Total time projectile is in air", tags: ["flight", "time", "projectile"] },
-                    { name: "Uniform Motion", expr: "s = vt", desc: "Distance in uniform motion (constant velocity)", tags: ["uniform", "constant", "velocity"] },
-                    { name: "Retardation", expr: "a = -a (negative acceleration)", desc: "Retardation or deceleration is negative acceleration", tags: ["retardation", "deceleration", "negative"] }
-                ]
-            },
-            {
-                chapter: "Gravitation",
-                icon: "fa-earth-americas",
-                formulas: [
-                    { name: "Newton's Law of Gravitation", expr: "F = G(m₁m₂)/r²", desc: "Gravitational force between two masses. G = 6.67×10⁻¹¹ Nm²/kg²", tags: ["newton", "gravitation", "force", "mass"] },
-                    { name: "Acceleration due to Gravity", expr: "g = GM/R²", desc: "g on surface of planet. On Earth: 9.8 m/s²", tags: ["gravity", "acceleration", "earth"] },
-                    { name: "Variation of g with Height", expr: "g_h = g(R/(R+h))²", desc: "g decreases with height above Earth's surface", tags: ["variation", "height", "decrease"] },
-                    { name: "Variation of g with Depth", expr: "g_d = g(1 - d/R)", desc: "g decreases linearly with depth inside Earth", tags: ["variation", "depth", "inside"] },
-                    { name: "Variation of g with Latitude", expr: "g_φ = g - Rω²cos²φ", desc: "g varies with latitude due to Earth's rotation", tags: ["latitude", "rotation", "variation"] },
-                    { name: "Weight on Moon", expr: "W_moon = mg/6", desc: "Weight on moon is 1/6th of weight on Earth", tags: ["moon", "weight", "one sixth"] },
-                    { name: "Gravitational Potential Energy", expr: "U = -GMm/r", desc: "Gravitational PE at distance r from mass M", tags: ["potential", "energy", "gravitational"] },
-                    { name: "Binding Energy", expr: "E_b = GMm/(2r)", desc: "Energy required to remove satellite from orbit", tags: ["binding", "energy", "orbit"] },
-                    { name: "Kepler's Third Law", expr: "T² ∝ r³", desc: "Square of orbital period proportional to cube of semi-major axis", tags: ["kepler", "third", "period", "orbit"] },
-                    { name: "Areal Velocity", expr: "dA/dt = L/(2m) = constant", desc: "Kepler's second law: equal areas in equal times", tags: ["kepler", "areal", "velocity", "constant"] },
-                    { name: "Gravitational Field", expr: "E_g = F/m = GM/r²", desc: "Gravitational field strength at distance r", tags: ["field", "strength", "gravitational"] },
-                    { name: "Gravitational Potential", expr: "V = -GM/r", desc: "Gravitational potential at distance r (zero at infinity)", tags: ["potential", "gravitational", "zero"] },
-                    { name: "Mass of Earth", expr: "M = gR²/G", desc: "Calculating Earth's mass from g, R, and G", tags: ["earth", "mass", "calculate"] },
-                    { name: "Density of Earth", expr: "ρ = 3g/(4πGR)", desc: "Average density of Earth from g, R, and G", tags: ["density", "earth", "average"] },
-                    { name: "Geostationary Orbit", expr: "r ≈ 42,164 km from center", desc: "Orbit where satellite appears stationary over Earth", tags: ["geostationary", "orbit", "stationary"] },
-                    { name: "Weightlessness", expr: "N = 0 (free fall)", desc: "Apparent weight zero during free fall", tags: ["weightless", "free fall", "zero gravity"] }
-                ]
-            },
-            {
-                chapter: "Heat and Thermodynamics",
-                icon: "fa-temperature-high",
-                formulas: [
-                    { name: "Temperature Conversion C to F", expr: "°F = (9/5)°C + 32", desc: "Celsius to Fahrenheit conversion", tags: ["celsius", "fahrenheit", "conversion"] },
-                    { name: "Temperature Conversion F to C", expr: "°C = (5/9)(°F - 32)", desc: "Fahrenheit to Celsius conversion", tags: ["fahrenheit", "celsius", "conversion"] },
-                    { name: "Celsius to Kelvin", expr: "K = °C + 273.15", desc: "Absolute temperature in Kelvin", tags: ["kelvin", "celsius", "absolute"] },
-                    { name: "Specific Heat Capacity", expr: "Q = mcΔT", desc: "Heat required to change temperature. c is specific heat", tags: ["specific heat", "temperature", "mass"] },
-                    { name: "Heat Capacity", expr: "C = mc", desc: "Heat capacity of an object", tags: ["heat capacity", "mass", "specific"] },
-                    { name: "Latent Heat", expr: "Q = mL", desc: "Heat for phase change at constant temperature. L is latent heat", tags: ["latent", "phase", "change", "constant"] },
-                    { name: "Latent Heat of Fusion", expr: "L_f (ice) = 334 J/g", desc: "Heat to melt ice at 0°C", tags: ["fusion", "melt", "ice", "latent"] },
-                    { name: "Latent Heat of Vaporization", expr: "L_v (water) = 2260 J/g", desc: "Heat to vaporize water at 100°C", tags: ["vaporization", "boil", "water", "latent"] },
-                    { name: "Calorimetry", expr: "Heat lost = Heat gained", desc: "Principle of calorimetry for isolated system", tags: ["calorimetry", "lost", "gained", "equal"] },
-                    { name: "Thermal Expansion (Linear)", expr: "ΔL = αL₀ΔT", desc: "Linear expansion. α is coefficient of linear expansion", tags: ["expansion", "linear", "coefficient"] },
-                    { name: "Thermal Expansion (Area)", expr: "ΔA = 2αA₀ΔT", desc: "Area expansion. Coefficient is approximately 2α", tags: ["expansion", "area", "superficial"] },
-                    { name: "Thermal Expansion (Volume)", expr: "ΔV = γV₀ΔT", desc: "Volume expansion. γ ≈ 3α for solids", tags: ["expansion", "volume", "cubical"] },
-                    { name: "Boyle's Law", expr: "P₁V₁ = P₂V₂ (constant T)", desc: "Pressure inversely proportional to volume at constant temperature", tags: ["boyle", "pressure", "volume", "isothermal"] },
-                    { name: "Charles' Law", expr: "V₁/T₁ = V₂/T₂ (constant P)", desc: "Volume proportional to absolute temperature at constant pressure", tags: ["charles", "volume", "temperature", "isobaric"] },
-                    { name: "Gay-Lussac's Law", expr: "P₁/T₁ = P₂/T₂ (constant V)", desc: "Pressure proportional to absolute temperature at constant volume", tags: ["gay-lussac", "pressure", "temperature"] },
-                    { name: "Ideal Gas Law", expr: "PV = nRT", desc: "Combined gas law. R = 8.314 J/(mol·K)", tags: ["ideal", "gas", "universal", "constant"] },
-                    { name: "Universal Gas Constant", expr: "R = 8.314 J/(mol·K)", desc: "Value of universal gas constant in SI units", tags: ["gas constant", "universal", "value"] },
-                    { name: "Boltzmann Constant", expr: "k = R/N_A = 1.38×10⁻²³ J/K", desc: "Gas constant per molecule", tags: ["boltzmann", "constant", "molecule"] },
-                    { name: "First Law of Thermodynamics", expr: "ΔU = Q - W", desc: "Change in internal energy equals heat added minus work done", tags: ["first law", "internal", "energy", "heat", "work"] },
-                    { name: "Work Done by Gas", expr: "W = PΔV", desc: "Work done in expansion at constant pressure", tags: ["work", "gas", "expansion", "pressure"] },
-                    { name: "Efficiency of Heat Engine", expr: "η = 1 - T_c/T_h", desc: "Carnot efficiency. T in Kelvin", tags: ["efficiency", "carnot", "temperature"] },
-                    { name: "Coefficient of Performance (Refrigerator)", expr: "COP = Q_c/W", desc: "Heat removed per work input", tags: ["cop", "refrigerator", "performance"] },
-                    { name: "Thermal Conductivity", expr: "Q/t = kA(ΔT)/L", desc: "Heat conduction rate. k is thermal conductivity", tags: ["conduction", "thermal", "conductivity"] },
-                    { name: "Stefan-Boltzmann Law", expr: "P = εσAT⁴", desc: "Radiated power. σ = 5.67×10⁻⁸ W/(m²K⁴)", tags: ["stefan", "boltzmann", "radiation"] },
-                    { name: "Wien's Displacement Law", expr: "λ_max = b/T", desc: "Peak wavelength inversely proportional to temperature. b = 2.9×10⁻³ m·K", tags: ["wien", "displacement", "wavelength"] }
-                ]
+        // Create floating particles for each card
+        function createCardParticles(cardId) {
+            const container = document.getElementById(cardId);
+            for (let i = 0; i < 15; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'particle-dot';
+                dot.style.left = Math.random() * 90 + '%';
+                dot.style.top = Math.random() * 80 + 60 + '%';
+                dot.style.setProperty('--delay', Math.random() * 2 + 's');
+                container.appendChild(dot);
             }
-        ];
-
-        let currentSort = 'chapter'; // 'chapter' or 'alphabetical'
-        let collapsedChapters = new Set();
-
-        // Render all formulas
-        function renderFormulas(data) {
-            const container = document.getElementById('formulasContainer');
-            container.innerHTML = '';
-
-            data.forEach((chapter, chapterIndex) => {
-                const section = document.createElement('div');
-                section.className = 'chapter-section';
-                if (collapsedChapters.has(chapterIndex)) {
-                    section.classList.add('collapsed');
-                }
-
-                section.innerHTML = `
-                    <div class="chapter-header" onclick="toggleChapter(${chapterIndex})">
-                        <div class="chapter-icon">
-                            <i class="fas ${chapter.icon}"></i>
-                        </div>
-                        <div class="chapter-info">
-                            <div class="chapter-name">${chapter.chapter}</div>
-                            <div class="chapter-count">${chapter.formulas.length} formulas</div>
-                        </div>
-                        <i class="fas fa-chevron-down chapter-toggle"></i>
-                    </div>
-                    <div class="formulas-grid">
-                        ${chapter.formulas.map((formula, fIndex) => `
-                            <div class="formula-card" data-chapter="${chapterIndex}" data-name="${formula.name.toLowerCase()}" data-tags="${formula.tags.join(' ')}" data-expr="${formula.expr.toLowerCase()}">
-                                <div class="formula-name">${formula.name}</div>
-                                <div class="formula-expression">${formula.expr}</div>
-                                <div class="formula-desc">${formula.desc}</div>
-                                <div class="formula-tags">
-                                    ${formula.tags.map(tag => `<span class="formula-tag">#${tag}</span>`).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-
-                container.appendChild(section);
-            });
-
-            updateVisibleCount();
         }
 
-        // Toggle chapter collapse
-        function toggleChapter(index) {
-            if (collapsedChapters.has(index)) {
-                collapsedChapters.delete(index);
-            } else {
-                collapsedChapters.add(index);
-            }
+        // Launch lab - navigate to specific lab page
+        function launchLab(labName) {
+            // Add click animation
+            document.body.style.transition = 'opacity 0.4s, transform 0.4s';
+            document.body.style.opacity = '0';
+            document.body.style.transform = 'scale(0.97)';
             
-            const sections = document.querySelectorAll('.chapter-section');
-            if (sections[index]) {
-                sections[index].classList.toggle('collapsed');
-            }
-        }
-
-        // Filter formulas based on search
-        function filterFormulas() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            const cards = document.querySelectorAll('.formula-card');
-            const sections = document.querySelectorAll('.chapter-section');
-            let visibleCount = 0;
-
-            sections.forEach(section => {
-                let chapterHasVisible = false;
-                const sectionCards = section.querySelectorAll('.formula-card');
-                
-                sectionCards.forEach(card => {
-                    const name = card.dataset.name;
-                    const tags = card.dataset.tags;
-                    const expr = card.dataset.expr;
-                    
-                    if (searchTerm === '' || 
-                        name.includes(searchTerm) || 
-                        tags.includes(searchTerm) || 
-                        expr.includes(searchTerm)) {
-                        card.style.display = '';
-                        chapterHasVisible = true;
-                        visibleCount++;
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-
-                // Show/hide chapter section
-                if (searchTerm === '') {
-                    section.style.display = '';
-                    if (collapsedChapters.has(parseInt(section.querySelector('.formula-card')?.dataset.chapter))) {
-                        section.classList.add('collapsed');
-                    }
-                } else {
-                    section.style.display = chapterHasVisible ? '' : 'none';
-                    if (chapterHasVisible) {
-                        section.classList.remove('collapsed');
-                    }
-                }
-            });
-
-            // Update counts
-            document.getElementById('visibleCount').textContent = visibleCount;
-            document.getElementById('totalCount').textContent = getAllFormulasCount();
-            
-            // Show/hide no results
-            document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
-        }
-
-        // Get total formula count
-        function getAllFormulasCount() {
-            return formulaData.reduce((total, chapter) => total + chapter.formulas.length, 0);
-        }
-
-        // Update visible count
-        function updateVisibleCount() {
-            const visibleCards = document.querySelectorAll('.formula-card[style*="display: none"]').length;
-            const total = getAllFormulasCount();
-            document.getElementById('visibleCount').textContent = total - visibleCards;
-            document.getElementById('totalCount').textContent = total;
-        }
-
-        // Toggle sort
-        function toggleSort() {
-            const btn = document.getElementById('sortBtn');
-            const label = document.getElementById('sortLabel');
-            
-            if (currentSort === 'chapter') {
-                currentSort = 'alphabetical';
-                btn.classList.add('active');
-                label.textContent = 'Sort: A to Z';
-                sortAlphabetically();
-            } else {
-                currentSort = 'chapter';
-                btn.classList.remove('active');
-                label.textContent = 'Sort: By Chapter';
-                renderFormulas(formulaData);
-                // Re-apply search filter
-                if (document.getElementById('searchInput').value.trim() !== '') {
-                    filterFormulas();
-                }
-            }
-        }
-
-        // Sort formulas alphabetically
-        function sortAlphabetically() {
-            // Flatten all formulas with their chapter info
-            let allFormulas = [];
-            formulaData.forEach(chapter => {
-                chapter.formulas.forEach(formula => {
-                    allFormulas.push({
-                        ...formula,
-                        chapterName: chapter.chapter,
-                        chapterIcon: chapter.icon
-                    });
-                });
-            });
-
-            // Sort alphabetically
-            allFormulas.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Create a single "All Formulas" chapter
-            const container = document.getElementById('formulasContainer');
-            container.innerHTML = `
-                <div class="chapter-section">
-                    <div class="chapter-header" onclick="toggleChapter(0)">
-                        <div class="chapter-icon">
-                            <i class="fas fa-sort-alpha-down"></i>
-                        </div>
-                        <div class="chapter-info">
-                            <div class="chapter-name">All Formulas (A-Z)</div>
-                            <div class="chapter-count">${allFormulas.length} formulas</div>
-                        </div>
-                        <i class="fas fa-chevron-down chapter-toggle"></i>
-                    </div>
-                    <div class="formulas-grid">
-                        ${allFormulas.map((formula, index) => `
-                            <div class="formula-card" data-chapter="0" data-name="${formula.name.toLowerCase()}" data-tags="${formula.tags.join(' ')}" data-expr="${formula.expr.toLowerCase()}">
-                                <div class="formula-name">${formula.name} <span style="font-size:11px;color:#FF8E8E;">(${formula.chapterName})</span></div>
-                                <div class="formula-expression">${formula.expr}</div>
-                                <div class="formula-desc">${formula.desc}</div>
-                                <div class="formula-tags">
-                                    ${formula.tags.map(tag => `<span class="formula-tag">#${tag}</span>`).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-
-            updateVisibleCount();
+            setTimeout(() => {
+                const labPages = {
+                    'force-pressure': '8_physics_force.html',
+                    'sound': '8_physics_sound.html',
+                    'light': '8_physics_light.html',
+                    'friction': '8_physics_friction.html',
+                    'solar-system': '8_physics_solar.html',
+                    'optics': '8_physics_optics.html'
+                };
+                window.location.href = labPages[labName];
+            }, 400);
         }
 
         // Navigation
@@ -1094,25 +657,22 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                document.getElementById('searchInput').focus();
-            }
+            if (e.key === '1') launchLab('force-pressure');
+            if (e.key === '2') launchLab('sound');
+            if (e.key === '3') launchLab('light');
+            if (e.key === '4') launchLab('friction');
+            if (e.key === '5') launchLab('solar-system');
+            if (e.key === '6') launchLab('optics');
         });
 
         // Initialize
         window.addEventListener('load', () => {
-            renderFormulas(formulaData);
-            document.getElementById('totalCount').textContent = getAllFormulasCount();
-            document.getElementById('visibleCount').textContent = getAllFormulasCount();
-
-            // Focus search on '/' key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === '/' && document.activeElement !== document.getElementById('searchInput')) {
-                    e.preventDefault();
-                    document.getElementById('searchInput').focus();
-                }
-            });
+            createCardParticles('particles1');
+            createCardParticles('particles2');
+            createCardParticles('particles3');
+            createCardParticles('particles4');
+            createCardParticles('particles5');
+            createCardParticles('particles6');
         });
     </script>
 </body>

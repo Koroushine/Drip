@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Force & Pressure Lab</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --physics-color: #FF6B6B;
+            --physics-light: #FF8E8E;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(255,107,107,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,107,107,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,107,107,0.25), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(255,142,142,0.2), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1300px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .back-btn:hover {
+            background: rgba(255,107,107,0.3); transform: translateX(-4px);
+            box-shadow: 0 8px 24px rgba(255,107,107,0.3);
+        }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #FF6B6B; font-weight: 600; }
+        .class-badge {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #FF8E8E);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 20px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+        }
+        .tab-btn.active {
+            background: rgba(255,107,107,0.3); color: white;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.2);
+        }
+        .tab-btn:hover:not(.active) {
+            color: white; background: rgba(255,255,255,0.05);
+        }
+
+        /* Tab Content */
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        /* Cards Grid */
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        /* Simulation Card */
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px; transition: all 0.3s;
+        }
+        .sim-card:hover {
+            border-color: rgba(255,107,107,0.4);
+            box-shadow: 0 12px 40px rgba(255,107,107,0.15);
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* Pressure Calculator */
+        .calculator-section {
+            display: flex; flex-direction: column; gap: 18px;
+        }
+        .input-group {
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .input-group label {
+            font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .input-group input[type="range"] {
+            width: 100%; height: 8px; border-radius: 4px;
+            -webkit-appearance: none; appearance: none;
+            background: rgba(255,255,255,0.15); outline: none;
+        }
+        .input-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #FF6B6B; cursor: pointer; border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(255,107,107,0.4);
+        }
+        .input-values {
+            display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.6);
+        }
+        .result-display {
+            background: rgba(255,107,107,0.15); border: 1px solid rgba(255,107,107,0.3);
+            border-radius: 14px; padding: 20px; text-align: center;
+        }
+        .result-display .pressure-value {
+            font-size: 48px; font-weight: 900; color: #FF8E8E;
+        }
+        .result-display .pressure-unit { font-size: 16px; color: rgba(255,255,255,0.6); }
+        .result-display .formula { font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+        /* Visual Block */
+        .visual-block-container {
+            position: relative; height: 120px; background: rgba(0,0,0,0.2);
+            border-radius: 12px; overflow: hidden; display: flex;
+            align-items: flex-end; justify-content: center;
+        }
+        .pressing-block {
+            width: 60%; background: linear-gradient(180deg, #FF6B6B, #cc4444);
+            border-radius: 8px 8px 0 0; transition: height 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px;
+        }
+        .surface-line {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Force Type Sorter */
+        .sorter-container {
+            display: flex; gap: 16px; flex-wrap: wrap;
+        }
+        .sort-bucket {
+            flex: 1; min-width: 180px;
+            background: rgba(0,0,0,0.2); border-radius: 14px;
+            padding: 16px; border: 2px dashed rgba(255,255,255,0.15);
+            transition: all 0.3s; min-height: 200px;
+        }
+        .sort-bucket.highlight {
+            border-color: #FF6B6B; background: rgba(255,107,107,0.1);
+        }
+        .sort-bucket h4 {
+            font-size: 14px; text-align: center; margin-bottom: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+        .draggable-item {
+            padding: 10px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            margin-bottom: 8px; cursor: grab; font-size: 13px;
+            transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+            user-select: none;
+        }
+        .draggable-item:hover { background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.4); }
+        .draggable-item.dragging { opacity: 0.5; transform: scale(0.95); }
+        .draggable-item.correct { border-color: #4ECDC4; background: rgba(78,205,196,0.15); }
+        .draggable-item.wrong { border-color: #FF6B6B; background: rgba(255,107,107,0.2); animation: shake 0.5s; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .score-display {
+            text-align: center; padding: 10px; font-weight: 700; font-size: 16px;
+            color: #4ECDC4;
+        }
+        .reset-sorter {
+            padding: 10px 20px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-weight: 600; transition: all 0.3s;
+            display: block; margin: 12px auto 0;
+        }
+        .reset-sorter:hover { background: rgba(255,107,107,0.3); }
+
+        /* Info Cards */
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px; margin-top: 16px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 28px; margin-bottom: 6px; }
+        .info-card .info-name { font-size: 13px; font-weight: 700; color: #FF8E8E; }
+        .info-card .info-desc { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+        @media (max-width: 600px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .sorter-container { flex-direction: column; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 13px; padding: 10px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()" title="Back to Labs">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Physics Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Force & Pressure</span>
+            </div>
+            <div class="class-badge"><i class="fas fa-hand-fist"></i> Force & Pressure Lab</div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>⚡ Force & Pressure Lab</h1>
+            <p class="subtitle">✦ Interactive Simulations ✦</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('calculator')">
+                <i class="fas fa-calculator"></i> Pressure Calculator
+            </button>
+            <button class="tab-btn" onclick="switchTab('sorter')">
+                <i class="fas fa-sort"></i> Force Type Sorter
+            </button>
+            <button class="tab-btn" onclick="switchTab('learn')">
+                <i class="fas fa-book"></i> Learn
+            </button>
+        </div>
+
+        <!-- Tab 1: Pressure Calculator -->
+        <div class="tab-content active" id="tab-calculator">
+            <div class="sim-cards">
+                <!-- Calculator -->
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-calculator"></i></div>
+                        <div>
+                            <div class="sim-card-title">Pressure Calculator</div>
+                            <div class="sim-card-subtitle">P = F / A (Force ÷ Area)</div>
+                        </div>
+                    </div>
+                    <div class="calculator-section">
+                        <div class="input-group">
+                            <label><i class="fas fa-dumbbell"></i> Force (Newtons)</label>
+                            <input type="range" id="forceSlider" min="1" max="200" value="50" oninput="updateCalculator()">
+                            <div class="input-values"><span>1 N</span><span id="forceValue">50 N</span><span>200 N</span></div>
+                        </div>
+                        <div class="input-group">
+                            <label><i class="fas fa-expand"></i> Area (m²)</label>
+                            <input type="range" id="areaSlider" min="0.1" max="10" step="0.1" value="2" oninput="updateCalculator()">
+                            <div class="input-values"><span>0.1 m²</span><span id="areaValue">2 m²</span><span>10 m²</span></div>
+                        </div>
+                        <div class="result-display">
+                            <div style="font-size:13px;color:rgba(255,255,255,0.5);">PRESSURE</div>
+                            <div class="pressure-value" id="pressureResult">25</div>
+                            <div class="pressure-unit">Pascals (Pa) = N/m²</div>
+                            <div class="formula" id="formulaDisplay">P = 50N ÷ 2m² = 25 Pa</div>
+                        </div>
+                        <div class="visual-block-container">
+                            <div class="surface-line"></div>
+                            <div class="pressing-block" id="visualBlock" style="height:50%;">
+                                Force
+                            </div>
+                        </div>
+                        <p style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;">
+                            💡 More force = more pressure | More area = less pressure
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Real-world Examples -->
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <div class="sim-card-title">Real-World Applications</div>
+                            <div class="sim-card-subtitle">Where do we see pressure in daily life?</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <div class="emoji">🔪</div>
+                            <div class="info-name">Sharp Knife</div>
+                            <div class="info-desc">Small area = High pressure for easy cutting</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">📌</div>
+                            <div class="info-name">Drawing Pin</div>
+                            <div class="info-desc">Sharp tip has tiny area = penetrates easily</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🎿</div>
+                            <div class="info-name">Snow Shoes</div>
+                            <div class="info-desc">Large area = Low pressure = doesn't sink in snow</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🐪</div>
+                            <div class="info-name">Camel Feet</div>
+                            <div class="info-desc">Wide feet spread weight = walk on sand easily</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🏗️</div>
+                            <div class="info-name">Building Foundation</div>
+                            <div class="info-desc">Wide base reduces pressure on ground</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🪡</div>
+                            <div class="info-name">Needle</div>
+                            <div class="info-desc">Sharp point = high pressure to pierce fabric</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Force Type Sorter -->
+        <div class="tab-content" id="tab-sorter">
+            <div class="sim-card" style="margin-bottom:20px;">
+                <div class="sim-card-header">
+                    <div class="sim-card-icon"><i class="fas fa-sort"></i></div>
+                    <div>
+                        <div class="sim-card-title">Force Type Sorter</div>
+                        <div class="sim-card-subtitle">Drag each item into the correct force category!</div>
+                    </div>
+                </div>
+                <div class="score-display" id="scoreDisplay">✅ Score: 0 / 10</div>
+                <div class="sorter-container">
+                    <!-- Items to sort -->
+                    <div class="sort-bucket" id="itemsBucket">
+                        <h4>📦 Items (Drag these)</h4>
+                        <div id="draggableItems"></div>
+                    </div>
+                    <!-- Contact Forces -->
+                    <div class="sort-bucket" id="contactBucket" ondragover="allowDrop(event)" ondrop="drop(event, 'contact')">
+                        <h4>🤝 Contact Forces</h4>
+                        <div id="contactDropped"></div>
+                    </div>
+                    <!-- Non-Contact Forces -->
+                    <div class="sort-bucket" id="nonContactBucket" ondragover="allowDrop(event)" ondrop="drop(event, 'noncontact')">
+                        <h4>🌌 Non-Contact Forces</h4>
+                        <div id="nonContactDropped"></div>
+                    </div>
+                </div>
+                <button class="reset-sorter" onclick="resetSorter()"><i class="fas fa-redo"></i> Reset Game</button>
+            </div>
+        </div>
+
+        <!-- Tab 3: Learn -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div>
+                            <div class="sim-card-title">Key Concepts</div>
+                            <div class="sim-card-subtitle">Force and Pressure basics</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <div class="emoji">💪</div>
+                            <div class="info-name">Force</div>
+                            <div class="info-desc">A push or pull that changes or tends to change the state of an object. SI Unit: Newton (N)</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">📐</div>
+                            <div class="info-name">Pressure</div>
+                            <div class="info-desc">Force per unit area. P = F/A. SI Unit: Pascal (Pa)</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🤝</div>
+                            <div class="info-name">Contact Force</div>
+                            <div class="info-desc">Force that acts when objects are in physical contact. e.g., Friction, Muscular force</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🧲</div>
+                            <div class="info-name">Non-Contact Force</div>
+                            <div class="info-desc">Force that acts without physical contact. e.g., Gravity, Magnetic, Electrostatic</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🌍</div>
+                            <div class="info-name">Gravitational Force</div>
+                            <div class="info-desc">Attraction between any two masses. Earth pulls everything toward its center</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">⚡</div>
+                            <div class="info-name">Electrostatic Force</div>
+                            <div class="info-desc">Force between charged objects. Like charges repel, unlike charges attract</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">🧲</div>
+                            <div class="info-name">Magnetic Force</div>
+                            <div class="info-desc">Attraction or repulsion between magnets. Like poles repel, unlike poles attract</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="emoji">💪</div>
+                            <div class="info-name">Muscular Force</div>
+                            <div class="info-desc">Force generated by muscles. Used in lifting, pushing, pulling, and walking</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ TAB SWITCHING ============
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ============ PRESSURE CALCULATOR ============
+        function updateCalculator() {
+            const force = parseFloat(document.getElementById('forceSlider').value);
+            const area = parseFloat(document.getElementById('areaSlider').value);
+            const pressure = (force / area).toFixed(1);
+            
+            document.getElementById('forceValue').textContent = force + ' N';
+            document.getElementById('areaValue').textContent = area + ' m²';
+            document.getElementById('pressureResult').textContent = pressure;
+            document.getElementById('formulaDisplay').textContent = 
+                `P = ${force}N ÷ ${area}m² = ${pressure} Pa`;
+            
+            // Update visual block
+            const blockHeight = Math.min(90, Math.max(10, (force / area) * 3));
+            const block = document.getElementById('visualBlock');
+            block.style.height = blockHeight + '%';
+            
+            // Color change based on pressure
+            if (pressure > 100) {
+                block.style.background = 'linear-gradient(180deg, #ff4444, #cc0000)';
+            } else if (pressure > 20) {
+                block.style.background = 'linear-gradient(180deg, #FF6B6B, #cc4444)';
+            } else {
+                block.style.background = 'linear-gradient(180deg, #FF8E8E, #FF6B6B)';
+            }
+        }
+
+        // ============ FORCE TYPE SORTER (MOBILE-FRIENDLY) ============
+        const forceItems = [
+            { id: 1, text: '🧲 Magnet attracting iron', category: 'noncontact' },
+            { id: 2, text: '💪 Lifting a book', category: 'contact' },
+            { id: 3, text: '🌍 Apple falling from tree', category: 'noncontact' },
+            { id: 4, text: '🤝 Pushing a door', category: 'contact' },
+            { id: 5, text: '⚡ Hair attracted to comb', category: 'noncontact' },
+            { id: 6, text: '🖐️ Catching a ball', category: 'contact' },
+            { id: 7, text: '🧲 Two magnets repelling', category: 'noncontact' },
+            { id: 8, text: '🚶 Walking on ground', category: 'contact' },
+            { id: 9, text: '🌊 Tides due to moon', category: 'noncontact' },
+            { id: 10, text: '✏️ Writing with pencil', category: 'contact' }
+        ];
+
+        let score = 0;
+        let totalItems = forceItems.length;
+        let selectedItem = null;
+
+        function initSorter() {
+            const itemsContainer = document.getElementById('draggableItems');
+            itemsContainer.innerHTML = '';
+            
+            const shuffled = [...forceItems].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'draggable-item';
+                div.draggable = true;
+                div.id = 'item-' + item.id;
+                div.textContent = item.text;
+                div.dataset.category = item.category;
+                
+                // Mouse events
+                div.addEventListener('dragstart', drag);
+                div.addEventListener('dragend', dragEnd);
+                
+                // Touch events for mobile
+                div.addEventListener('touchstart', touchStart, {passive: false});
+                div.addEventListener('touchmove', touchMove, {passive: false});
+                div.addEventListener('touchend', touchEnd);
+                
+                itemsContainer.appendChild(div);
+            });
+            
+            document.getElementById('contactDropped').innerHTML = '';
+            document.getElementById('nonContactDropped').innerHTML = '';
+            document.getElementById('scoreDisplay').textContent = '✅ Score: 0 / ' + totalItems;
+            document.getElementById('scoreDisplay').style.color = '#4ECDC4';
+            score = 0;
+        }
+
+        // Mouse drag events
+        function allowDrop(e) {
+            e.preventDefault();
+            const bucket = e.target.closest('.sort-bucket');
+            if (bucket) bucket.classList.add('highlight');
+        }
+
+        function drag(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text', e.target.id);
+        }
+
+        function dragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+        }
+
+        function drop(e, category) {
+            e.preventDefault();
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+            
+            const itemId = e.dataTransfer.getData('text');
+            if (!itemId) return;
+            processDrop(itemId, category);
+        }
+
+        // Touch events for mobile
+        function touchStart(e) {
+            // Don't prevent default for buttons or links
+            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('span')) {
+                return;
+            }
+            
+            selectedItem = e.target.closest('.draggable-item');
+            if (selectedItem) {
+                e.preventDefault();
+                selectedItem.classList.add('dragging');
+                selectedItem.style.opacity = '0.6';
+                selectedItem.style.transform = 'scale(1.05)';
+                selectedItem.style.zIndex = '1000';
+            }
+        }
+
+        function touchMove(e) {
+            if (!selectedItem) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            selectedItem.style.position = 'fixed';
+            selectedItem.style.left = (touch.clientX - 80) + 'px';
+            selectedItem.style.top = (touch.clientY - 20) + 'px';
+            selectedItem.style.width = '160px';
+            selectedItem.style.pointerEvents = 'none';
+            
+            // Highlight bucket under finger
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bucket = elemBelow?.closest('.sort-bucket');
+            if (bucket) bucket.classList.add('highlight');
+        }
+
+        function touchEnd(e) {
+            if (!selectedItem) return;
+            
+            selectedItem.classList.remove('dragging');
+            selectedItem.style.opacity = '1';
+            selectedItem.style.transform = '';
+            selectedItem.style.position = '';
+            selectedItem.style.left = '';
+            selectedItem.style.top = '';
+            selectedItem.style.width = '';
+            selectedItem.style.pointerEvents = '';
+            selectedItem.style.zIndex = '';
+            
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+            
+            // Check where it was dropped
+            const touch = e.changedTouches[0];
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bucket = elemBelow?.closest('.sort-bucket');
+            
+            if (bucket) {
+                let category = '';
+                if (bucket.id === 'contactBucket' || bucket.id === 'contactDropped') category = 'contact';
+                if (bucket.id === 'nonContactBucket' || bucket.id === 'nonContactDropped') category = 'noncontact';
+                if (category) processDrop(selectedItem.id, category);
+            }
+            
+            selectedItem = null;
+        }
+
+        function processDrop(itemId, category) {
+            const item = document.getElementById(itemId);
+            if (!item) return;
+            
+            const correctCategory = item.dataset.category;
+            const dropTarget = category === 'contact' ? 
+                document.getElementById('contactDropped') : 
+                document.getElementById('nonContactDropped');
+            
+            // Check if already dropped
+            if (item.parentElement.id === 'contactDropped' || item.parentElement.id === 'nonContactDropped') return;
+            
+            // Move item
+            dropTarget.appendChild(item);
+            item.draggable = false;
+            item.style.cursor = 'default';
+            item.style.position = '';
+            item.style.left = '';
+            item.style.top = '';
+            item.style.opacity = '1';
+            item.style.transform = '';
+            
+            // Check answer
+            if (correctCategory === category) {
+                item.classList.add('correct');
+                item.classList.remove('wrong');
+                score++;
+            } else {
+                item.classList.add('wrong');
+                item.classList.remove('correct');
+                setTimeout(() => item.classList.remove('wrong'), 500);
+            }
+            
+            document.getElementById('scoreDisplay').textContent = '✅ Score: ' + score + ' / ' + totalItems;
+            
+            if (score === totalItems) {
+                document.getElementById('scoreDisplay').textContent = '🎉 Perfect! All Correct! 10 / 10 🎉';
+                document.getElementById('scoreDisplay').style.color = '#FFD700';
+            }
+        }
+
+        // ============ INITIALIZATION ============
+        window.addEventListener('load', () => {
+            updateCalculator();
+            initSorter();
+            
+            // Fix drag over event for buckets
+            document.querySelectorAll('.sort-bucket').forEach(bucket => {
+                bucket.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                    this.classList.add('highlight');
+                });
+                bucket.addEventListener('dragleave', function(e) {
+                    this.classList.remove('highlight');
+                });
+            });
+        });
+
+        // Keyboard shortcut for back
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') goBack();
+        });
+    </script>
+</body>
+</html>
