@@ -689,7 +689,21 @@
                 font-size: 16px;
                 letter-spacing: 3px;
             }
-            
+            .class-card:active {
+                transform: scale(0.97) !important;
+                transition: transform 0.1s !important;
+            }
+
+            .cta-button:active {
+                transform: scale(0.93) !important;
+            }
+
+            /* Make sure buttons are tappable */
+            .cta-button, .class-card {
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+
             .class-card {
                 padding: 32px 20px 30px;
             }
@@ -974,9 +988,10 @@
             });
         });
 
-        // Prevent double-tap zoom on mobile
+        // Improve mobile touch experience
         document.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.class-card')) {
+            // Only prevent double-tap zoom, not clicks
+            if (e.target.closest('.class-card') && e.touches.length > 1) {
                 e.preventDefault();
             }
         }, { passive: false });

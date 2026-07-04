@@ -23,6 +23,7 @@
             min-height: 100vh;
             color: white;
             position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
         .bg-grid {
@@ -59,17 +60,18 @@
             border: 1px solid var(--glass-border); color: white;
             font-size: 20px; cursor: pointer; transition: all 0.3s;
             display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .back-btn:hover {
-            background: rgba(255,107,107,0.3); transform: translateX(-4px);
-            box-shadow: 0 8px 24px rgba(255,107,107,0.3);
+        .back-btn:active {
+            background: rgba(255,107,107,0.3); transform: scale(0.95);
         }
         .breadcrumb {
             display: flex; align-items: center; gap: 10px; font-size: 15px;
             color: rgba(255,255,255,0.7);
         }
         .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.3s; }
-        .breadcrumb span:hover { color: white; }
+        .breadcrumb span:active { color: white; }
         .breadcrumb .current { color: #FF6B6B; font-weight: 600; }
         .class-badge {
             background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
@@ -106,13 +108,16 @@
             font-size: 15px; font-weight: 600; cursor: pointer;
             transition: all 0.3s; display: flex; align-items: center;
             justify-content: center; gap: 8px;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
         }
         .tab-btn.active {
             background: rgba(255,107,107,0.3); color: white;
             box-shadow: 0 4px 15px rgba(255,107,107,0.2);
         }
-        .tab-btn:hover:not(.active) {
-            color: white; background: rgba(255,255,255,0.05);
+        .tab-btn:active:not(.active) {
+            color: white; background: rgba(255,255,255,0.1);
         }
 
         /* Tab Content */
@@ -130,10 +135,6 @@
             background: var(--glass); backdrop-filter: blur(30px);
             border: 1px solid var(--glass-border); border-radius: var(--radius);
             padding: 28px; transition: all 0.3s;
-        }
-        .sim-card:hover {
-            border-color: rgba(255,107,107,0.4);
-            box-shadow: 0 12px 40px rgba(255,107,107,0.15);
         }
         .sim-card-header {
             display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
@@ -165,7 +166,7 @@
         }
         .input-group input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none;
-            width: 24px; height: 24px; border-radius: 50%;
+            width: 28px; height: 28px; border-radius: 50%;
             background: #FF6B6B; cursor: pointer; border: 3px solid white;
             box-shadow: 0 4px 12px rgba(255,107,107,0.4);
         }
@@ -221,11 +222,12 @@
             background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
             margin-bottom: 8px; cursor: grab; font-size: 13px;
             transition: all 0.2s; display: flex; align-items: center; gap: 8px;
-            user-select: none;
+            -webkit-user-select: none; user-select: none;
+            -webkit-touch-callout: none;
         }
-        .draggable-item:hover { background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.4); }
+        .draggable-item:active { background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.4); }
         .draggable-item.dragging { opacity: 0.5; transform: scale(0.95); }
-        .draggable-item.correct { border-color: #4ECDC4; background: rgba(78,205,196,0.15); }
+        .draggable-item.correct { border-color: #4ECDC4; background: rgba(78,205,196,0.15); cursor: default; }
         .draggable-item.wrong { border-color: #FF6B6B; background: rgba(255,107,107,0.2); animation: shake 0.5s; }
         @keyframes shake {
             0%,100% { transform: translateX(0); }
@@ -237,12 +239,14 @@
             color: #4ECDC4;
         }
         .reset-sorter {
-            padding: 10px 20px; border-radius: 100px;
+            padding: 12px 24px; border-radius: 100px;
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
             color: white; cursor: pointer; font-weight: 600; transition: all 0.3s;
-            display: block; margin: 12px auto 0;
+            display: block; margin: 16px auto 0; font-size: 15px;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .reset-sorter:hover { background: rgba(255,107,107,0.3); }
+        .reset-sorter:active { background: rgba(255,107,107,0.3); transform: scale(0.95); }
 
         /* Info Cards */
         .info-cards {
@@ -261,7 +265,10 @@
             .sim-cards { grid-template-columns: 1fr; }
             .sorter-container { flex-direction: column; }
             .page-header h1 { font-size: 28px; }
-            .tab-btn { font-size: 13px; padding: 10px 12px; }
+            .tab-btn { font-size: 12px; padding: 10px 8px; }
+            .tab-btn i { display: none; }
+            .breadcrumb { font-size: 12px; }
+            .class-badge { font-size: 11px; padding: 6px 12px; margin-left: 0; }
         }
     </style>
 </head>
@@ -294,13 +301,13 @@
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('calculator')">
+            <button class="tab-btn active" onclick="switchTab('calculator', this)">
                 <i class="fas fa-calculator"></i> Pressure Calculator
             </button>
-            <button class="tab-btn" onclick="switchTab('sorter')">
+            <button class="tab-btn" onclick="switchTab('sorter', this)">
                 <i class="fas fa-sort"></i> Force Type Sorter
             </button>
-            <button class="tab-btn" onclick="switchTab('learn')">
+            <button class="tab-btn" onclick="switchTab('learn', this)">
                 <i class="fas fa-book"></i> Learn
             </button>
         </div>
@@ -308,7 +315,6 @@
         <!-- Tab 1: Pressure Calculator -->
         <div class="tab-content active" id="tab-calculator">
             <div class="sim-cards">
-                <!-- Calculator -->
                 <div class="sim-card">
                     <div class="sim-card-header">
                         <div class="sim-card-icon"><i class="fas fa-calculator"></i></div>
@@ -336,9 +342,7 @@
                         </div>
                         <div class="visual-block-container">
                             <div class="surface-line"></div>
-                            <div class="pressing-block" id="visualBlock" style="height:50%;">
-                                Force
-                            </div>
+                            <div class="pressing-block" id="visualBlock" style="height:50%;">Force</div>
                         </div>
                         <p style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;">
                             💡 More force = more pressure | More area = less pressure
@@ -346,7 +350,6 @@
                     </div>
                 </div>
 
-                <!-- Real-world Examples -->
                 <div class="sim-card">
                     <div class="sim-card-header">
                         <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
@@ -356,36 +359,12 @@
                         </div>
                     </div>
                     <div class="info-cards">
-                        <div class="info-card">
-                            <div class="emoji">🔪</div>
-                            <div class="info-name">Sharp Knife</div>
-                            <div class="info-desc">Small area = High pressure for easy cutting</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">📌</div>
-                            <div class="info-name">Drawing Pin</div>
-                            <div class="info-desc">Sharp tip has tiny area = penetrates easily</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🎿</div>
-                            <div class="info-name">Snow Shoes</div>
-                            <div class="info-desc">Large area = Low pressure = doesn't sink in snow</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🐪</div>
-                            <div class="info-name">Camel Feet</div>
-                            <div class="info-desc">Wide feet spread weight = walk on sand easily</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🏗️</div>
-                            <div class="info-name">Building Foundation</div>
-                            <div class="info-desc">Wide base reduces pressure on ground</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🪡</div>
-                            <div class="info-name">Needle</div>
-                            <div class="info-desc">Sharp point = high pressure to pierce fabric</div>
-                        </div>
+                        <div class="info-card"><div class="emoji">🔪</div><div class="info-name">Sharp Knife</div><div class="info-desc">Small area = High pressure for easy cutting</div></div>
+                        <div class="info-card"><div class="emoji">📌</div><div class="info-name">Drawing Pin</div><div class="info-desc">Sharp tip has tiny area = penetrates easily</div></div>
+                        <div class="info-card"><div class="emoji">🎿</div><div class="info-name">Snow Shoes</div><div class="info-desc">Large area = Low pressure = doesn't sink in snow</div></div>
+                        <div class="info-card"><div class="emoji">🐪</div><div class="info-name">Camel Feet</div><div class="info-desc">Wide feet spread weight = walk on sand easily</div></div>
+                        <div class="info-card"><div class="emoji">🏗️</div><div class="info-name">Building Foundation</div><div class="info-desc">Wide base reduces pressure on ground</div></div>
+                        <div class="info-card"><div class="emoji">🪡</div><div class="info-name">Needle</div><div class="info-desc">Sharp point = high pressure to pierce fabric</div></div>
                     </div>
                 </div>
             </div>
@@ -403,17 +382,14 @@
                 </div>
                 <div class="score-display" id="scoreDisplay">✅ Score: 0 / 10</div>
                 <div class="sorter-container">
-                    <!-- Items to sort -->
                     <div class="sort-bucket" id="itemsBucket">
                         <h4>📦 Items (Drag these)</h4>
                         <div id="draggableItems"></div>
                     </div>
-                    <!-- Contact Forces -->
                     <div class="sort-bucket" id="contactBucket" ondragover="allowDrop(event)" ondrop="drop(event, 'contact')">
                         <h4>🤝 Contact Forces</h4>
                         <div id="contactDropped"></div>
                     </div>
-                    <!-- Non-Contact Forces -->
                     <div class="sort-bucket" id="nonContactBucket" ondragover="allowDrop(event)" ondrop="drop(event, 'noncontact')">
                         <h4>🌌 Non-Contact Forces</h4>
                         <div id="nonContactDropped"></div>
@@ -435,46 +411,14 @@
                         </div>
                     </div>
                     <div class="info-cards">
-                        <div class="info-card">
-                            <div class="emoji">💪</div>
-                            <div class="info-name">Force</div>
-                            <div class="info-desc">A push or pull that changes or tends to change the state of an object. SI Unit: Newton (N)</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">📐</div>
-                            <div class="info-name">Pressure</div>
-                            <div class="info-desc">Force per unit area. P = F/A. SI Unit: Pascal (Pa)</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🤝</div>
-                            <div class="info-name">Contact Force</div>
-                            <div class="info-desc">Force that acts when objects are in physical contact. e.g., Friction, Muscular force</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🧲</div>
-                            <div class="info-name">Non-Contact Force</div>
-                            <div class="info-desc">Force that acts without physical contact. e.g., Gravity, Magnetic, Electrostatic</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🌍</div>
-                            <div class="info-name">Gravitational Force</div>
-                            <div class="info-desc">Attraction between any two masses. Earth pulls everything toward its center</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">⚡</div>
-                            <div class="info-name">Electrostatic Force</div>
-                            <div class="info-desc">Force between charged objects. Like charges repel, unlike charges attract</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">🧲</div>
-                            <div class="info-name">Magnetic Force</div>
-                            <div class="info-desc">Attraction or repulsion between magnets. Like poles repel, unlike poles attract</div>
-                        </div>
-                        <div class="info-card">
-                            <div class="emoji">💪</div>
-                            <div class="info-name">Muscular Force</div>
-                            <div class="info-desc">Force generated by muscles. Used in lifting, pushing, pulling, and walking</div>
-                        </div>
+                        <div class="info-card"><div class="emoji">💪</div><div class="info-name">Force</div><div class="info-desc">A push or pull that changes the state of an object. SI Unit: Newton (N)</div></div>
+                        <div class="info-card"><div class="emoji">📐</div><div class="info-name">Pressure</div><div class="info-desc">Force per unit area. P = F/A. SI Unit: Pascal (Pa)</div></div>
+                        <div class="info-card"><div class="emoji">🤝</div><div class="info-name">Contact Force</div><div class="info-desc">Force that acts when objects are in physical contact. e.g., Friction, Muscular force</div></div>
+                        <div class="info-card"><div class="emoji">🧲</div><div class="info-name">Non-Contact Force</div><div class="info-desc">Force that acts without physical contact. e.g., Gravity, Magnetic, Electrostatic</div></div>
+                        <div class="info-card"><div class="emoji">🌍</div><div class="info-name">Gravitational Force</div><div class="info-desc">Attraction between any two masses. Earth pulls everything toward its center</div></div>
+                        <div class="info-card"><div class="emoji">⚡</div><div class="info-name">Electrostatic Force</div><div class="info-desc">Force between charged objects. Like charges repel, unlike charges attract</div></div>
+                        <div class="info-card"><div class="emoji">🧲</div><div class="info-name">Magnetic Force</div><div class="info-desc">Attraction or repulsion between magnets. Like poles repel, unlike poles attract</div></div>
+                        <div class="info-card"><div class="emoji">💪</div><div class="info-name">Muscular Force</div><div class="info-desc">Force generated by muscles. Used in lifting, pushing, pulling, and walking</div></div>
                     </div>
                 </div>
             </div>
@@ -482,13 +426,26 @@
     </div>
 
     <script>
+        // ============ NAVIGATION ============
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+        }
+
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
         // ============ TAB SWITCHING ============
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
             document.getElementById('tab-' + tabName).classList.add('active');
-            event.target.classList.add('active');
+            if (btn) btn.classList.add('active');
         }
 
         // ============ PRESSURE CALCULATOR ============
@@ -503,12 +460,10 @@
             document.getElementById('formulaDisplay').textContent = 
                 `P = ${force}N ÷ ${area}m² = ${pressure} Pa`;
             
-            // Update visual block
             const blockHeight = Math.min(90, Math.max(10, (force / area) * 3));
             const block = document.getElementById('visualBlock');
             block.style.height = blockHeight + '%';
             
-            // Color change based on pressure
             if (pressure > 100) {
                 block.style.background = 'linear-gradient(180deg, #ff4444, #cc0000)';
             } else if (pressure > 20) {
@@ -518,7 +473,7 @@
             }
         }
 
-        // ============ FORCE TYPE SORTER (MOBILE-FRIENDLY) ============
+        // ============ FORCE TYPE SORTER ============
         const forceItems = [
             { id: 1, text: '🧲 Magnet attracting iron', category: 'noncontact' },
             { id: 2, text: '💪 Lifting a book', category: 'contact' },
@@ -550,11 +505,8 @@
                 div.textContent = item.text;
                 div.dataset.category = item.category;
                 
-                // Mouse events
                 div.addEventListener('dragstart', drag);
                 div.addEventListener('dragend', dragEnd);
-                
-                // Touch events for mobile
                 div.addEventListener('touchstart', touchStart, {passive: false});
                 div.addEventListener('touchmove', touchMove, {passive: false});
                 div.addEventListener('touchend', touchEnd);
@@ -569,7 +521,13 @@
             score = 0;
         }
 
-        // Mouse drag events
+        function resetSorter() {
+            score = 0;
+            document.getElementById('scoreDisplay').style.color = '#4ECDC4';
+            initSorter();
+        }
+
+        // Mouse events
         function allowDrop(e) {
             e.preventDefault();
             const bucket = e.target.closest('.sort-bucket');
@@ -589,21 +547,19 @@
         function drop(e, category) {
             e.preventDefault();
             document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
-            
             const itemId = e.dataTransfer.getData('text');
             if (!itemId) return;
             processDrop(itemId, category);
         }
 
-        // Touch events for mobile
+        // Touch events
         function touchStart(e) {
-            // Don't prevent default for buttons or links
-            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('span')) {
+            if (e.target.closest('button') || e.target.closest('a')) {
                 return;
             }
             
             selectedItem = e.target.closest('.draggable-item');
-            if (selectedItem) {
+            if (selectedItem && selectedItem.parentElement.id === 'draggableItems') {
                 e.preventDefault();
                 selectedItem.classList.add('dragging');
                 selectedItem.style.opacity = '0.6';
@@ -623,7 +579,6 @@
             selectedItem.style.width = '160px';
             selectedItem.style.pointerEvents = 'none';
             
-            // Highlight bucket under finger
             document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
             const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
             const bucket = elemBelow?.closest('.sort-bucket');
@@ -645,7 +600,6 @@
             
             document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
             
-            // Check where it was dropped
             const touch = e.changedTouches[0];
             const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
             const bucket = elemBelow?.closest('.sort-bucket');
@@ -664,15 +618,13 @@
             const item = document.getElementById(itemId);
             if (!item) return;
             
+            if (item.parentElement.id === 'contactDropped' || item.parentElement.id === 'nonContactDropped') return;
+            
             const correctCategory = item.dataset.category;
             const dropTarget = category === 'contact' ? 
                 document.getElementById('contactDropped') : 
                 document.getElementById('nonContactDropped');
             
-            // Check if already dropped
-            if (item.parentElement.id === 'contactDropped' || item.parentElement.id === 'nonContactDropped') return;
-            
-            // Move item
             dropTarget.appendChild(item);
             item.draggable = false;
             item.style.cursor = 'default';
@@ -681,8 +633,8 @@
             item.style.top = '';
             item.style.opacity = '1';
             item.style.transform = '';
+            item.style.zIndex = '';
             
-            // Check answer
             if (correctCategory === category) {
                 item.classList.add('correct');
                 item.classList.remove('wrong');
@@ -706,7 +658,6 @@
             updateCalculator();
             initSorter();
             
-            // Fix drag over event for buckets
             document.querySelectorAll('.sort-bucket').forEach(bucket => {
                 bucket.addEventListener('dragenter', function(e) {
                     e.preventDefault();
@@ -716,11 +667,6 @@
                     this.classList.remove('highlight');
                 });
             });
-        });
-
-        // Keyboard shortcut for back
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') goBack();
         });
     </script>
 </body>
