@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Optical Fun</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --optics-color: #9C27B0;
+            --optics-light: #CE93D8;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(156,39,176,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(156,39,176,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(156,39,176,0.2), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(206,147,216,0.15), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1300px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(156,39,176,0.3); transform: scale(0.95); }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb span:active { color: white; }
+        .breadcrumb .current { color: #CE93D8; font-weight: 600; }
+        .class-badge {
+            background: linear-gradient(135deg, #9C27B0, #CE93D8);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(156,39,176,0.4);
+        }
+
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #CE93D8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active {
+            background: rgba(156,39,176,0.3); color: #CE93D8;
+            box-shadow: 0 4px 15px rgba(156,39,176,0.2);
+        }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px;
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #9C27B0, #CE93D8);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* Canvas */
+        .canvas-wrap {
+            width: 100%; background: rgba(0,0,0,0.3); border-radius: 14px;
+            overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+            cursor: grab; touch-action: none;
+        }
+        .canvas-wrap:active { cursor: grabbing; }
+        .canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+
+        /* Kaleidoscope */
+        .kaleido-view {
+            position: relative; width: 300px; height: 300px;
+            border-radius: 50%; overflow: hidden;
+            border: 4px solid rgba(255,255,255,0.2);
+            box-shadow: 0 0 40px rgba(156,39,176,0.3);
+            background: #0a0a1a; cursor: pointer; margin: 0 auto;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .kaleido-view canvas { width: 100%; height: 100%; display: block; }
+        .mirror-count-display {
+            font-size: 16px; font-weight: 700; color: #CE93D8; text-align: center;
+        }
+        .btn-row {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px;
+        }
+        .ctrl-btn {
+            padding: 10px 18px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: all 0.3s; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .ctrl-btn:active { background: rgba(156,39,176,0.3); transform: scale(0.95); }
+        .ctrl-btn.active-ctrl { background: rgba(156,39,176,0.3); border-color: #9C27B0; }
+
+        .slider-group {
+            width: 100%; max-width: 350px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px;
+        }
+        .slider-group label {
+            font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 600;
+        }
+        .slider-group input[type="range"] {
+            width: 100%; height: 8px; border-radius: 4px;
+            -webkit-appearance: none; appearance: none;
+            background: linear-gradient(90deg, #4CAF50, #FFEB3B, #FF9800, #F44336);
+            outline: none;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 26px; height: 26px;
+            border-radius: 50%; background: #CE93D8; cursor: pointer;
+            border: 3px solid white; box-shadow: 0 0 12px rgba(156,39,176,0.5);
+        }
+
+        /* Periscope status */
+        .periscope-status {
+            text-align: center; font-size: 14px; font-weight: 700; color: #FFD700; margin-top: 10px;
+        }
+
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px; margin-top: 12px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 26px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 11px; font-weight: 700; color: #CE93D8; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        @media (max-width: 600px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .kaleido-view { width: 240px; height: 240px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Physics Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Optical Fun</span>
+            </div>
+            <div class="class-badge"><i class="fas fa-eye"></i> Optical Fun</div>
+        </div>
+
+        <div class="page-header">
+            <h1>🔮 Optical Fun</h1>
+            <p class="subtitle">✦ Kaleidoscope, Periscope & Multiple Reflections ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('kaleidoscope', this)"><i class="fas fa-snowflake"></i> Kaleidoscope</button>
+            <button class="tab-btn" onclick="switchTab('periscope', this)"><i class="fas fa-binoculars"></i> Periscope</button>
+            <button class="tab-btn" onclick="switchTab('reflections', this)"><i class="fas fa-clone"></i> Reflections</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Learn</button>
+        </div>
+
+        <!-- Tab 1: Kaleidoscope -->
+        <div class="tab-content active" id="tab-kaleidoscope">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-snowflake"></i></div>
+                        <div>
+                            <div class="sim-card-title">Kaleidoscope Simulator</div>
+                            <div class="sim-card-subtitle">Tap or click inside the circle to create colorful patterns!</div>
+                        </div>
+                    </div>
+                    <div class="kaleido-view" id="kaleidoView">
+                        <canvas id="kaleidoCanvas"></canvas>
+                    </div>
+                    <div class="mirror-count-display" style="margin-top:14px;">
+                        🔸 3 Mirrors (60°) → 5 images | 6-fold symmetry
+                    </div>
+                    <div class="btn-row">
+                        <button class="ctrl-btn active-ctrl" onclick="setKaleidoMirrors(3)">🪞 3 Mirrors</button>
+                        <button class="ctrl-btn" onclick="setKaleidoMirrors(4)">🪞 4 Mirrors</button>
+                        <button class="ctrl-btn" onclick="setKaleidoMirrors(6)">🪞 6 Mirrors</button>
+                        <button class="ctrl-btn" onclick="clearKaleido()">🗑️ Clear</button>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div><div class="sim-card-title">How It Works</div><div class="sim-card-subtitle">Multiple mirrors = beautiful symmetry</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🪞</div><div class="info-name">3 Mirrors</div><div class="info-desc">At 60° in a tube. Creates 6-fold symmetry</div></div>
+                        <div class="info-card"><div class="emoji">🟡</div><div class="info-name">Objects</div><div class="info-desc">Colored beads that tumble and reflect</div></div>
+                        <div class="info-card"><div class="emoji">🔢</div><div class="info-name">Formula</div><div class="info-desc">n = 360°/angle - 1. 60° → 5 images</div></div>
+                        <div class="info-card"><div class="emoji">🎨</div><div class="info-name">Unique</div><div class="info-desc">Every turn = never-repeating pattern!</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: INTERACTIVE Periscope -->
+        <div class="tab-content" id="tab-periscope">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-binoculars"></i></div>
+                        <div>
+                            <div class="sim-card-title">Interactive Periscope Simulator</div>
+                            <div class="sim-card-subtitle">🖱️ Drag the periscope UP/DOWN to see over the wall!</div>
+                        </div>
+                    </div>
+                    <div class="canvas-wrap" id="periscopeWrap" style="height:450px;">
+                        <canvas id="periscopeCanvas"></canvas>
+                    </div>
+                    <div class="periscope-status" id="periscopeStatus">
+                        📐 Drag the periscope up to peek over the wall!
+                    </div>
+                    <div class="btn-row">
+                        <button class="ctrl-btn" onclick="movePeriscope('up')">⬆️ Raise</button>
+                        <button class="ctrl-btn" onclick="movePeriscope('down')">⬇️ Lower</button>
+                        <button class="ctrl-btn" onclick="resetPeriscope()">🔄 Reset</button>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-info-circle"></i></div>
+                        <div><div class="sim-card-title">Periscope Facts</div><div class="sim-card-subtitle">Where is it used?</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🚢</div><div class="info-name">Submarines</div><div class="info-desc">See above water while staying hidden underwater</div></div>
+                        <div class="info-card"><div class="emoji">🪖</div><div class="info-name">Trenches</div><div class="info-desc">Soldiers see over walls without exposing themselves</div></div>
+                        <div class="info-card"><div class="emoji">📐</div><div class="info-name">45° Mirrors</div><div class="info-desc">Both mirrors exactly at 45° for proper Z-path</div></div>
+                        <div class="info-card"><div class="emoji">🪞</div><div class="info-name">Plane Mirrors</div><div class="info-desc">Parallel mirrors facing each other in the tube</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Multiple Reflections -->
+        <div class="tab-content" id="tab-reflections">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-clone"></i></div>
+                        <div>
+                            <div class="sim-card-title">Multiple Reflections</div>
+                            <div class="sim-card-subtitle">Change the angle between two mirrors</div>
+                        </div>
+                    </div>
+                    <div class="canvas-wrap" style="height:350px;">
+                        <canvas id="mirrorVizCanvas"></canvas>
+                    </div>
+                    <div class="slider-group" style="margin-top:14px;">
+                        <label>Angle: <span id="angleValue" style="color:#CE93D8;font-weight:700;">60°</span></label>
+                        <input type="range" id="angleSlider" min="10" max="180" value="60" oninput="updateMirrorAngle(this.value)">
+                    </div>
+                    <div style="text-align:center;font-size:15px;font-weight:700;color:#CE93D8;margin-top:8px;" id="imageCountDisplay">
+                        Images: 5 | n = 360/60 - 1 = 5
+                    </div>
+                    <div class="btn-row">
+                        <button class="ctrl-btn" onclick="setPresetAngle(90)">90° → 3</button>
+                        <button class="ctrl-btn active-ctrl" onclick="setPresetAngle(60)">60° → 5</button>
+                        <button class="ctrl-btn" onclick="setPresetAngle(45)">45° → 7</button>
+                        <button class="ctrl-btn" onclick="setPresetAngle(30)">30° → 11</button>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-calculator"></i></div>
+                        <div><div class="sim-card-title">The Formula</div><div class="sim-card-subtitle">n = 360/θ - 1</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">90°</div><div class="info-name">Right Angle</div><div class="info-desc">360/90 - 1 = 3 images</div></div>
+                        <div class="info-card"><div class="emoji">60°</div><div class="info-name">Kaleidoscope</div><div class="info-desc">360/60 - 1 = 5 images</div></div>
+                        <div class="info-card"><div class="emoji">45°</div><div class="info-name">Sharp Angle</div><div class="info-desc">360/45 - 1 = 7 images</div></div>
+                        <div class="info-card"><div class="emoji">30°</div><div class="info-name">Very Sharp</div><div class="info-desc">360/30 - 1 = 11 images</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Learn -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div><div class="sim-card-title">Optical Devices</div><div class="sim-card-subtitle">Mirrors and their applications</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🔮</div><div class="info-name">Kaleidoscope</div><div class="info-desc">3 mirrors at 60°. Beautiful symmetrical patterns</div></div>
+                        <div class="info-card"><div class="emoji">🔭</div><div class="info-name">Periscope</div><div class="info-desc">2 parallel mirrors at 45°. Z-shaped light path</div></div>
+                        <div class="info-card"><div class="emoji">🪞</div><div class="info-name">Plane Mirror</div><div class="info-desc">Flat mirror. Virtual image. ∠i = ∠r</div></div>
+                        <div class="info-card"><div class="emoji">🔄</div><div class="info-name">Multiple Images</div><div class="info-desc">2 mirrors at angle θ create n = 360/θ - 1 images</div></div>
+                        <div class="info-card"><div class="emoji">👁️</div><div class="info-name">Human Eye</div><div class="info-desc">Cornea → Lens → Retina. Image formed on retina</div></div>
+                        <div class="info-card"><div class="emoji">🌈</div><div class="info-name">Dispersion</div><div class="info-desc">White light → 7 colors through prism (VIBGYOR)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                if (tabName === 'kaleidoscope') initKaleidoscope();
+                if (tabName === 'periscope') initPeriscope();
+                if (tabName === 'reflections') drawMirrorAngle(parseInt(document.getElementById('angleSlider').value));
+            }, 100);
+        }
+
+        // ==================== KALEIDOSCOPE ====================
+        let kaleidoMirrors = 3;
+        let kaleidoDots = [];
+        let kaleidoCanvas, kaleidoCtx;
+
+        function initKaleidoscope() {
+            const view = document.getElementById('kaleidoView');
+            kaleidoCanvas = document.getElementById('kaleidoCanvas');
+            kaleidoCanvas.width = view.clientWidth;
+            kaleidoCanvas.height = view.clientHeight;
+            kaleidoCtx = kaleidoCanvas.getContext('2d');
+            
+            if (kaleidoDots.length === 0) {
+                for (let i = 0; i < 25; i++) {
+                    kaleidoDots.push({
+                        x: Math.random() * kaleidoCanvas.width/2,
+                        y: Math.random() * kaleidoCanvas.height/2,
+                        color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+                        size: Math.random() * 8 + 3
+                    });
+                }
+            }
+            drawKaleidoscope();
+            
+            // Remove old event listeners by cloning
+            const newView = view.cloneNode(true);
+            view.parentNode.replaceChild(newView, view);
+            
+            // Re-get the canvas after replacement
+            kaleidoCanvas = newView.querySelector('canvas');
+            kaleidoCanvas.width = newView.clientWidth;
+            kaleidoCanvas.height = newView.clientHeight;
+            kaleidoCtx = kaleidoCanvas.getContext('2d');
+            
+            // Redraw after resize
+            drawKaleidoscope();
+            
+            // Add event listeners to the new view
+            newView.onclick = (e) => {
+                const rect = newView.getBoundingClientRect();
+                addKaleidoDot(e.clientX - rect.left, e.clientY - rect.top);
+            };
+            newView.ontouchend = (e) => {
+                e.preventDefault();
+                const rect = newView.getBoundingClientRect();
+                const t = e.changedTouches[0];
+                addKaleidoDot(t.clientX - rect.left, t.clientY - rect.top);
+            };
+        }
+
+        function addKaleidoDot(x, y) {
+            const cx = kaleidoCanvas.width/2, cy = kaleidoCanvas.height/2;
+            const dx = x - cx, dy = y - cy;
+            if (Math.sqrt(dx*dx+dy*dy) < kaleidoCanvas.width/2 - 10) {
+                kaleidoDots.push({
+                    x: Math.abs(dx), y: Math.abs(dy),
+                    color: `hsl(${Math.random()*360}, 85%, 60%)`,
+                    size: Math.random()*10+5
+                });
+                drawKaleidoscope();
+            }
+        }
+
+        function drawKaleidoscope() {
+            const ctx = kaleidoCtx, w = kaleidoCanvas.width, h = kaleidoCanvas.height;
+            const cx = w/2, cy = h/2, sectorAngle = (2*Math.PI)/kaleidoMirrors;
+            
+            ctx.fillStyle = '#0a0a1a'; ctx.fillRect(0, 0, w, h);
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx, cy, w/2-5, 0, Math.PI*2); ctx.clip();
+            
+            kaleidoDots.forEach(dot => {
+                for (let i = 0; i < kaleidoMirrors; i++) {
+                    const a = i * sectorAngle, cos = Math.cos(a), sin = Math.sin(a);
+                    const rx = dot.x*cos - dot.y*sin, ry = dot.x*sin + dot.y*cos;
+                    const mx = dot.x*cos + dot.y*sin, my = dot.x*sin - dot.y*cos;
+                    ctx.fillStyle = dot.color;
+                    ctx.beginPath(); ctx.arc(cx+rx, cy+ry, dot.size, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx+mx, cy+my, dot.size, 0, Math.PI*2); ctx.fill();
+                }
+            });
+            ctx.restore();
+            
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+            for (let i = 0; i < kaleidoMirrors; i++) {
+                const a = i*sectorAngle - Math.PI/2;
+                ctx.beginPath(); ctx.moveTo(cx, cy);
+                ctx.lineTo(cx+(w/2)*Math.cos(a), cy+(w/2)*Math.sin(a)); ctx.stroke();
+            }
+        }
+
+        function setKaleidoMirrors(n) {
+            kaleidoMirrors = n;
+            const imgs = Math.floor(360/(360/n))-1;
+            document.getElementById('mirrorCountDisplay').textContent = 
+                `🔸 ${n} Mirrors (${360/n}°) → ${imgs} images | ${n*2}-fold symmetry`;
+            document.querySelectorAll('#tab-kaleidoscope .ctrl-btn').forEach((b,i) => {
+                b.classList.toggle('active-ctrl', i === [3,4,6].indexOf(n));
+            });
+            drawKaleidoscope();
+        }
+        function clearKaleido() { kaleidoDots = []; drawKaleidoscope(); }
+
+        // ==================== INTERACTIVE PERISCOPE ====================
+        let periscopeY = 0; // 0 = fully down, 1 = fully up
+        let isDragging = false;
+        let dragStartY = 0;
+        let dragStartPeriscopeY = 0;
+        let periscopeCanvas, periscopeCtx;
+
+        function initPeriscope() {
+            periscopeCanvas = document.getElementById('periscopeCanvas');
+            const wrap = document.getElementById('periscopeWrap');
+            periscopeCanvas.width = wrap.clientWidth;
+            periscopeCanvas.height = wrap.clientHeight;
+            periscopeCtx = periscopeCanvas.getContext('2d');
+            
+            // Mouse drag
+            wrap.onmousedown = (e) => {
+                isDragging = true;
+                dragStartY = e.clientY;
+                dragStartPeriscopeY = periscopeY;
+                wrap.style.cursor = 'grabbing';
+            };
+            window.onmousemove = (e) => {
+                if (!isDragging) return;
+                const wrapRect = wrap.getBoundingClientRect();
+                const deltaY = (dragStartY - e.clientY) / wrapRect.height;
+                periscopeY = Math.max(0, Math.min(1, dragStartPeriscopeY + deltaY));
+                drawPeriscope();
+            };
+            window.onmouseup = () => {
+                isDragging = false;
+                wrap.style.cursor = 'grab';
+            };
+            
+            // Touch drag
+            wrap.ontouchstart = (e) => {
+                isDragging = true;
+                dragStartY = e.touches[0].clientY;
+                dragStartPeriscopeY = periscopeY;
+            };
+            wrap.ontouchmove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const wrapRect = wrap.getBoundingClientRect();
+                const deltaY = (dragStartY - e.touches[0].clientY) / wrapRect.height;
+                periscopeY = Math.max(0, Math.min(1, dragStartPeriscopeY + deltaY));
+                drawPeriscope();
+            };
+            wrap.ontouchend = () => { isDragging = false; };
+            
+            drawPeriscope();
+        }
+
+        function movePeriscope(dir) {
+            if (dir === 'up') periscopeY = Math.min(1, periscopeY + 0.2);
+            else periscopeY = Math.max(0, periscopeY - 0.2);
+            drawPeriscope();
+        }
+
+        function resetPeriscope() {
+            periscopeY = 0;
+            drawPeriscope();
+        }
+
+        function drawPeriscope() {
+            const ctx = periscopeCtx;
+            const w = periscopeCanvas.width;
+            const h = periscopeCanvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Sky gradient
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h*0.4);
+            skyGrad.addColorStop(0, '#1a3a5c');
+            skyGrad.addColorStop(1, '#87CEEB');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h*0.4);
+            
+            // Sun
+            ctx.fillStyle = '#FFD700';
+            ctx.shadowBlur = 30; ctx.shadowColor = 'rgba(255,215,0,0.5)';
+            ctx.beginPath(); ctx.arc(w*0.3, h*0.12, 30, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Clouds
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            drawCloud(ctx, w*0.6, h*0.08, 25);
+            drawCloud(ctx, w*0.75, h*0.15, 20);
+            
+            // Wall (brick)
+            const wallTop = h * 0.25;
+            const wallHeight = h * 0.55;
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, wallTop, w, wallHeight);
+            
+            // Brick pattern
+            ctx.strokeStyle = '#6B3410';
+            ctx.lineWidth = 1.5;
+            for (let row = 0; row < 8; row++) {
+                const y = wallTop + row * (wallHeight/8);
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+                const offset = row % 2 === 0 ? 0 : 30;
+                for (let col = offset; col < w; col += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(col, y);
+                    ctx.lineTo(col, y + wallHeight/8);
+                    ctx.stroke();
+                }
+            }
+            
+            // Hidden object behind wall (tree)
+            const treeX = w * 0.25;
+            const treeBaseY = wallTop;
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(treeX-6, treeBaseY-50, 12, 50);
+            ctx.fillStyle = '#2d8a2d';
+            ctx.beginPath(); ctx.arc(treeX, treeBaseY-60, 28, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#3ab03a';
+            ctx.beginPath(); ctx.arc(treeX-10, treeBaseY-50, 18, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(treeX+10, treeBaseY-55, 18, 0, Math.PI*2); ctx.fill();
+            
+            // Eye person (bottom-left)
+            const eyeX = w * 0.22;
+            const eyeY = h * 0.88;
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '32px Inter, sans-serif';
+            ctx.fillText('👁️', eyeX-20, eyeY);
+            ctx.fillStyle = 'white';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillText('Viewer', eyeX-20, eyeY+16);
+            
+            // Periscope position (interpolated)
+            const tubeLeft = w * 0.38;
+            const tubeRight = w * 0.55;
+            const minTubeTop = h * 0.55; // fully down - hidden behind wall
+            const maxTubeTop = h * 0.05; // fully up - peeking over wall
+            const tubeTop = minTubeTop + (maxTubeTop - minTubeTop) * periscopeY;
+            const tubeBottom = h * 0.85;
+            const tubeHeight = tubeBottom - tubeTop;
+            
+            // Determine if periscope can see over wall
+            const canSee = tubeTop < wallTop;
+            
+            // Tube body
+            const tubeGrad = ctx.createLinearGradient(tubeLeft, 0, tubeRight, 0);
+            tubeGrad.addColorStop(0, '#444');
+            tubeGrad.addColorStop(0.5, '#666');
+            tubeGrad.addColorStop(1, '#444');
+            ctx.fillStyle = tubeGrad;
+            ctx.strokeStyle = '#777';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(tubeLeft, tubeTop, tubeRight-tubeLeft, tubeHeight, 8);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Top mirror (at top of tube)
+            const mirrorLen = (tubeRight-tubeLeft)*0.85;
+            const topMirrorY = tubeTop + 20;
+            
+            ctx.strokeStyle = '#aaddff';
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(150,200,255,0.5)';
+            ctx.beginPath();
+            ctx.moveTo(tubeLeft+5, topMirrorY+mirrorLen*0.7);
+            ctx.lineTo(tubeLeft+mirrorLen-5, topMirrorY-mirrorLen*0.7);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Bottom mirror
+            const bottomMirrorY = tubeBottom - 20;
+            ctx.strokeStyle = '#aaddff';
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(150,200,255,0.5)';
+            ctx.beginPath();
+            ctx.moveTo(tubeRight-5, bottomMirrorY-mirrorLen*0.7);
+            ctx.lineTo(tubeRight-mirrorLen+5, bottomMirrorY+mirrorLen*0.7);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Mirror labels
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.fillText('45°', tubeLeft+mirrorLen/2-5, topMirrorY-12);
+            ctx.fillText('45°', tubeRight-mirrorLen/2-5, bottomMirrorY+18);
+            
+            // Light rays (only if periscope can see)
+            if (canSee) {
+                // Object to top mirror
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([8, 4]);
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(255,215,0,0.6)';
+                ctx.beginPath();
+                ctx.moveTo(treeX, treeBaseY-60);
+                ctx.lineTo(tubeLeft+mirrorLen/2, topMirrorY);
+                ctx.stroke();
+                
+                // Top mirror to bottom mirror (inside tube)
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(tubeLeft+mirrorLen/2, topMirrorY);
+                ctx.lineTo(tubeRight-mirrorLen/2, bottomMirrorY);
+                ctx.stroke();
+                
+                // Bottom mirror to eye
+                ctx.setLineDash([8, 4]);
+                ctx.beginPath();
+                ctx.moveTo(tubeRight-mirrorLen/2, bottomMirrorY);
+                ctx.lineTo(eyeX, eyeY-10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.shadowBlur = 0;
+                
+                // Arrow on internal ray
+                drawArrowHead(ctx, tubeLeft+mirrorLen/2, topMirrorY+tubeHeight*0.3, -Math.PI/2, '#FFD700');
+            }
+            
+            // Status text
+            const status = document.getElementById('periscopeStatus');
+            if (canSee) {
+                status.textContent = '👀 YES! Periscope is above the wall - You can see the tree!';
+                status.style.color = '#4CAF50';
+            } else {
+                status.textContent = '🧱 Periscope is behind the wall - Cannot see over yet. Drag it UP!';
+                status.style.color = '#FF9800';
+            }
+            
+            // Ground
+            ctx.fillStyle = '#4a7c3f';
+            ctx.fillRect(0, h*0.82, w, h*0.18);
+            ctx.fillStyle = '#5a8c4f';
+            ctx.fillRect(0, h*0.82, w, 3);
+        }
+
+        function drawArrowHead(ctx, x, y, angle, color) {
+            const size = 7;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, -size);
+            ctx.lineTo(-size, size);
+            ctx.lineTo(size, size);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawCloud(ctx, x, y, size) {
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI*2);
+            ctx.arc(x+size*0.8, y-size*0.2, size*0.8, 0, Math.PI*2);
+            ctx.arc(x-size*0.8, y-size*0.1, size*0.7, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        // ==================== MULTIPLE REFLECTIONS ====================
+        function drawMirrorAngle(angle) {
+            const canvas = document.getElementById('mirrorVizCanvas');
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const cx = w*0.5, cy = h*0.65, len = Math.min(w,h)*0.4;
+            
+            ctx.fillStyle = '#0a0a1a'; ctx.fillRect(0, 0, w, h);
+            
+            const halfRad = (angle*Math.PI/180)/2;
+            const m1x = cx - len*Math.cos(halfRad), m1y = cy - len*Math.sin(halfRad);
+            const m2x = cx + len*Math.cos(halfRad), m2y = cy - len*Math.sin(halfRad);
+            
+            ctx.strokeStyle = 'rgba(180,200,255,0.9)'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(m1x, m1y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(m2x, m2y); ctx.stroke();
+            
+            ctx.fillStyle = 'white'; ctx.font = '10px Inter, sans-serif';
+            ctx.fillText('Mirror 1', m1x-42, m1y-6);
+            ctx.fillText('Mirror 2', m2x+6, m2y-6);
+            
+            const objX = cx, objY = cy - len*0.3;
+            ctx.fillStyle = '#FFD700'; ctx.shadowBlur = 15; ctx.shadowColor = 'rgba(255,215,0,0.7)';
+            ctx.beginPath(); ctx.arc(objX, objY, 7, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'white'; ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillText('Object', objX+12, objY+4);
+            
+            const numImages = Math.floor(360/angle)-1;
+            const imgR = len*0.5;
+            for (let i = 0; i < numImages; i++) {
+                const a = -Math.PI/2-halfRad+((i+1)*(angle*Math.PI/180)/(numImages+1));
+                const ix = cx+imgR*Math.cos(a), iy = cy+imgR*Math.sin(a);
+                if (ix>15 && ix<w-15 && iy>15 && iy<h-15) {
+                    ctx.fillStyle = 'rgba(255,150,0,0.7)';
+                    ctx.beginPath(); ctx.arc(ix, iy, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px Inter, sans-serif';
+                    ctx.fillText('I'+(i+1), ix+8, iy+3);
+                }
+            }
+            
+            ctx.fillStyle = '#CE93D8'; ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillText(angle+'°', cx-45, cy+20);
+            
+            document.getElementById('angleValue').textContent = angle+'°';
+            document.getElementById('angleSlider').value = angle;
+            document.getElementById('imageCountDisplay').textContent = 
+                `Images: ${numImages} | n = 360/${angle} - 1 = ${numImages}`;
+            
+            document.querySelectorAll('#tab-reflections .ctrl-btn').forEach(b => {
+                b.classList.remove('active-ctrl');
+                const m = b.textContent.match(/(\d+)/);
+                if (m && parseInt(m[1]) === angle) b.classList.add('active-ctrl');
+            });
+        }
+
+        function updateMirrorAngle(v) { drawMirrorAngle(parseInt(v)); }
+        function setPresetAngle(a) { drawMirrorAngle(a); }
+
+        // ==================== INIT ====================
+        window.addEventListener('load', () => {
+            initKaleidoscope();
+            initPeriscope();
+            drawMirrorAngle(60);
+        });
+
+        window.addEventListener('resize', () => {
+            const at = document.querySelector('.tab-content.active');
+            if (at) {
+                if (at.id === 'tab-kaleidoscope') {
+                    initKaleidoscope();
+                }
+                if (at.id === 'tab-periscope') initPeriscope();
+                if (at.id === 'tab-reflections') drawMirrorAngle(parseInt(document.getElementById('angleSlider').value));
+            }
+        });
+    </script>
+</body>
+</html>

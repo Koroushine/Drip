@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Solar System Explorer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(ellipse at center, #0d0d2b 0%, #050510 70%, #020208 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+            overflow-x: hidden;
+        }
+
+        .stars-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        .star {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle var(--twinkle-dur) ease-in-out infinite;
+            animation-delay: var(--twinkle-delay);
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.7); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(255,215,0,0.3); transform: scale(0.95); }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb span:active { color: white; }
+        .breadcrumb .current { color: #FFD700; font-weight: 600; }
+        .class-badge {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 20px rgba(255,215,0,0.5);
+            color: #1a1035;
+        }
+
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active {
+            background: rgba(255,215,0,0.2); color: #FFD700;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.15);
+        }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+        }
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px;
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: #1a1035;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* ============ SOLAR SYSTEM - FIXED ============ */
+        .solar-orbit-container {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+            background: radial-gradient(ellipse at center, rgba(15,15,40,0.9) 0%, rgba(3,3,15,0.98) 100%);
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.06);
+            box-shadow: 0 0 60px rgba(30,30,80,0.3);
+        }
+        .solar-orbit-container canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .planet-nav-row {
+            display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 16px;
+        }
+        .planet-nav-btn {
+            padding: 7px 12px; border-radius: 100px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            color: white; cursor: pointer; font-size: 11px; font-weight: 600;
+            transition: all 0.3s; min-height: 38px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .planet-nav-btn:active { background: rgba(255,215,0,0.2); }
+        .planet-nav-btn.active-planet { background: rgba(255,215,0,0.2); border-color: #FFD700; color: #FFD700; }
+
+        .planet-info-card {
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 16px;
+            padding: 20px; text-align: center; margin-top: 16px;
+        }
+        .planet-info-card .p-emoji { font-size: 50px; }
+        .planet-info-card .p-name { font-size: 22px; font-weight: 700; margin: 6px 0; }
+        .planet-info-card .p-detail { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+        .planet-info-card .p-facts {
+            display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px;
+        }
+        .planet-info-card .p-fact-chip {
+            padding: 5px 12px; border-radius: 100px;
+            background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.25);
+            font-size: 11px; color: #FFD700;
+        }
+
+        /* Moon */
+        .moon-container {
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+        }
+        .moon-display {
+            position: relative; width: 170px; height: 170px;
+            border-radius: 50%; overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.12);
+            box-shadow: 0 0 40px rgba(100,150,255,0.12);
+        }
+        .moon-surface {
+            position: absolute; width: 100%; height: 100%;
+            background: radial-gradient(circle at 40% 40%, #e8e8e8 0%, #c8c8c8 30%, #a0a0a0 60%, #707070 100%);
+            border-radius: 50%;
+        }
+        .moon-shadow-overlay {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            background: #0a0a1a; transition: all 0.4s ease;
+        }
+        .moon-phase-name { font-size: 18px; font-weight: 700; color: #FFD700; }
+        .moon-phase-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .moon-slider-container { width: 100%; max-width: 350px; }
+        .moon-slider-container input[type="range"] {
+            width: 100%; height: 8px; -webkit-appearance: none; appearance: none;
+            background: linear-gradient(90deg, #0a0a1a, #555, #ccc, #555, #0a0a1a);
+            border-radius: 4px; outline: none;
+        }
+        .moon-slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 26px; height: 26px;
+            border-radius: 50%; background: #FFD700; cursor: pointer;
+            border: 3px solid white; box-shadow: 0 0 15px rgba(255,215,0,0.6);
+        }
+        .moon-btn-row { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+        .moon-btn {
+            padding: 6px 10px; border-radius: 100px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            color: white; cursor: pointer; font-size: 10px; font-weight: 600;
+            transition: all 0.3s; min-height: 36px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .moon-btn:active { background: rgba(255,215,0,0.2); }
+        .moon-btn.active-moon { background: rgba(255,215,0,0.2); border-color: #FFD700; color: #FFD700; }
+
+        /* Constellation */
+        .constellation-canvas-wrap {
+            width: 100%; aspect-ratio: 16/10; max-height: 420px;
+            background: #050510;
+            border-radius: 20px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .constellation-canvas { width: 100%; height: 100%; display: block; }
+        .const-btn-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+        .const-btn {
+            padding: 10px 15px; border-radius: 100px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            color: white; cursor: pointer; font-size: 12px; font-weight: 600;
+            transition: all 0.3s; min-height: 42px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .const-btn:active { background: rgba(255,215,0,0.2); }
+        .const-btn.active-const { background: rgba(255,215,0,0.2); border-color: #FFD700; color: #FFD700; }
+
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px; margin-top: 12px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 26px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 11px; font-weight: 700; color: #FFD700; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        @media (max-width: 600px) {
+            .solar-orbit-container { max-width: 100%; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .moon-display { width: 130px; height: 130px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars-container" id="starsContainer"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Physics Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Solar System</span>
+            </div>
+            <div class="class-badge"><i class="fas fa-globe-americas"></i> Solar System</div>
+        </div>
+
+        <div class="page-header">
+            <h1>🌌 Solar System Explorer</h1>
+            <p class="subtitle">✦ Planets, Moon Phases & Constellations ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('orbits', this)"><i class="fas fa-globe"></i> Orbits</button>
+            <button class="tab-btn" onclick="switchTab('moon', this)"><i class="fas fa-moon"></i> Moon</button>
+            <button class="tab-btn" onclick="switchTab('constellations', this)"><i class="fas fa-star"></i> Constellations</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Planets</button>
+        </div>
+
+        <!-- Tab 1: Solar System -->
+        <div class="tab-content active" id="tab-orbits">
+            <div class="sim-card">
+                <div class="sim-card-header">
+                    <div class="sim-card-icon"><i class="fas fa-globe"></i></div>
+                    <div>
+                        <div class="sim-card-title">Live Solar System</div>
+                        <div class="sim-card-subtitle">Click a planet to learn about it!</div>
+                    </div>
+                </div>
+                <div class="solar-orbit-container" id="solarContainer">
+                    <canvas id="solarCanvas"></canvas>
+                </div>
+                <div class="planet-nav-row" id="planetNav"></div>
+                <div class="planet-info-card" id="planetInfoCard">
+                    <div class="p-emoji">☀️</div>
+                    <div class="p-name">The Sun</div>
+                    <div class="p-detail">Our star! Contains 99.8% of all mass in the solar system. Surface: 5,500°C.</div>
+                    <div class="p-facts">
+                        <span class="p-fact-chip">🌟 Star</span>
+                        <span class="p-fact-chip">🔥 5,500°C</span>
+                        <span class="p-fact-chip">⏳ 4.6 Billion years</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Moon -->
+        <div class="tab-content" id="tab-moon">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-moon"></i></div>
+                        <div>
+                            <div class="sim-card-title">Moon Phase Simulator</div>
+                            <div class="sim-card-subtitle">Drag slider to change phases</div>
+                        </div>
+                    </div>
+                    <div class="moon-container">
+                        <div class="moon-display">
+                            <div class="moon-surface"></div>
+                            <div class="moon-shadow-overlay" id="moonShadow" style="clip-path: inset(0 0 0 0);"></div>
+                        </div>
+                        <div class="moon-phase-name" id="moonPhaseName">🌕 Full Moon</div>
+                        <div class="moon-phase-desc" id="moonPhaseDesc">Entire face illuminated</div>
+                        <div class="moon-slider-container">
+                            <input type="range" id="moonSlider" min="0" max="28" value="14" oninput="updateMoonPhase(this.value)">
+                        </div>
+                        <div class="moon-btn-row">
+                            <button class="moon-btn" onclick="setMoonPhase(0)">🌑 New</button>
+                            <button class="moon-btn" onclick="setMoonPhase(4)">🌒 Crescent</button>
+                            <button class="moon-btn" onclick="setMoonPhase(7)">🌓 1st Qtr</button>
+                            <button class="moon-btn" onclick="setMoonPhase(10)">🌔 Gibbous</button>
+                            <button class="moon-btn active-moon" onclick="setMoonPhase(14)">🌕 Full</button>
+                            <button class="moon-btn" onclick="setMoonPhase(18)">🌖 Gibbous</button>
+                            <button class="moon-btn" onclick="setMoonPhase(21)">🌗 3rd Qtr</button>
+                            <button class="moon-btn" onclick="setMoonPhase(25)">🌘 Crescent</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-info-circle"></i></div>
+                        <div><div class="sim-card-title">Why Phases?</div><div class="sim-card-subtitle">Moon orbits Earth every 29.5 days</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🌑</div><div class="info-name">New Moon</div><div class="info-desc">Moon between Earth & Sun</div></div>
+                        <div class="info-card"><div class="emoji">🌓</div><div class="info-name">First Quarter</div><div class="info-desc">Right half lit</div></div>
+                        <div class="info-card"><div class="emoji">🌕</div><div class="info-name">Full Moon</div><div class="info-desc">Earth between Moon & Sun</div></div>
+                        <div class="info-card"><div class="emoji">🌗</div><div class="info-name">Last Quarter</div><div class="info-desc">Left half lit</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Constellations -->
+        <div class="tab-content" id="tab-constellations">
+            <div class="sim-card">
+                <div class="sim-card-header">
+                    <div class="sim-card-icon"><i class="fas fa-star"></i></div>
+                    <div>
+                        <div class="sim-card-title">Constellation Viewer</div>
+                        <div class="sim-card-subtitle">Famous star patterns in the night sky</div>
+                    </div>
+                </div>
+                <div class="constellation-canvas-wrap">
+                    <canvas id="constCanvas" class="constellation-canvas"></canvas>
+                </div>
+                <div class="const-btn-row">
+                    <button class="const-btn active-const" onclick="drawConstellation('orion')">🏹 Orion</button>
+                    <button class="const-btn" onclick="drawConstellation('ursa')">🐻 Big Dipper</button>
+                    <button class="const-btn" onclick="drawConstellation('cassiopeia')">👑 Cassiopeia</button>
+                    <button class="const-btn" onclick="drawConstellation('leo')">🦁 Leo</button>
+                    <button class="const-btn" onclick="drawConstellation('scorpius')">🦂 Scorpius</button>
+                </div>
+                <div style="text-align:center;margin-top:12px;font-size:13px;color:#FFD700;font-weight:600;" id="constInfo"></div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Planet Facts -->
+        <div class="tab-content" id="tab-learn">
+            <div class="info-cards" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));">
+                <div class="info-card"><div class="emoji">☀️</div><div class="info-name">Sun</div><div class="info-desc">Star. 99.8% mass. 5,500°C.</div></div>
+                <div class="info-card"><div class="emoji">☿</div><div class="info-name">Mercury</div><div class="info-desc">Smallest. 0 moons. -180 to 430°C.</div></div>
+                <div class="info-card"><div class="emoji">♀</div><div class="info-name">Venus</div><div class="info-desc">Hottest 462°C. Spins backwards.</div></div>
+                <div class="info-card"><div class="emoji">🌍</div><div class="info-name">Earth</div><div class="info-desc">Home! Water, life, 1 moon.</div></div>
+                <div class="info-card"><div class="emoji">♂</div><div class="info-name">Mars</div><div class="info-desc">Red planet. 2 moons. Volcanoes.</div></div>
+                <div class="info-card"><div class="emoji">♃</div><div class="info-name">Jupiter</div><div class="info-desc">Largest. Great Red Spot. 95 moons.</div></div>
+                <div class="info-card"><div class="emoji">♄</div><div class="info-name">Saturn</div><div class="info-desc">Rings! Least dense. 146 moons.</div></div>
+                <div class="info-card"><div class="emoji">⛢</div><div class="info-name">Uranus</div><div class="info-desc">Sideways. Ice giant. -224°C.</div></div>
+                <div class="info-card"><div class="emoji">♆</div><div class="info-name">Neptune</div><div class="info-desc">Windiest 2,100km/h. 14 moons.</div></div>
+                <div class="info-card"><div class="emoji">🌙</div><div class="info-name">Moon</div><div class="info-desc">Earth's satellite. 1/6 gravity.</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (tabName === 'orbits') initSolarSystem();
+            if (tabName === 'constellations') setTimeout(() => drawConstellation('orion'), 100);
+        }
+
+        function createStars() {
+            const container = document.getElementById('starsContainer');
+            for (let i = 0; i < 130; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 0.8;
+                star.style.width = size + 'px'; star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%'; star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--twinkle-dur', (Math.random() * 4 + 2) + 's');
+                star.style.setProperty('--twinkle-delay', (Math.random() * 6) + 's');
+                container.appendChild(star);
+            }
+        }
+
+        // ==================== SOLAR SYSTEM CANVAS ====================
+        const planetData = [
+            { name: 'Mercury', emoji: '☿', color: '#b0b0b0', radius: 4, orbit: 50, speed: 0.04, detail: 'Smallest planet | 0 moons | -180°C to 430°C | Year = 88 days', facts: ['☿ Smallest', '🌡️ Extreme', '🪐 0 moons'] },
+            { name: 'Venus', emoji: '♀', color: '#f5c56a', radius: 7, orbit: 75, speed: 0.025, detail: 'Hottest (462°C) | Rotates backwards | Morning Star | Year = 225 days', facts: ['♀ Hottest', '🔄 Backwards', '🌟 Evening Star'] },
+            { name: 'Earth', emoji: '🌍', color: '#4da6ff', radius: 8, orbit: 105, speed: 0.018, detail: 'Our home! | Liquid water & life | 1 Moon | Year = 365 days', facts: ['🌍 Home', '💧 Water', '🌙 1 Moon'] },
+            { name: 'Mars', emoji: '♂', color: '#e0553d', radius: 6, orbit: 135, speed: 0.014, detail: 'Red Planet | Olympus Mons volcano | 2 moons | Year = 687 days', facts: ['♂ Red', '🌋 Volcano', '🌑 2 moons'] },
+            { name: 'Jupiter', emoji: '♃', color: '#d4a574', radius: 18, orbit: 175, speed: 0.009, detail: 'Largest! | Great Red Spot | 95 moons | Year = 12 years', facts: ['♃ Largest', '🔴 Storm', '🌑 95 moons'] },
+            { name: 'Saturn', emoji: '♄', color: '#f4d58d', radius: 14, orbit: 215, speed: 0.007, detail: 'Beautiful rings | Least dense | 146 moons | Year = 29 years', facts: ['♄ Rings', '💨 Floats!', '🌑 146 moons'] },
+            { name: 'Uranus', emoji: '⛢', color: '#7ec8e3', radius: 10, orbit: 250, speed: 0.005, detail: 'Sideways! | Ice giant | -224°C | 27 moons | Year = 84 years', facts: ['⛢ Sideways', '❄️ Ice giant', '🌑 27 moons'] },
+            { name: 'Neptune', emoji: '♆', color: '#4169e1', radius: 9, orbit: 280, speed: 0.004, detail: 'Windiest 2,100km/h | Last planet | 14 moons | Year = 165 years', facts: ['♆ Windiest', '💨 2,100km/h', '🌑 14 moons'] }
+        ];
+
+        let planetAngles = planetData.map(() => Math.random() * Math.PI * 2);
+        let animationId;
+        let selectedPlanet = 2; // Earth
+
+        function initSolarSystem() {
+            if (animationId) cancelAnimationFrame(animationId);
+            const canvas = document.getElementById('solarCanvas');
+            const container = document.getElementById('solarContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            const ctx = canvas.getContext('2d');
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // Nav buttons
+            const nav = document.getElementById('planetNav');
+            nav.innerHTML = planetData.map((p, i) => 
+                `<button class="planet-nav-btn ${i === selectedPlanet ? 'active-planet' : ''}" onclick="selectPlanet(${i})">${p.emoji} ${p.name}</button>`
+            ).join('');
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw orbit rings
+                planetData.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, p.orbit, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+
+                // Draw Sun
+                const sunGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22);
+                sunGrad.addColorStop(0, '#fffde0');
+                sunGrad.addColorStop(0.3, '#FFD700');
+                sunGrad.addColorStop(0.6, '#FF8C00');
+                sunGrad.addColorStop(1, '#B22222');
+                ctx.fillStyle = sunGrad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Sun glow
+                const glowGrad = ctx.createRadialGradient(cx, cy, 22, cx, cy, 45);
+                glowGrad.addColorStop(0, 'rgba(255,180,0,0.5)');
+                glowGrad.addColorStop(1, 'rgba(255,100,0,0)');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 45, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw planets
+                planetData.forEach((p, i) => {
+                    planetAngles[i] += p.speed;
+                    const px = cx + p.orbit * Math.cos(planetAngles[i]);
+                    const py = cy + p.orbit * Math.sin(planetAngles[i]);
+
+                    // Planet body
+                    const pGrad = ctx.createRadialGradient(px - p.radius/3, py - p.radius/3, 0, px, py, p.radius);
+                    pGrad.addColorStop(0, '#ffffff');
+                    pGrad.addColorStop(0.4, p.color);
+                    pGrad.addColorStop(1, '#000000');
+                    ctx.fillStyle = pGrad;
+                    ctx.beginPath();
+                    ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Saturn rings
+                    if (p.name === 'Saturn') {
+                        ctx.strokeStyle = 'rgba(244,213,141,0.6)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.ellipse(px, py, p.radius + 6, p.radius + 2, -0.3, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.strokeStyle = 'rgba(244,213,141,0.3)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.ellipse(px, py, p.radius + 10, p.radius + 3.5, -0.3, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
+                    // Label
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = `${Math.max(8, p.radius)}px Inter, sans-serif`;
+                    ctx.fillText(p.emoji, px + p.radius + 4, py + 4);
+                });
+
+                animationId = requestAnimationFrame(animate);
+            }
+
+            animate();
+            selectPlanet(selectedPlanet);
+        }
+
+        function selectPlanet(index) {
+            selectedPlanet = index;
+            const p = planetData[index];
+            const card = document.getElementById('planetInfoCard');
+            card.innerHTML = `
+                <div class="p-emoji">${p.emoji}</div>
+                <div class="p-name">${p.name}</div>
+                <div class="p-detail">${p.detail}</div>
+                <div class="p-facts">${p.facts.map(f => `<span class="p-fact-chip">${f}</span>`).join('')}</div>
+            `;
+            document.querySelectorAll('.planet-nav-btn').forEach((b, i) => {
+                b.classList.toggle('active-planet', i === index);
+            });
+        }
+
+        // ==================== MOON ====================
+        function updateMoonPhase(value) {
+            const v = parseInt(value);
+            const shadow = document.getElementById('moonShadow');
+            document.getElementById('moonSlider').value = v;
+            let clipPath, name, desc;
+            if (v <= 1) { clipPath = 'inset(0 100% 0 0)'; name = '🌑 New Moon'; desc = 'Dark side faces Earth'; }
+            else if (v <= 5) { clipPath = `inset(0 ${90-(v-1)*18}% 0 0)`; name = '🌒 Waxing Crescent'; desc = 'Thin light on right'; }
+            else if (v <= 8) { clipPath = `inset(0 0 0 ${100-(v-5)*33}%)`; name = '🌓 First Quarter'; desc = 'Right half lit'; }
+            else if (v <= 13) { clipPath = `inset(0 0 0 ${100-(v-8)*20}%)`; name = '🌔 Waxing Gibbous'; desc = 'Almost full'; }
+            else if (v <= 15) { clipPath = 'inset(0 0 0 0)'; name = '🌕 Full Moon'; desc = 'Fully illuminated!'; }
+            else if (v <= 19) { clipPath = `inset(0 ${(v-15)*25}% 0 0)`; name = '🌖 Waning Gibbous'; desc = 'Light fading right'; }
+            else if (v <= 22) { clipPath = `inset(0 ${50+(v-19)*17}% 0 0)`; name = '🌗 Last Quarter'; desc = 'Left half lit'; }
+            else if (v <= 27) { clipPath = `inset(0 ${80-(v-22)*16}% 0 0)`; name = '🌘 Waning Crescent'; desc = 'Thin light on left'; }
+            else { clipPath = 'inset(0 100% 0 0)'; name = '🌑 New Moon'; desc = 'Cycle complete'; }
+            shadow.style.clipPath = clipPath;
+            document.getElementById('moonPhaseName').textContent = name;
+            document.getElementById('moonPhaseDesc').textContent = desc;
+            document.querySelectorAll('.moon-btn').forEach(b => b.classList.remove('active-moon'));
+            const phases = [0,4,7,10,14,18,21,25];
+            const idx = phases.indexOf(v);
+            if (idx >= 0) document.querySelectorAll('.moon-btn')[idx].classList.add('active-moon');
+        }
+        function setMoonPhase(val) { updateMoonPhase(val); }
+
+        // ==================== CONSTELLATIONS ====================
+        const constellations = {
+            orion: {
+                name: 'Orion - The Hunter',
+                info: 'Winter constellation. Orion\'s Belt = 3 stars in a line. Betelgeuse (red shoulder, top-left). Rigel (blue foot, bottom-right).',
+                stars: [
+                    {x:50,y:8},   // 0 head
+                    {x:38,y:25},  // 1 Betelgeuse - left shoulder (RED)
+                    {x:62,y:23},  // 2 right shoulder
+                    {x:44,y:36},  // 3 belt left
+                    {x:50,y:37},  // 4 belt center
+                    {x:56,y:38},  // 5 belt right
+                    {x:36,y:55},  // 6 left knee
+                    {x:64,y:52},  // 7 Rigel - right foot (BLUE)
+                    {x:30,y:63},  // 8 left foot
+                    {x:66,y:60}   // 9 right lower
+                ],
+                lines: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5],[1,6],[2,7],[6,8],[7,9]],
+                bright: [1,7]
+            },
+            ursa: {
+                name: 'Ursa Major - Big Dipper',
+                info: 'Visible all year. Big Dipper = bowl + handle. Two pointer stars (right side of bowl) point to Polaris (North Star).',
+                stars: [
+                    {x:20,y:18},  // 0 handle tip
+                    {x:28,y:28},  // 1 handle
+                    {x:36,y:35},  // 2 handle base
+                    {x:45,y:32},  // 3 bowl top-left
+                    {x:56,y:25},  // 4 bowl top-right
+                    {x:52,y:44},  // 5 bowl bottom-right
+                    {x:42,y:48},  // 6 bowl bottom-left
+                    {x:30,y:58},  // 7 body
+                    {x:22,y:68},  // 8 legs
+                    {x:14,y:78}   // 9 feet
+                ],
+                lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3],[6,7],[7,8],[8,9]],
+                bright: [3,4,5,6]
+            },
+            cassiopeia: {
+                name: 'Cassiopeia - The W Queen',
+                info: 'Distinct W shape. Named after a vain queen in Greek myth. Visible year-round in northern sky.',
+                stars: [
+                    {x:10,y:62},  // 0 left top
+                    {x:24,y:42},  // 1 left bottom
+                    {x:38,y:58},  // 2 middle top (brightest)
+                    {x:52,y:40},  // 3 right bottom
+                    {x:66,y:60}   // 4 right top
+                ],
+                lines: [[0,1],[1,2],[2,3],[3,4]],
+                bright: [2]
+            },
+            leo: {
+                name: 'Leo - The Lion',
+                info: 'Spring constellation. The Sickle (backward ?) = lion\'s head. Regulus (brightest) at bottom of sickle.',
+                stars: [
+                    {x:58,y:8},   // 0 top sickle
+                    {x:50,y:18},  // 1 sickle
+                    {x:42,y:28},  // 2 sickle
+                    {x:50,y:38},  // 3 Regulus - brightest
+                    {x:62,y:32},  // 4 neck
+                    {x:72,y:40},  // 5 body
+                    {x:82,y:52},  // 6 Denebola - tail
+                    {x:40,y:48},  // 7 lower
+                    {x:32,y:60}   // 8 legs
+                ],
+                lines: [[0,1],[1,2],[2,3],[0,3],[3,4],[4,5],[5,6],[2,7],[7,8]],
+                bright: [3,6]
+            },
+            scorpius: {
+                name: 'Scorpius - The Scorpion',
+                info: 'Summer constellation. Antares (red supergiant) is the heart. Curved J-tail ends with bright stinger.',
+                stars: [
+                    {x:55,y:8},   // 0 head top
+                    {x:50,y:18},  // 1 head
+                    {x:47,y:28},  // 2 Antares - RED heart
+                    {x:44,y:40},  // 3 body
+                    {x:40,y:52},  // 4 tail start
+                    {x:34,y:60},  // 5 tail
+                    {x:26,y:66},  // 6 tail bend
+                    {x:18,y:70},  // 7 stinger
+                    {x:60,y:16},  // 8 claw right
+                    {x:62,y:24}   // 9 claw right
+                ],
+                lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[1,8],[8,9]],
+                bright: [2,7]
+            }
+        };
+
+        function drawConstellation(name) {
+            const canvas = document.getElementById('constCanvas');
+            const wrap = document.querySelector('.constellation-canvas-wrap');
+            canvas.width = wrap.clientWidth;
+            canvas.height = wrap.clientHeight;
+            const ctx = canvas.getContext('2d');
+            const data = constellations[name];
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            // Dark background
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Random stars
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * w;
+                const y = Math.random() * h;
+                ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.4+0.1})`;
+                ctx.beginPath();
+                ctx.arc(x, y, Math.random()*1.2+0.3, 0, Math.PI*2);
+                ctx.fill();
+            }
+            
+            // Scale: use 75% of canvas
+            const sx = w * 0.75 / 80;
+            const sy = h * 0.75 / 80;
+            const ox = w * 0.125;
+            const oy = h * 0.125;
+            
+            const toCanvas = (star) => ({
+                x: star.x * sx + ox,
+                y: star.y * sy + oy
+            });
+            
+            // Lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([5, 5]);
+            data.lines.forEach(([a, b]) => {
+                const p1 = toCanvas(data.stars[a]);
+                const p2 = toCanvas(data.stars[b]);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+            
+            // Stars
+            data.stars.forEach((s, i) => {
+                const p = toCanvas(s);
+                const isBright = data.bright && data.bright.includes(i);
+                const size = isBright ? 5 : 3;
+                const glowSize = isBright ? 12 : 7;
+                
+                // Glow
+                const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
+                glow.addColorStop(0, isBright ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.4)');
+                glow.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, glowSize, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Star
+                ctx.fillStyle = isBright ? '#FFD700' : '#ffffff';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, size, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Cross spikes for bright stars
+                if (isBright) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                    ctx.lineWidth = 0.7;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x - size*2.5, p.y);
+                    ctx.lineTo(p.x + size*2.5, p.y);
+                    ctx.moveTo(p.x, p.y - size*2.5);
+                    ctx.lineTo(p.x, p.y + size*2.5);
+                    ctx.stroke();
+                }
+            });
+            
+            document.getElementById('constInfo').textContent = data.info;
+            document.querySelectorAll('.const-btn').forEach(b => b.classList.remove('active-const'));
+            const btn = document.querySelector(`.const-btn[onclick*="${name}"]`);
+            if (btn) btn.classList.add('active-const');
+        }
+
+        // ==================== INIT ====================
+        window.addEventListener('load', () => {
+            createStars();
+            initSolarSystem();
+            updateMoonPhase(14);
+            setTimeout(() => drawConstellation('orion'), 400);
+        });
+
+        window.addEventListener('resize', () => {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab && activeTab.id === 'tab-orbits') initSolarSystem();
+            if (activeTab && activeTab.id === 'tab-constellations') {
+                const ab = document.querySelector('.const-btn.active-const');
+                if (ab) {
+                    const m = ab.getAttribute('onclick').match(/'(\w+)'/);
+                    if (m) drawConstellation(m[1]);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
