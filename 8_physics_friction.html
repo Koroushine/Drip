@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Friction Tester</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --friction-color: #FF6B6B;
+            --friction-light: #FF8E8E;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(255,107,107,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,107,107,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,107,107,0.2), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(255,142,142,0.15), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1300px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(255,107,107,0.3); transform: scale(0.95); }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb span:active { color: white; }
+        .breadcrumb .current { color: #FF6B6B; font-weight: 600; }
+        .class-badge {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #FF8E8E);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active {
+            background: rgba(255,107,107,0.3); color: white;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.2);
+        }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px;
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* IMPROVED Surface Comparator */
+        .surface-demo-wrapper {
+            position: relative; width: 100%; height: 220px;
+            background: rgba(0,0,0,0.4); border-radius: 14px;
+            overflow: hidden; margin-bottom: 16px;
+        }
+        .surface-ground-visual {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            transition: all 0.5s ease;
+        }
+        .ground-texture {
+            width: 100%; height: 70px;
+            border-radius: 0; transition: all 0.5s ease;
+            position: relative;
+        }
+        /* Texture patterns */
+        .texture-ice {
+            background: linear-gradient(180deg, #d4f1ff 0%, #b0e0f0 30%, #c8e8f8 60%, #a0d8ef 100%);
+            box-shadow: inset 0 2px 15px rgba(255,255,255,0.6);
+        }
+        .texture-wood {
+            background: linear-gradient(90deg, #c49a6c 0%, #d4a574 10%, #c49a6c 20%, #b8895a 30%, #d4a574 40%, #c49a6c 50%, #a07848 60%, #c49a6c 70%, #d4a574 80%, #b8895a 90%, #c49a6c 100%);
+        }
+        .texture-carpet {
+            background: #8B4513;
+            background-image: radial-gradient(circle, #6b3410 1px, transparent 1px);
+            background-size: 8px 8px;
+        }
+        .texture-sandpaper {
+            background: #555;
+            background-image: radial-gradient(circle, #333 1px, transparent 1px),
+                              radial-gradient(circle, #666 2px, transparent 2px);
+            background-size: 6px 6px, 10px 10px;
+            background-position: 0 0, 3px 3px;
+        }
+
+        .block-on-surface {
+            position: absolute; bottom: 70px; left: 30px;
+            width: 65px; height: 55px;
+            background: linear-gradient(135deg, #FF6B6B, #cc4444);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 28px;
+            transition: left 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 2;
+        }
+        .push-hand {
+            position: absolute; bottom: 75px; left: 105px;
+            font-size: 32px; z-index: 3;
+            transition: all 0.6s ease;
+            animation: handPush 2s ease-in-out infinite;
+        }
+        @keyframes handPush {
+            0%, 100% { transform: translateX(0); }
+            30% { transform: translateX(15px); }
+            60% { transform: translateX(5px); }
+        }
+        .friction-force-arrow {
+            position: absolute; bottom: 95px; left: 30px;
+            height: 3px; background: #FF4444;
+            transition: all 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border-radius: 2px;
+            display: flex; align-items: center;
+            z-index: 1;
+        }
+        .friction-arrow-head {
+            color: #FF4444; font-size: 14px;
+            position: absolute; left: -16px; top: -7px;
+        }
+        .friction-label-mini {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 9px; color: #FF4444; white-space: nowrap;
+        }
+        .surface-name-tag {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); color: white; padding: 5px 16px;
+            border-radius: 100px; font-weight: 700; font-size: 13px;
+            z-index: 5; transition: all 0.3s;
+        }
+        .distance-marker {
+            position: absolute; bottom: 78px; left: 30px;
+            color: rgba(255,255,255,0.4); font-size: 10px;
+            transition: all 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .friction-meter {
+            display: flex; align-items: center; gap: 12px; margin-top: 8px;
+        }
+        .friction-bar-bg {
+            flex: 1; height: 16px; background: rgba(255,255,255,0.12);
+            border-radius: 8px; overflow: hidden;
+        }
+        .friction-bar-fill {
+            height: 100%; border-radius: 8px; transition: all 0.5s ease;
+        }
+        .friction-value-text {
+            font-weight: 700; font-size: 14px; min-width: 80px; text-align: center;
+        }
+
+        .surface-selector {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px;
+        }
+        .surface-btn {
+            padding: 12px 8px; border-radius: 12px;
+            background: rgba(255,255,255,0.08); border: 2px solid transparent;
+            color: white; cursor: pointer; font-size: 12px; font-weight: 600;
+            transition: all 0.3s; text-align: center;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+        }
+        .surface-btn:active { transform: scale(0.95); }
+        .surface-btn.active-surface { border-color: #FF6B6B; background: rgba(255,107,107,0.2); }
+        .surface-btn .surf-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        /* Adv/Disadv Sorter */
+        .adv-disadv-container {
+            display: flex; gap: 16px; flex-wrap: wrap;
+        }
+        .adv-bucket {
+            flex: 1; min-width: 180px;
+            background: rgba(0,0,0,0.2); border-radius: 14px;
+            padding: 16px; border: 2px dashed rgba(255,255,255,0.15);
+            min-height: 250px; transition: all 0.3s;
+        }
+        .adv-bucket.highlight {
+            border-color: #FF6B6B; background: rgba(255,107,107,0.1);
+        }
+        .adv-bucket h4 {
+            font-size: 14px; text-align: center; margin-bottom: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+        .adv-item {
+            padding: 10px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            margin-bottom: 8px; cursor: grab; font-size: 13px;
+            transition: all 0.2s;
+            -webkit-user-select: none; user-select: none;
+            -webkit-touch-callout: none;
+        }
+        .adv-item:active { background: rgba(255,107,107,0.2); }
+        .adv-item.dragging { opacity: 0.5; transform: scale(0.95); }
+        .adv-item.correct { border-color: #4ECDC4; background: rgba(78,205,196,0.15); cursor: default; }
+        .adv-item.wrong { border-color: #FF6B6B; background: rgba(255,107,107,0.2); animation: shake 0.5s; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .adv-score {
+            text-align: center; padding: 10px; font-weight: 700; font-size: 16px;
+            color: #4ECDC4;
+        }
+        .reset-btn {
+            padding: 12px 24px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-weight: 600; font-size: 15px;
+            display: block; margin: 16px auto 0; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .reset-btn:active { background: rgba(255,107,107,0.3); transform: scale(0.95); }
+
+        /* INTERACTIVE Control Friction */
+        .control-demo-area {
+            position: relative; width: 100%; height: 180px;
+            background: rgba(0,0,0,0.4); border-radius: 14px;
+            overflow: hidden; margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .gear-animation {
+            position: relative; width: 120px; height: 120px;
+        }
+        .gear {
+            position: absolute; border-radius: 50%;
+            border: 6px dashed rgba(255,255,255,0.6);
+            animation: gearSpin 3s linear infinite;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px;
+        }
+        .gear-1 { width: 80px; height: 80px; top: 10px; left: 10px; animation-duration: 3s; }
+        .gear-2 { width: 50px; height: 50px; top: 45px; left: 55px; animation-duration: 2s; animation-direction: reverse; }
+        @keyframes gearSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .gear-oil {
+            position: absolute; font-size: 20px; animation: oilDrop 2s ease-in-out infinite;
+            top: 0; left: 40px;
+        }
+        @keyframes oilDrop {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            80% { transform: translateY(60px); opacity: 0.6; }
+            90% { transform: translateY(65px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 0; }
+        }
+        .gear-label {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.5); color: white; padding: 5px 14px;
+            border-radius: 100px; font-size: 12px; font-weight: 600;
+            transition: all 0.3s;
+        }
+        .control-buttons-row {
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px;
+        }
+        .control-action-btn {
+            padding: 10px 16px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: all 0.3s; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .control-action-btn:active { background: rgba(255,107,107,0.3); transform: scale(0.95); }
+        .control-action-btn.active-control { background: rgba(255,107,107,0.3); border-color: #FF6B6B; }
+
+        /* Info Cards */
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px; margin-top: 12px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 24px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 11px; font-weight: 700; color: #FF8E8E; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); }
+
+        @media (max-width: 600px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .surface-selector { grid-template-columns: repeat(2, 1fr); }
+            .surface-demo-wrapper { height: 170px; }
+            .block-on-surface { width: 50px; height: 45px; bottom: 60px; font-size: 22px; }
+            .ground-texture { height: 60px; }
+            .push-hand { bottom: 65px; font-size: 24px; }
+            .control-demo-area { height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Physics Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Friction Tester</span>
+            </div>
+            <div class="class-badge"><i class="fas fa-arrows-left-right"></i> Friction Tester</div>
+        </div>
+
+        <div class="page-header">
+            <h1>⚙️ Friction Tester</h1>
+            <p class="subtitle">✦ Explore Surfaces, Advantages & Control of Friction ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('surfaces', this)"><i class="fas fa-layer-group"></i> Surface Test</button>
+            <button class="tab-btn" onclick="switchTab('advdisadv', this)"><i class="fas fa-balance-scale"></i> Adv vs Disadv</button>
+            <button class="tab-btn" onclick="switchTab('control', this)"><i class="fas fa-sliders"></i> Control</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Learn</button>
+        </div>
+
+        <!-- Tab 1: IMPROVED Surface Comparator -->
+        <div class="tab-content active" id="tab-surfaces">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-layer-group"></i></div>
+                        <div>
+                            <div class="sim-card-title">Surface Comparator</div>
+                            <div class="sim-card-subtitle">Same push force on different surfaces = different results!</div>
+                        </div>
+                    </div>
+                    <div class="surface-demo-wrapper">
+                        <div class="block-on-surface" id="slidingBlock">📦</div>
+                        <div class="push-hand" id="pushHand">✋</div>
+                        <div class="friction-force-arrow" id="frictionArrow" style="width:60px;">
+                            <span class="friction-arrow-head">◄</span>
+                            <span class="friction-label-mini">Friction</span>
+                        </div>
+                        <div class="surface-ground-visual" style="bottom:0;">
+                            <div class="ground-texture texture-ice" id="groundTexture"></div>
+                        </div>
+                        <div class="surface-name-tag" id="surfaceLabel">🧊 Ice - Very Smooth</div>
+                    </div>
+                    <div class="friction-meter">
+                        <span style="font-size:11px;">Friction:</span>
+                        <div class="friction-bar-bg">
+                            <div class="friction-bar-fill" id="frictionBar" style="width:10%; background:#4CAF50;"></div>
+                        </div>
+                        <span class="friction-value-text" id="frictionValue" style="color:#4CAF50;">Very Low</span>
+                    </div>
+                    <div class="surface-selector">
+                        <button class="surface-btn active-surface" onclick="selectSurface('ice')">
+                            <span class="surf-icon">🧊</span> Ice
+                        </button>
+                        <button class="surface-btn" onclick="selectSurface('wood')">
+                            <span class="surf-icon">🪵</span> Wood
+                        </button>
+                        <button class="surface-btn" onclick="selectSurface('carpet')">
+                            <span class="surf-icon">🟫</span> Carpet
+                        </button>
+                        <button class="surface-btn" onclick="selectSurface('sandpaper')">
+                            <span class="surf-icon">📄</span> Sandpaper
+                        </button>
+                    </div>
+                    <p style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-top:8px;">
+                        💡 Higher friction = Block moves less. Lower friction = Block slides further.
+                    </p>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <div class="sim-card-title">How It Works</div>
+                            <div class="sim-card-subtitle">Understanding the surface test</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🧊</div><div class="info-name">Ice</div><div class="info-desc">Very smooth = Least friction = Block slides FAR</div></div>
+                        <div class="info-card"><div class="emoji">🪵</div><div class="info-name">Wood</div><div class="info-desc">Some roughness = Medium friction = Slides moderately</div></div>
+                        <div class="info-card"><div class="emoji">🟫</div><div class="info-name">Carpet</div><div class="info-desc">Rough fibers = High friction = Block moves less</div></div>
+                        <div class="info-card"><div class="emoji">📄</div><div class="info-name">Sandpaper</div><div class="info-desc">Very rough = Highest friction = Almost doesn't move</div></div>
+                        <div class="info-card"><div class="emoji">✋</div><div class="info-name">Same Push</div><div class="info-desc">The hand pushes with SAME force on all surfaces</div></div>
+                        <div class="info-card"><div class="emoji">🔄</div><div class="info-name">Friction Arrow</div><div class="info-desc">Red arrow shows friction opposing motion</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Advantages vs Disadvantages Sorter -->
+        <div class="tab-content" id="tab-advdisadv">
+            <div class="sim-card" style="margin-bottom:20px;">
+                <div class="sim-card-header">
+                    <div class="sim-card-icon"><i class="fas fa-balance-scale"></i></div>
+                    <div>
+                        <div class="sim-card-title">Advantages vs Disadvantages</div>
+                        <div class="sim-card-subtitle">Sort each item: Is friction helpful or harmful?</div>
+                    </div>
+                </div>
+                <div class="adv-score" id="advScore">✅ Score: 0 / 10</div>
+                <div class="adv-disadv-container">
+                    <div class="adv-bucket" id="itemsBucket">
+                        <h4>📦 Items (Drag or Tap)</h4>
+                        <div id="draggableAdvItems"></div>
+                    </div>
+                    <div class="adv-bucket" id="advantageBucket" ondragover="allowDropAdv(event)" ondrop="dropAdv(event, 'advantage')">
+                        <h4>✅ Advantages (Helpful)</h4>
+                        <div id="advantageDropped"></div>
+                    </div>
+                    <div class="adv-bucket" id="disadvantageBucket" ondragover="allowDropAdv(event)" ondrop="dropAdv(event, 'disadvantage')">
+                        <h4>❌ Disadvantages (Harmful)</h4>
+                        <div id="disadvantageDropped"></div>
+                    </div>
+                </div>
+                <button class="reset-btn" onclick="resetAdvSorter()"><i class="fas fa-redo"></i> Reset Game</button>
+            </div>
+        </div>
+
+        <!-- Tab 3: INTERACTIVE Control Friction -->
+        <div class="tab-content" id="tab-control">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-sliders"></i></div>
+                        <div>
+                            <div class="sim-card-title">Control Friction - Interactive</div>
+                            <div class="sim-card-subtitle">Click buttons to see how we control friction!</div>
+                        </div>
+                    </div>
+                    <div class="control-demo-area" id="controlDemo">
+                        <div class="gear-animation" id="gearAnimation">
+                            <div class="gear gear-1">⚙️</div>
+                            <div class="gear gear-2">⚙️</div>
+                        </div>
+                        <div class="gear-oil" id="oilDrop" style="display:none;">🛢️</div>
+                        <div class="gear-label" id="gearLabel">Normal Friction</div>
+                    </div>
+                    <div class="control-buttons-row">
+                        <button class="control-action-btn active-control" onclick="controlFriction('normal')">
+                            ⚙️ Normal
+                        </button>
+                        <button class="control-action-btn" onclick="controlFriction('lubricate')">
+                            🛢️ Add Oil
+                        </button>
+                        <button class="control-action-btn" onclick="controlFriction('ballbearing')">
+                            🔴 Ball Bearings
+                        </button>
+                        <button class="control-action-btn" onclick="controlFriction('rough')">
+                            📄 Roughen
+                        </button>
+                    </div>
+                    <p style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-top:8px;">
+                        💡 Click buttons to see how friction changes in machines!
+                    </p>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-list"></i></div>
+                        <div>
+                            <div class="sim-card-title">Methods to Control Friction</div>
+                            <div class="sim-card-subtitle">Complete guide</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🛢️</div><div class="info-name">Lubrication</div><div class="info-desc">Oil/grease fills gaps = smoother surface = less friction</div></div>
+                        <div class="info-card"><div class="emoji">🔴</div><div class="info-name">Ball Bearings</div><div class="info-desc">Rolling replaces sliding = much less friction</div></div>
+                        <div class="info-card"><div class="emoji">✨</div><div class="info-name">Polishing</div><div class="info-desc">Smoothing surface reduces interlocking = less friction</div></div>
+                        <div class="info-card"><div class="emoji">📄</div><div class="info-name">Roughening</div><div class="info-desc">Making surface rough increases grip = more friction</div></div>
+                        <div class="info-card"><div class="emoji">👟</div><div class="info-name">Treads/Grooves</div><div class="info-desc">Patterns on tires/shoes increase friction with ground</div></div>
+                        <div class="info-card"><div class="emoji">💨</div><div class="info-name">Streamlining</div><div class="info-desc">Smooth shape reduces air/water friction (drag)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Learn -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div>
+                            <div class="sim-card-title">Friction Basics</div>
+                            <div class="sim-card-subtitle">Key concepts for Class 8</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">📖</div><div class="info-name">What is Friction?</div><div class="info-desc">Force that opposes motion between two surfaces in contact</div></div>
+                        <div class="info-card"><div class="emoji">🔬</div><div class="info-name">Cause</div><div class="info-desc">Surface irregularities (bumps) interlock with each other</div></div>
+                        <div class="info-card"><div class="emoji">📐</div><div class="info-name">Depends On</div><div class="info-desc">Roughness of surfaces & how hard they are pressed together</div></div>
+                        <div class="info-card"><div class="emoji">🔄</div><div class="info-name">Types</div><div class="info-desc">Static > Sliding > Rolling (Rolling friction is smallest)</div></div>
+                        <div class="info-card"><div class="emoji">✅</div><div class="info-name">Advantages</div><div class="info-desc">Walking, writing, brakes, lighting matchstick</div></div>
+                        <div class="info-card"><div class="emoji">❌</div><div class="info-name">Disadvantages</div><div class="info-desc">Wear & tear, heat, energy loss, noise</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (tabName === 'advdisadv') initAdvSorter();
+        }
+
+        // ==================== IMPROVED SURFACE COMPARATOR ====================
+        const surfaceData = {
+            ice: {
+                name: '🧊 Ice - Very Smooth',
+                frictionPercent: 8,
+                frictionLabel: 'Very Low',
+                barColor: '#4CAF50',
+                labelColor: '#4CAF50',
+                textureClass: 'texture-ice',
+                blockEndLeft: 78,  // % of container - high = slides far
+                arrowWidth: 30,     // narrow = low friction
+                frictionDesc: 'Blocks slides easily - very little resistance'
+            },
+            wood: {
+                name: '🪵 Wood - Moderate',
+                frictionPercent: 35,
+                frictionLabel: 'Medium',
+                barColor: '#FF9800',
+                labelColor: '#FF9800',
+                textureClass: 'texture-wood',
+                blockEndLeft: 55,
+                arrowWidth: 120,
+                frictionDesc: 'Some resistance - block moves moderately'
+            },
+            carpet: {
+                name: '🟫 Carpet - Rough',
+                frictionPercent: 65,
+                frictionLabel: 'High',
+                barColor: '#F44336',
+                labelColor: '#F44336',
+                textureClass: 'texture-carpet',
+                blockEndLeft: 35,
+                arrowWidth: 200,
+                frictionDesc: 'High resistance - block barely moves'
+            },
+            sandpaper: {
+                name: '📄 Sandpaper - Very Rough',
+                frictionPercent: 90,
+                frictionLabel: 'Very High',
+                barColor: '#D32F2F',
+                labelColor: '#D32F2F',
+                textureClass: 'texture-sandpaper',
+                blockEndLeft: 18,
+                arrowWidth: 260,
+                frictionDesc: 'Maximum resistance - block almost stuck!'
+            }
+        };
+
+        function selectSurface(type) {
+            const data = surfaceData[type];
+            const container = document.querySelector('.surface-demo-wrapper');
+            const containerWidth = container.clientWidth;
+            
+            // Update block position (percentage-based)
+            const block = document.getElementById('slidingBlock');
+            const blockLeftPercent = data.blockEndLeft;
+            block.style.left = blockLeftPercent + '%';
+            
+            // Update push hand position (follows block)
+            const hand = document.getElementById('pushHand');
+            hand.style.left = (blockLeftPercent + 8) + '%';
+            
+            // Update friction arrow
+            const arrow = document.getElementById('frictionArrow');
+            arrow.style.width = data.arrowWidth + 'px';
+            arrow.style.left = blockLeftPercent + '%';
+            
+            // Update ground texture
+            const ground = document.getElementById('groundTexture');
+            ground.className = 'ground-texture ' + data.textureClass;
+            
+            // Update label
+            document.getElementById('surfaceLabel').textContent = data.name;
+            
+            // Update friction bar
+            const bar = document.getElementById('frictionBar');
+            bar.style.width = data.frictionPercent + '%';
+            bar.style.background = data.barColor;
+            
+            // Update friction text
+            const value = document.getElementById('frictionValue');
+            value.textContent = data.frictionLabel;
+            value.style.color = data.labelColor;
+            
+            // Highlight active button
+            document.querySelectorAll('.surface-btn').forEach(b => b.classList.remove('active-surface'));
+            const clickedBtn = document.querySelector(`.surface-btn[onclick*="${type}"]`);
+            if (clickedBtn) clickedBtn.classList.add('active-surface');
+            
+            // Animate hand push
+            const handEl = document.getElementById('pushHand');
+            handEl.style.animation = 'none';
+            handEl.offsetHeight;
+            handEl.style.animation = 'handPush 2s ease-in-out infinite';
+        }
+
+        // ==================== ADVANTAGES vs DISADVANTAGES SORTER ====================
+        const advItems = [
+            { id: 1, text: '🚶 Walking without slipping', category: 'advantage' },
+            { id: 2, text: '⚙️ Machine parts wear out', category: 'disadvantage' },
+            { id: 3, text: '✏️ Writing with pencil', category: 'advantage' },
+            { id: 4, text: '🔥 Overheating of engines', category: 'disadvantage' },
+            { id: 5, text: '🚗 Brakes stopping a car', category: 'advantage' },
+            { id: 6, text: '👟 Soles of shoes wearing out', category: 'disadvantage' },
+            { id: 7, text: '🔥 Lighting a matchstick', category: 'advantage' },
+            { id: 8, text: '⚡ Energy loss in machines', category: 'disadvantage' },
+            { id: 9, text: '🧗 Climbing a rope', category: 'advantage' },
+            { id: 10, text: '🔊 Noise from machines', category: 'disadvantage' }
+        ];
+
+        let advScore = 0;
+        let selectedAdvItem = null;
+
+        function initAdvSorter() {
+            const container = document.getElementById('draggableAdvItems');
+            container.innerHTML = '';
+            document.getElementById('advantageDropped').innerHTML = '';
+            document.getElementById('disadvantageDropped').innerHTML = '';
+            
+            const shuffled = [...advItems].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'adv-item';
+                div.draggable = true;
+                div.id = 'adv-item-' + item.id;
+                div.textContent = item.text;
+                div.dataset.category = item.category;
+                
+                div.addEventListener('dragstart', dragAdv);
+                div.addEventListener('dragend', dragEndAdv);
+                div.addEventListener('touchstart', touchStartAdv, {passive: false});
+                div.addEventListener('touchmove', touchMoveAdv, {passive: false});
+                div.addEventListener('touchend', touchEndAdv);
+                
+                container.appendChild(div);
+            });
+            
+            advScore = 0;
+            document.getElementById('advScore').textContent = '✅ Score: 0 / 10';
+            document.getElementById('advScore').style.color = '#4ECDC4';
+        }
+
+        function resetAdvSorter() { initAdvSorter(); }
+
+        function allowDropAdv(e) { e.preventDefault(); }
+        function dragAdv(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text', e.target.id);
+        }
+        function dragEndAdv(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.adv-bucket').forEach(b => b.classList.remove('highlight'));
+        }
+        function dropAdv(e, category) {
+            e.preventDefault();
+            document.querySelectorAll('.adv-bucket').forEach(b => b.classList.remove('highlight'));
+            const itemId = e.dataTransfer.getData('text');
+            if (itemId) processAdvDrop(itemId, category);
+        }
+
+        function touchStartAdv(e) {
+            if (e.target.closest('button')) return;
+            selectedAdvItem = e.target.closest('.adv-item');
+            if (selectedAdvItem && selectedAdvItem.parentElement.id === 'draggableAdvItems') {
+                e.preventDefault();
+                selectedAdvItem.classList.add('dragging');
+                selectedAdvItem.style.opacity = '0.6';
+                selectedAdvItem.style.zIndex = '1000';
+            }
+        }
+        function touchMoveAdv(e) {
+            if (!selectedAdvItem) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            selectedAdvItem.style.position = 'fixed';
+            selectedAdvItem.style.left = (touch.clientX - 80) + 'px';
+            selectedAdvItem.style.top = (touch.clientY - 20) + 'px';
+            selectedAdvItem.style.width = '160px';
+            selectedAdvItem.style.pointerEvents = 'none';
+            document.querySelectorAll('.adv-bucket').forEach(b => b.classList.remove('highlight'));
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bucket = elemBelow?.closest('.adv-bucket');
+            if (bucket) bucket.classList.add('highlight');
+        }
+        function touchEndAdv(e) {
+            if (!selectedAdvItem) return;
+            selectedAdvItem.classList.remove('dragging');
+            selectedAdvItem.style.opacity = '1';
+            selectedAdvItem.style.position = '';
+            selectedAdvItem.style.left = '';
+            selectedAdvItem.style.top = '';
+            selectedAdvItem.style.width = '';
+            selectedAdvItem.style.pointerEvents = '';
+            selectedAdvItem.style.zIndex = '';
+            document.querySelectorAll('.adv-bucket').forEach(b => b.classList.remove('highlight'));
+            const touch = e.changedTouches[0];
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bucket = elemBelow?.closest('.adv-bucket');
+            if (bucket) {
+                let category = '';
+                if (bucket.id === 'advantageBucket' || bucket.id === 'advantageDropped') category = 'advantage';
+                if (bucket.id === 'disadvantageBucket' || bucket.id === 'disadvantageDropped') category = 'disadvantage';
+                if (category) processAdvDrop(selectedAdvItem.id, category);
+            }
+            selectedAdvItem = null;
+        }
+
+        function processAdvDrop(itemId, category) {
+            const item = document.getElementById(itemId);
+            if (!item) return;
+            if (item.parentElement.id === 'advantageDropped' || item.parentElement.id === 'disadvantageDropped') return;
+            
+            const correctCategory = item.dataset.category;
+            const dropTarget = category === 'advantage' ? 
+                document.getElementById('advantageDropped') : 
+                document.getElementById('disadvantageDropped');
+            
+            dropTarget.appendChild(item);
+            item.draggable = false;
+            item.style.cursor = 'default';
+            item.style.position = '';
+            item.style.left = '';
+            item.style.top = '';
+            item.style.opacity = '1';
+            
+            if (correctCategory === category) {
+                item.classList.add('correct');
+                item.classList.remove('wrong');
+                advScore++;
+            } else {
+                item.classList.add('wrong');
+                item.classList.remove('correct');
+                setTimeout(() => item.classList.remove('wrong'), 500);
+            }
+            
+            document.getElementById('advScore').textContent = '✅ Score: ' + advScore + ' / 10';
+            if (advScore === 10) {
+                document.getElementById('advScore').textContent = '🎉 Perfect! All Correct! 10 / 10 🎉';
+                document.getElementById('advScore').style.color = '#FFD700';
+            }
+        }
+
+        // ==================== INTERACTIVE CONTROL FRICTION ====================
+        function controlFriction(action) {
+            const gears = document.querySelectorAll('.gear');
+            const oilDrop = document.getElementById('oilDrop');
+            const gearLabel = document.getElementById('gearLabel');
+            const demoArea = document.getElementById('controlDemo');
+            
+            // Reset
+            gears.forEach(g => {
+                g.style.animationDuration = '';
+                g.style.animationPlayState = 'running';
+                g.style.opacity = '1';
+                g.style.borderColor = 'rgba(255,255,255,0.6)';
+            });
+            oilDrop.style.display = 'none';
+            demoArea.style.background = 'rgba(0,0,0,0.4)';
+            
+            document.querySelectorAll('.control-action-btn').forEach(b => b.classList.remove('active-control'));
+            const clickedBtn = document.querySelector(`.control-action-btn[onclick*="${action}"]`);
+            if (clickedBtn) clickedBtn.classList.add('active-control');
+            
+            switch(action) {
+                case 'normal':
+                    gearLabel.textContent = '⚙️ Normal Friction - Gears running';
+                    gearLabel.style.color = 'white';
+                    break;
+                    
+                case 'lubricate':
+                    gears.forEach(g => {
+                        g.style.animationDuration = '1.5s';
+                        g.style.borderColor = 'rgba(255,215,0,0.8)';
+                    });
+                    oilDrop.style.display = 'block';
+                    gearLabel.textContent = '🛢️ Oil Added - Gears spin FASTER! (Less friction)';
+                    gearLabel.style.color = '#FFD700';
+                    demoArea.style.background = 'rgba(255,215,0,0.05)';
+                    break;
+                    
+                case 'ballbearing':
+                    gears.forEach(g => {
+                        g.style.animationDuration = '1.2s';
+                        g.style.borderColor = 'rgba(78,205,196,0.8)';
+                        g.style.borderStyle = 'dotted';
+                    });
+                    gearLabel.textContent = '🔴 Ball Bearings - Rolling friction = Very fast!';
+                    gearLabel.style.color = '#4ECDC4';
+                    demoArea.style.background = 'rgba(78,205,196,0.05)';
+                    break;
+                    
+                case 'rough':
+                    gears.forEach(g => {
+                        g.style.animationDuration = '6s';
+                        g.style.borderColor = 'rgba(255,107,107,0.9)';
+                        g.style.opacity = '0.8';
+                    });
+                    gearLabel.textContent = '📄 Roughened Surface - Gears struggle (High friction)';
+                    gearLabel.style.color = '#FF6B6B';
+                    demoArea.style.background = 'rgba(255,107,107,0.05)';
+                    break;
+            }
+        }
+
+        // ==================== INIT ====================
+        window.addEventListener('load', () => {
+            selectSurface('ice');
+            initAdvSorter();
+            controlFriction('normal');
+            
+            document.querySelectorAll('.adv-bucket').forEach(bucket => {
+                bucket.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                    this.classList.add('highlight');
+                });
+                bucket.addEventListener('dragleave', function(e) {
+                    this.classList.remove('highlight');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
