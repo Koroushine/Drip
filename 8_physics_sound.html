@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Sound Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --physics-color: #FF6B6B;
+            --physics-light: #FF8E8E;
+            --sound-color: #FF9800;
+            --sound-light: #FFB74D;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(255,152,0,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,152,0,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,152,0,0.25), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(255,183,77,0.2), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1300px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active {
+            background: rgba(255,152,0,0.3); transform: scale(0.95);
+        }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:active { color: white; }
+        .breadcrumb .current { color: #FF9800; font-weight: 600; }
+        .class-badge {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(255,152,0,0.4);
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #FFB74D);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active {
+            background: rgba(255,152,0,0.3); color: white;
+            box-shadow: 0 4px 15px rgba(255,152,0,0.2);
+        }
+        .tab-btn:active:not(.active) {
+            color: white; background: rgba(255,255,255,0.1);
+        }
+
+        /* Tab Content */
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        /* Cards Grid */
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px; transition: all 0.3s;
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* Vibration Visualizer */
+        .vibration-area {
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+        .string-container {
+            width: 100%; height: 120px; background: rgba(0,0,0,0.3);
+            border-radius: 14px; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .vibrating-string {
+            width: 80%; height: 4px; background: #FF9800;
+            border-radius: 2px; position: relative;
+            transition: all 0.1s;
+        }
+        .string-node {
+            position: absolute; width: 12px; height: 12px; background: white;
+            border-radius: 50%; top: -4px; left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 20px rgba(255,152,0,0.8);
+        }
+        .vibration-controls {
+            display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+        }
+        .vib-btn {
+            padding: 12px 20px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-weight: 600; font-size: 14px;
+            transition: all 0.3s; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .vib-btn:active { background: rgba(255,152,0,0.3); transform: scale(0.95); }
+        .vib-btn.active { background: rgba(255,152,0,0.4); border-color: #FF9800; }
+        .frequency-display {
+            font-size: 24px; font-weight: 700; color: #FFB74D;
+            text-align: center;
+        }
+
+        /* Bell Jar Experiment */
+        .bell-jar-container {
+            position: relative; width: 100%; height: 250px;
+            background: rgba(0,0,0,0.3); border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .bell-jar {
+            width: 140px; height: 180px; border: 3px solid rgba(255,255,255,0.4);
+            border-radius: 70px 70px 20px 20px; position: relative;
+            background: rgba(255,255,255,0.03);
+        }
+        .bell-inside {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            font-size: 40px; transition: all 0.5s;
+        }
+        .sound-waves {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 4px;
+        }
+        .wave-bar {
+            width: 6px; background: #FF9800; border-radius: 3px;
+            transition: height 0.2s;
+        }
+        .air-particles {
+            position: absolute; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .air-dot {
+            position: absolute; width: 3px; height: 3px;
+            background: rgba(255,255,255,0.6); border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .vacuum-controls {
+            display: flex; gap: 12px; justify-content: center; margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Pitch Explorer */
+        .pitch-area {
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        .pitch-slider-container {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .pitch-slider-container label {
+            font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 600;
+        }
+        .pitch-slider-container input[type="range"] {
+            width: 100%; height: 10px; border-radius: 5px;
+            -webkit-appearance: none; appearance: none;
+            background: linear-gradient(90deg, #4CAF50, #FFEB3B, #FF9800, #F44336);
+            outline: none;
+        }
+        .pitch-slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: white; cursor: pointer; border: 3px solid #FF9800;
+            box-shadow: 0 4px 12px rgba(255,152,0,0.4);
+        }
+        .wave-visual {
+            width: 100%; height: 100px; background: rgba(0,0,0,0.3);
+            border-radius: 14px; overflow: hidden; position: relative;
+        }
+        .wave-canvas {
+            width: 100%; height: 100%;
+        }
+        .pitch-info {
+            display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px;
+        }
+        .pitch-stat {
+            text-align: center; padding: 10px 16px;
+            background: rgba(255,152,0,0.1); border-radius: 12px;
+            border: 1px solid rgba(255,152,0,0.2);
+        }
+        .pitch-stat .value { font-size: 20px; font-weight: 700; color: #FFB74D; }
+        .pitch-stat .label { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+        /* Noise Pollution */
+        .noise-meter-container {
+            display: flex; flex-direction: column; align-items: center; gap: 16px;
+        }
+        .db-meter {
+            width: 200px; height: 200px; border-radius: 50%;
+            background: conic-gradient(#4CAF50 0deg 90deg, #FFEB3B 90deg 180deg, #FF9800 180deg 270deg, #F44336 270deg 360deg);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .db-meter::after {
+            content: ''; position: absolute;
+            width: 140px; height: 140px; border-radius: 50%;
+            background: #1a1035;
+        }
+        .db-value {
+            position: relative; z-index: 1; font-size: 36px; font-weight: 900;
+            color: white;
+        }
+        .db-label { position: relative; z-index: 1; font-size: 14px; color: rgba(255,255,255,0.5); }
+        .noise-sources {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+        }
+        .noise-btn {
+            padding: 10px 16px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: all 0.3s; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .noise-btn:active { background: rgba(255,152,0,0.3); transform: scale(0.95); }
+        .noise-btn.active-source { background: rgba(255,152,0,0.4); border-color: #FF9800; }
+
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px; margin-top: 12px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 26px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 12px; font-weight: 700; color: #FFB74D; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        @media (max-width: 600px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .bell-jar { width: 100px; height: 140px; }
+            .db-meter { width: 150px; height: 150px; }
+            .db-meter::after { width: 100px; height: 100px; }
+            .db-value { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()" title="Back to Labs">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Physics Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Sound Studio</span>
+            </div>
+            <div class="class-badge"><i class="fas fa-volume-high"></i> Sound Studio</div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🔊 Sound Studio</h1>
+            <p class="subtitle">✦ Explore Vibrations, Pitch & Sound Waves ✦</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('vibration', this)">
+                <i class="fas fa-wave-square"></i> Vibration
+            </button>
+            <button class="tab-btn" onclick="switchTab('belljar', this)">
+                <i class="fas fa-bell"></i> Bell Jar
+            </button>
+            <button class="tab-btn" onclick="switchTab('pitch', this)">
+                <i class="fas fa-sliders"></i> Pitch
+            </button>
+            <button class="tab-btn" onclick="switchTab('noise', this)">
+                <i class="fas fa-ear-listen"></i> Noise
+            </button>
+        </div>
+
+        <!-- Tab 1: Vibration Visualizer -->
+        <div class="tab-content active" id="tab-vibration">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-wave-square"></i></div>
+                        <div>
+                            <div class="sim-card-title">Vibration Visualizer</div>
+                            <div class="sim-card-subtitle">See how different objects vibrate to produce sound</div>
+                        </div>
+                    </div>
+                    <div class="vibration-area">
+                        <div class="string-container" id="stringContainer">
+                            <div class="vibrating-string" id="vibratingString">
+                                <div class="string-node" id="stringNode"></div>
+                            </div>
+                        </div>
+                        <div class="frequency-display" id="freqDisplay">Frequency: Medium</div>
+                        <div class="vibration-controls">
+                            <button class="vib-btn" onclick="setVibration('slow')">
+                                <i class="fas fa-turtle"></i> Slow (Low Pitch)
+                            </button>
+                            <button class="vib-btn active" onclick="setVibration('medium')">
+                                <i class="fas fa-walking"></i> Medium
+                            </button>
+                            <button class="vib-btn" onclick="setVibration('fast')">
+                                <i class="fas fa-rabbit"></i> Fast (High Pitch)
+                            </button>
+                        </div>
+                        <p style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;">
+                            💡 Faster vibration = Higher frequency = Higher pitch sound
+                        </p>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <div class="sim-card-title">Sound Basics</div>
+                            <div class="sim-card-subtitle">Key concepts about sound</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">📳</div><div class="info-name">Vibration</div><div class="info-desc">Sound is produced by vibrating objects. No vibration = No sound</div></div>
+                        <div class="info-card"><div class="emoji">🌊</div><div class="info-name">Sound Wave</div><div class="info-desc">Sound travels as longitudinal waves through a medium</div></div>
+                        <div class="info-card"><div class="emoji">📏</div><div class="info-name">Frequency</div><div class="info-desc">Number of vibrations per second. Unit: Hertz (Hz)</div></div>
+                        <div class="info-card"><div class="emoji">📈</div><div class="info-name">Amplitude</div><div class="info-desc">Maximum displacement. Larger amplitude = Louder sound</div></div>
+                        <div class="info-card"><div class="emoji">🎵</div><div class="info-name">Pitch</div><div class="info-desc">How high or low a sound is. Depends on frequency</div></div>
+                        <div class="info-card"><div class="emoji">🔊</div><div class="info-name">Loudness</div><div class="info-desc">How strong a sound feels. Depends on amplitude</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Bell Jar Experiment -->
+        <div class="tab-content" id="tab-belljar">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-bell"></i></div>
+                        <div>
+                            <div class="sim-card-title">Bell Jar Experiment</div>
+                            <div class="sim-card-subtitle">Sound needs a medium to travel!</div>
+                        </div>
+                    </div>
+                    <div class="bell-jar-container" id="bellJarContainer">
+                        <div class="bell-jar">
+                            <div class="bell-inside" id="bellIcon">🔔</div>
+                            <div class="sound-waves" id="soundWaves">
+                                <div class="wave-bar" style="height:20px;"></div>
+                                <div class="wave-bar" style="height:30px;"></div>
+                                <div class="wave-bar" style="height:40px;"></div>
+                                <div class="wave-bar" style="height:30px;"></div>
+                                <div class="wave-bar" style="height:20px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;margin-top:8px;font-size:14px;" id="vacuumStatus">
+                        🟢 Air Present - Sound can be heard
+                    </div>
+                    <div class="vacuum-controls">
+                        <button class="vib-btn" onclick="setVacuum('air')">
+                            <i class="fas fa-wind"></i> Air Present
+                        </button>
+                        <button class="vib-btn" onclick="setVacuum('partial')">
+                            <i class="fas fa-pump"></i> Partial Vacuum
+                        </button>
+                        <button class="vib-btn" onclick="setVacuum('full')">
+                            <i class="fas fa-vacuum"></i> Full Vacuum
+                        </button>
+                    </div>
+                    <p style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-top:12px;">
+                        💡 Sound cannot travel through vacuum. Astronauts use radios to talk in space!
+                    </p>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-info-circle"></i></div>
+                        <div>
+                            <div class="sim-card-title">Sound Travels Through...</div>
+                            <div class="sim-card-subtitle">Different mediums conduct sound differently</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">💨</div><div class="info-name">Air (Gas)</div><div class="info-desc">Speed: ~343 m/s. Sound travels slowest in gases</div></div>
+                        <div class="info-card"><div class="emoji">💧</div><div class="info-name">Water (Liquid)</div><div class="info-desc">Speed: ~1500 m/s. 4x faster than in air</div></div>
+                        <div class="info-card"><div class="emoji">🪨</div><div class="info-name">Steel (Solid)</div><div class="info-desc">Speed: ~5000 m/s. Fastest in solids</div></div>
+                        <div class="info-card"><div class="emoji">🚫</div><div class="info-name">Vacuum</div><div class="info-desc">Speed: 0 m/s. No sound at all!</div></div>
+                        <div class="info-card"><div class="emoji">👂</div><div class="info-name">Human Hearing</div><div class="info-desc">Range: 20 Hz - 20,000 Hz. Below 20 Hz = Infrasound</div></div>
+                        <div class="info-card"><div class="emoji">🦇</div><div class="info-name">Ultrasound</div><div class="info-desc">Above 20,000 Hz. Used by bats and in medical imaging</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Pitch Explorer -->
+        <div class="tab-content" id="tab-pitch">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-sliders"></i></div>
+                        <div>
+                            <div class="sim-card-title">Pitch Explorer</div>
+                            <div class="sim-card-subtitle">Adjust frequency to change pitch</div>
+                        </div>
+                    </div>
+                    <div class="pitch-area">
+                        <div class="pitch-slider-container">
+                            <label><i class="fas fa-wave-sine"></i> Frequency (Hz)</label>
+                            <input type="range" id="pitchSlider" min="20" max="20000" value="440" step="1" oninput="updatePitch()">
+                            <div class="input-values" style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.5);">
+                                <span>20 Hz (Very Low)</span><span>440 Hz (A Note)</span><span>20000 Hz (Very High)</span>
+                            </div>
+                        </div>
+                        <div class="wave-visual">
+                            <canvas id="waveCanvas" class="wave-canvas"></canvas>
+                        </div>
+                        <div class="pitch-info">
+                            <div class="pitch-stat">
+                                <div class="value" id="pitchFreq">440</div>
+                                <div class="label">Frequency (Hz)</div>
+                            </div>
+                            <div class="pitch-stat">
+                                <div class="value" id="pitchNote">A4</div>
+                                <div class="label">Musical Note</div>
+                            </div>
+                            <div class="pitch-stat">
+                                <div class="value" id="pitchType">Mid</div>
+                                <div class="label">Pitch Type</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-music"></i></div>
+                        <div>
+                            <div class="sim-card-title">Pitch in Real Life</div>
+                            <div class="sim-card-subtitle">Different sounds have different frequencies</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🐘</div><div class="info-name">Elephant Rumble</div><div class="info-desc">~20 Hz (Very low pitch, infrasound)</div></div>
+                        <div class="info-card"><div class="emoji">🎸</div><div class="info-name">Bass Guitar</div><div class="info-desc">~40-400 Hz (Low pitch)</div></div>
+                        <div class="info-card"><div class="emoji">👨</div><div class="info-name">Male Voice</div><div class="info-desc">~85-180 Hz (Medium-low)</div></div>
+                        <div class="info-card"><div class="emoji">👩</div><div class="info-name">Female Voice</div><div class="info-desc">~165-255 Hz (Medium-high)</div></div>
+                        <div class="info-card"><div class="emoji">🎻</div><div class="info-name">Violin</div><div class="info-desc">~196-3136 Hz (High pitch)</div></div>
+                        <div class="info-card"><div class="emoji">🐦</div><div class="info-name">Bird Chirp</div><div class="info-desc">~1000-8000 Hz (Very high)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Noise Pollution -->
+        <div class="tab-content" id="tab-noise">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-ear-listen"></i></div>
+                        <div>
+                            <div class="sim-card-title">Noise Level Meter</div>
+                            <div class="sim-card-subtitle">Click sources to see their decibel levels</div>
+                        </div>
+                    </div>
+                    <div class="noise-meter-container">
+                        <div class="db-meter">
+                            <div style="position:relative;z-index:1;text-align:center;">
+                                <div class="db-value" id="dbValue">30</div>
+                                <div class="db-label">dB</div>
+                            </div>
+                        </div>
+                        <div id="noiseLabel" style="font-size:14px;color:#4CAF50;">Whisper - Very Quiet</div>
+                        <div class="noise-sources">
+                            <button class="noise-btn" onclick="setNoise(10, 'Leaves rustling')">🍃 10 dB</button>
+                            <button class="noise-btn" onclick="setNoise(30, 'Whisper')">🤫 30 dB</button>
+                            <button class="noise-btn" onclick="setNoise(60, 'Normal talk')">🗣️ 60 dB</button>
+                            <button class="noise-btn" onclick="setNoise(80, 'Traffic')">🚗 80 dB</button>
+                            <button class="noise-btn" onclick="setNoise(100, 'Rock concert')">🎸 100 dB</button>
+                            <button class="noise-btn" onclick="setNoise(120, 'Jet engine')">✈️ 120 dB</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div>
+                            <div class="sim-card-title">Noise & Health</div>
+                            <div class="sim-card-subtitle">Effects of noise pollution and protection</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">😊</div><div class="info-name">Safe Level</div><div class="info-desc">Below 70 dB is safe for human ears</div></div>
+                        <div class="info-card"><div class="emoji">😟</div><div class="info-name">Risk Zone</div><div class="info-desc">Above 85 dB can cause hearing damage over time</div></div>
+                        <div class="info-card"><div class="emoji">😵</div><div class="info-name">Painful</div><div class="info-desc">Above 120 dB causes immediate pain</div></div>
+                        <div class="info-card"><div class="emoji">🎧</div><div class="info-name">Protection</div><div class="info-desc">Earplugs, earmuffs, limit loud music time</div></div>
+                        <div class="info-card"><div class="emoji">🏥</div><div class="info-name">Effects</div><div class="info-desc">Stress, sleep loss, hearing loss, high BP</div></div>
+                        <div class="info-card"><div class="emoji">🌳</div><div class="info-name">Solution</div><div class="info-desc">Plant trees (absorb sound), use silencers</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ NAVIGATION ============
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+        }
+
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        // ============ TAB SWITCHING ============
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            
+            if (tabName === 'pitch') updatePitch();
+        }
+
+        // ============ VIBRATION VISUALIZER ============
+        let vibrationInterval;
+        let currentVibration = 'medium';
+        let vibrationOffset = 0;
+
+        function setVibration(speed) {
+            currentVibration = speed;
+            document.querySelectorAll('#tab-vibration .vib-btn').forEach(b => b.classList.remove('active'));
+            
+            const speeds = { slow: 40, medium: 80, fast: 160 };
+            const freq = { slow: 'Low (Bass)', medium: 'Medium', fast: 'High (Treble)' };
+            
+            document.getElementById('freqDisplay').textContent = 'Frequency: ' + freq[speed];
+            
+            clearInterval(vibrationInterval);
+            const string = document.getElementById('vibratingString');
+            const node = document.getElementById('stringNode');
+            
+            const amplitude = speed === 'fast' ? 30 : speed === 'medium' ? 20 : 10;
+            
+            vibrationInterval = setInterval(() => {
+                vibrationOffset += 0.2;
+                const y = Math.sin(vibrationOffset * (speed === 'fast' ? 3 : speed === 'medium' ? 2 : 1)) * amplitude;
+                string.style.transform = `translateY(${y}px)`;
+                node.style.transform = `translateX(-50%) translateY(${-y}px)`;
+            }, speeds[speed] / 10);
+            
+            // Highlight active button
+            const buttons = document.querySelectorAll('#tab-vibration .vib-btn');
+            buttons.forEach(b => {
+                if (b.textContent.includes(speed === 'slow' ? 'Slow' : speed === 'medium' ? 'Medium' : 'Fast')) {
+                    b.classList.add('active');
+                }
+            });
+        }
+
+        // ============ BELL JAR EXPERIMENT ============
+        function setVacuum(level) {
+            const bellIcon = document.getElementById('bellIcon');
+            const soundWaves = document.getElementById('soundWaves');
+            const status = document.getElementById('vacuumStatus');
+            const dots = document.querySelectorAll('.air-dot');
+            
+            const settings = {
+                'air': { opacity: 1, waves: 1, icon: '🔔', status: '🟢 Air Present - Sound can be heard clearly', color: '#4CAF50' },
+                'partial': { opacity: 0.4, waves: 0.5, icon: '🔕', status: '🟡 Partial Vacuum - Sound getting fainter', color: '#FF9800' },
+                'full': { opacity: 0, waves: 0, icon: '🔇', status: '🔴 Full Vacuum - No sound at all!', color: '#F44336' }
+            };
+            
+            const s = settings[level];
+            bellIcon.textContent = s.icon;
+            soundWaves.style.opacity = s.waves;
+            status.textContent = s.status;
+            status.style.color = s.color;
+            
+            // Animate air particles
+            const container = document.getElementById('bellJarContainer');
+            const existingDots = container.querySelectorAll('.air-dot');
+            existingDots.forEach(d => d.style.opacity = s.opacity);
+            
+            document.querySelectorAll('#tab-belljar .vib-btn').forEach(b => b.classList.remove('active'));
+        }
+
+        // Create air particles
+        function createAirParticles() {
+            const container = document.getElementById('bellJarContainer');
+            for (let i = 0; i < 30; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'air-dot';
+                dot.style.left = (20 + Math.random() * 60) + '%';
+                dot.style.top = (20 + Math.random() * 60) + '%';
+                dot.style.animation = `float ${2 + Math.random() * 3}s ease-in-out infinite`;
+                container.appendChild(dot);
+            }
+        }
+
+        // ============ PITCH EXPLORER ============
+        function updatePitch() {
+            const freq = parseInt(document.getElementById('pitchSlider').value);
+            document.getElementById('pitchFreq').textContent = freq;
+            
+            // Determine note
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const noteIndex = Math.round(12 * Math.log2(freq / 440)) + 9;
+            const note = notes[((noteIndex % 12) + 12) % 12];
+            const octave = Math.floor((noteIndex + 9) / 12) + 4;
+            document.getElementById('pitchNote').textContent = note + octave;
+            
+            // Pitch type
+            let pitchType = 'Mid';
+            if (freq < 100) pitchType = 'Very Low';
+            else if (freq < 250) pitchType = 'Low';
+            else if (freq < 1000) pitchType = 'Mid';
+            else if (freq < 5000) pitchType = 'High';
+            else pitchType = 'Very High';
+            document.getElementById('pitchType').textContent = pitchType;
+            
+            // Draw wave
+            drawWave(freq);
+        }
+
+        function drawWave(freq) {
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = 100;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.strokeStyle = '#FF9800';
+            ctx.lineWidth = 3;
+            
+            const cycles = freq / 20;
+            for (let x = 0; x < canvas.width; x++) {
+                const y = 50 + 35 * Math.sin((x / canvas.width) * Math.PI * 2 * cycles);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // Glow effect
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#FF9800';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // ============ NOISE METER ============
+        function setNoise(db, label) {
+            document.getElementById('dbValue').textContent = db;
+            document.getElementById('noiseLabel').textContent = label;
+            
+            let color = '#4CAF50';
+            if (db > 85) color = '#F44336';
+            else if (db > 70) color = '#FF9800';
+            else if (db > 50) color = '#FFEB3B';
+            document.getElementById('noiseLabel').style.color = color;
+            
+            document.querySelectorAll('.noise-btn').forEach(b => b.classList.remove('active-source'));
+            event.target.classList.add('active-source');
+        }
+
+        // ============ INITIALIZATION ============
+        window.addEventListener('load', () => {
+            setVibration('medium');
+            createAirParticles();
+            updatePitch();
+            
+            // Handle window resize for canvas
+            window.addEventListener('resize', () => {
+                if (document.getElementById('tab-pitch').classList.contains('active')) {
+                    updatePitch();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

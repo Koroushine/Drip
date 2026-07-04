@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Light Lab</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --light-color: #FFD700;
+            --light-secondary: #FFC107;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(255,215,0,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,215,0,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,215,0,0.2), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(255,193,7,0.15), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1300px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(255,215,0,0.3); transform: scale(0.95); }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb span:active { color: white; }
+        .breadcrumb .current { color: #FFD700; font-weight: 600; }
+        .class-badge {
+            background: linear-gradient(135deg, #FFD700, #FFC107);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(255,215,0,0.4);
+            color: #1a1035;
+        }
+
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #FFD700);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active {
+            background: rgba(255,215,0,0.2); color: #FFD700;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.15);
+        }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px; transition: all 0.3s;
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #FFD700, #FFC107);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: #1a1035;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* Canvas */
+        .canvas-container {
+            width: 100%; height: 350px;
+            background: rgba(0,0,0,0.4); border-radius: 14px;
+            position: relative; overflow: hidden;
+            touch-action: none;
+        }
+        .ray-canvas { width: 100%; height: 100%; display: block; }
+        .ray-controls {
+            display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center;
+        }
+        .ray-btn {
+            padding: 10px 18px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: all 0.3s; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ray-btn:active { background: rgba(255,215,0,0.3); transform: scale(0.95); }
+        .ray-btn.active-btn { background: rgba(255,215,0,0.3); border-color: #FFD700; }
+        .angle-display {
+            text-align: center; font-size: 16px; font-weight: 700;
+            color: #FFD700; margin-top: 8px;
+        }
+
+        /* Material Demo */
+        .material-demo { display: flex; flex-direction: column; gap: 16px; }
+        .material-row {
+            display: flex; align-items: center; gap: 16px;
+            padding: 16px; border-radius: 14px;
+            background: rgba(0,0,0,0.3); cursor: pointer;
+            transition: all 0.3s; border: 2px solid transparent;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-row:active { border-color: #FFD700; transform: scale(0.98); }
+        .material-row.active-material { border-color: #FFD700; background: rgba(255,215,0,0.1); }
+        .material-icon { font-size: 40px; min-width: 50px; text-align: center; }
+        .material-info { flex: 1; }
+        .material-name { font-size: 16px; font-weight: 700; }
+        .material-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+        
+        .light-box {
+            width: 100%; height: 80px; background: rgba(0,0,0,0.5);
+            border-radius: 14px; position: relative; overflow: hidden;
+            margin-top: 8px; display: flex; align-items: center;
+        }
+        .light-source-dot {
+            position: absolute; left: 5%; top: 50%; transform: translateY(-50%);
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #FFD700; box-shadow: 0 0 25px 8px rgba(255,215,0,0.8);
+            z-index: 2;
+        }
+        .light-rays-container {
+            position: absolute; left: 12%; top: 0; width: 76%; height: 100%;
+            overflow: hidden;
+        }
+        .light-ray {
+            position: absolute; top: 50%; height: 3px;
+            background: linear-gradient(90deg, rgba(255,215,0,1), rgba(255,215,0,0.3));
+            border-radius: 2px; transform: translateY(-50%);
+            transition: all 0.6s ease;
+        }
+        .material-wall {
+            position: absolute; top: 10%; height: 80%; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 11px; transition: all 0.5s;
+            z-index: 1;
+        }
+        .exit-light {
+            position: absolute; right: 2%; top: 50%; transform: translateY(-50%);
+            transition: all 0.6s ease;
+        }
+
+        /* Mirror */
+        .mirror-canvas-container {
+            width: 100%; height: 300px;
+            background: rgba(0,0,0,0.4); border-radius: 14px;
+            position: relative; overflow: hidden;
+        }
+        .mirror-canvas { width: 100%; height: 100%; display: block; }
+        .mirror-info {
+            text-align: center; font-size: 14px; color: #FFD700; font-weight: 600;
+        }
+
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px; margin-top: 12px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 24px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 11px; font-weight: 700; color: #FFD700; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); }
+
+        @media (max-width: 600px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .canvas-container { height: 250px; }
+            .mirror-canvas-container { height: 220px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Physics Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Light Lab</span>
+            </div>
+            <div class="class-badge"><i class="fas fa-lightbulb"></i> Light Lab</div>
+        </div>
+
+        <div class="page-header">
+            <h1>💡 Light Lab</h1>
+            <p class="subtitle">✦ Explore Reflection, Ray Diagrams & Materials ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('raydiagram', this)"><i class="fas fa-draw-polygon"></i> Ray Diagram</button>
+            <button class="tab-btn" onclick="switchTab('materials', this)"><i class="fas fa-cube"></i> Materials</button>
+            <button class="tab-btn" onclick="switchTab('mirror', this)"><i class="fas fa-mirror"></i> Mirror Fun</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Learn</button>
+        </div>
+
+        <!-- Tab 1: Ray Diagram -->
+        <div class="tab-content active" id="tab-raydiagram">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-draw-polygon"></i></div>
+                        <div><div class="sim-card-title">Ray Diagram Tool</div><div class="sim-card-subtitle">Click presets or drag the light source dot</div></div>
+                    </div>
+                    <div class="canvas-container" id="rayContainer">
+                        <canvas id="rayCanvas" class="ray-canvas"></canvas>
+                    </div>
+                    <div class="angle-display" id="angleDisplay">∠i = 45° | ∠r = 45° | ∠i = ∠r ✓</div>
+                    <div class="ray-controls">
+                        <button class="ray-btn" onclick="setRayAngle(15)">15°</button>
+                        <button class="ray-btn" onclick="setRayAngle(30)">30°</button>
+                        <button class="ray-btn active-btn" onclick="setRayAngle(45)">45°</button>
+                        <button class="ray-btn" onclick="setRayAngle(60)">60°</button>
+                        <button class="ray-btn" onclick="setRayAngle(75)">75°</button>
+                        <button class="ray-btn" onclick="toggleNormalLine()">📐 Normal</button>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div><div class="sim-card-title">Laws of Reflection</div><div class="sim-card-subtitle">Two golden rules of reflection</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">1️⃣</div><div class="info-name">First Law</div><div class="info-desc">Angle of Incidence = Angle of Reflection (∠i = ∠r)</div></div>
+                        <div class="info-card"><div class="emoji">2️⃣</div><div class="info-name">Second Law</div><div class="info-desc">Incident ray, reflected ray & normal all lie in the SAME plane</div></div>
+                        <div class="info-card"><div class="emoji">📏</div><div class="info-name">Normal Line</div><div class="info-desc">Imaginary line perpendicular to the mirror at point of incidence</div></div>
+                        <div class="info-card"><div class="emoji">🪞</div><div class="info-name">Plane Mirror</div><div class="info-desc">Virtual, erect, same size, laterally inverted (left↔right)</div></div>
+                        <div class="info-card"><div class="emoji">🔍</div><div class="info-name">Concave Mirror</div><div class="info-desc">Curves inward. Can form real AND virtual images</div></div>
+                        <div class="info-card"><div class="emoji">🪞</div><div class="info-name">Convex Mirror</div><div class="info-desc">Curves outward. Always virtual, diminished, wide view</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Materials -->
+        <div class="tab-content" id="tab-materials">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-cube"></i></div>
+                        <div><div class="sim-card-title">Material Explorer</div><div class="sim-card-subtitle">Click a material to see how light behaves</div></div>
+                    </div>
+                    <div class="material-demo">
+                        <div class="material-row active-material" onclick="selectMaterial('transparent', this)">
+                            <div class="material-icon">🪟</div>
+                            <div class="material-info"><div class="material-name">Transparent</div><div class="material-desc">Light passes completely. Clear view. e.g., Glass, clean water</div></div>
+                        </div>
+                        <div class="material-row" onclick="selectMaterial('translucent', this)">
+                            <div class="material-icon">🧴</div>
+                            <div class="material-info"><div class="material-name">Translucent</div><div class="material-desc">Some light passes. Blurry view. e.g., Frosted glass, butter paper</div></div>
+                        </div>
+                        <div class="material-row" onclick="selectMaterial('opaque', this)">
+                            <div class="material-icon">🧱</div>
+                            <div class="material-info"><div class="material-name">Opaque</div><div class="material-desc">NO light passes. Forms shadow. e.g., Wood, metal, wall</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div><div class="sim-card-title" id="matTitle">Transparent Material</div><div class="sim-card-subtitle" id="matSub">Light passes through completely - objects clearly visible</div></div>
+                    </div>
+                    <div class="light-box" id="lightBox">
+                        <div class="light-source-dot"></div>
+                        <div class="light-rays-container">
+                            <div class="light-ray" id="lightRayBefore" style="left:0; width:35%;"></div>
+                            <div class="material-wall" id="materialWall" style="left:35%; width:8%; background:rgba(200,230,255,0.3); color:white;">Glass</div>
+                            <div class="light-ray" id="lightRayAfter" style="left:43%; width:55%;"></div>
+                        </div>
+                        <div class="exit-light" id="exitGlow" style="width:16px;height:16px;border-radius:50%;background:#FFD700;box-shadow:0 0 20px 8px rgba(255,215,0,0.7);"></div>
+                    </div>
+                    <p style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-top:8px;" id="matTip">
+                        💡 Examples: Glass window, clean water, air, clear plastic
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Mirror Fun -->
+        <div class="tab-content" id="tab-mirror">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-mirror"></i></div>
+                        <div><div class="sim-card-title">Multiple Reflections</div><div class="sim-card-subtitle">Two mirrors at an angle create multiple images</div></div>
+                    </div>
+                    <div class="mirror-canvas-container" id="mirrorContainer">
+                        <canvas id="mirrorCanvas" class="mirror-canvas"></canvas>
+                    </div>
+                    <div class="mirror-info" id="mirrorInfo">Angle: 60° | Images: 5 | n = 360/60 - 1 = 5</div>
+                    <div class="ray-controls">
+                        <button class="ray-btn" onclick="setMirrorAngle(90)">90° → 3 images</button>
+                        <button class="ray-btn active-btn" onclick="setMirrorAngle(60)">60° → 5 images</button>
+                        <button class="ray-btn" onclick="setMirrorAngle(45)">45° → 7 images</button>
+                        <button class="ray-btn" onclick="setMirrorAngle(30)">30° → 11 images</button>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-info-circle"></i></div>
+                        <div><div class="sim-card-title">Optical Devices</div><div class="sim-card-subtitle">Real-world applications of mirrors</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🔮</div><div class="info-name">Kaleidoscope</div><div class="info-desc">3 mirrors at 60° = beautiful symmetrical patterns</div></div>
+                        <div class="info-card"><div class="emoji">🔭</div><div class="info-name">Periscope</div><div class="info-desc">2 mirrors at 45° = see over walls/obstacles</div></div>
+                        <div class="info-card"><div class="emoji">👁️</div><div class="info-name">Human Eye</div><div class="info-desc">Cornea → Pupil → Lens → Retina (image formed)</div></div>
+                        <div class="info-card"><div class="emoji">🌈</div><div class="info-name">Dispersion</div><div class="info-desc">White light splits into 7 colors (VIBGYOR)</div></div>
+                        <div class="info-card"><div class="emoji">🚗</div><div class="info-name">Car Mirror</div><div class="info-desc">Convex mirror = wider field of view</div></div>
+                        <div class="info-card"><div class="emoji">🦷</div><div class="info-name">Dentist Mirror</div><div class="info-desc">Concave mirror = magnified view of teeth</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Learn -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div><div class="sim-card-title">Light Basics</div><div class="sim-card-subtitle">Key concepts about light for Class 8</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">⚡</div><div class="info-name">Speed of Light</div><div class="info-desc">300,000 km/s in vacuum. Fastest in the universe!</div></div>
+                        <div class="info-card"><div class="emoji">➡️</div><div class="info-name">Straight Line</div><div class="info-desc">Light travels in straight lines (rectilinear propagation)</div></div>
+                        <div class="info-card"><div class="emoji">🪞</div><div class="info-name">Reflection</div><div class="info-desc">Bouncing back of light from a shiny surface</div></div>
+                        <div class="info-card"><div class="emoji">👤</div><div class="info-name">Shadow</div><div class="info-desc">Dark area formed when opaque object blocks light</div></div>
+                        <div class="info-card"><div class="emoji">🌑</div><div class="info-name">Solar Eclipse</div><div class="info-desc">Moon comes between Sun and Earth</div></div>
+                        <div class="info-card"><div class="emoji">🌕</div><div class="info-name">Lunar Eclipse</div><div class="info-desc">Earth's shadow falls on the Moon</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (tabName === 'raydiagram') setTimeout(() => drawRayDiagram(currentRayAngle), 100);
+            if (tabName === 'mirror') setTimeout(() => drawMirrorDiagram(currentMirrorAngle), 100);
+        }
+
+        // ==================== RAY DIAGRAM ====================
+        let currentRayAngle = 45;
+        let showNormalLine = true;
+
+        function drawRayDiagram(angle) {
+            currentRayAngle = angle;
+            const canvas = document.getElementById('rayCanvas');
+            const container = document.getElementById('rayContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            const ctx = canvas.getContext('2d');
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const mirrorY = h * 0.55;
+            const mirrorX = w * 0.5;
+            const mirrorHalfWidth = w * 0.35;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Draw mirror
+            ctx.fillStyle = 'rgba(200,220,255,0.5)';
+            ctx.fillRect(mirrorX - mirrorHalfWidth, mirrorY - 4, mirrorHalfWidth * 2, 10);
+            ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(mirrorX - mirrorHalfWidth, mirrorY - 4, mirrorHalfWidth * 2, 10);
+            
+            // Hatch marks
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            for (let x = mirrorX - mirrorHalfWidth + 8; x < mirrorX + mirrorHalfWidth - 8; x += 14) {
+                ctx.fillRect(x, mirrorY + 8, 2, 10);
+            }
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillText('MIRROR', mirrorX + mirrorHalfWidth + 10, mirrorY + 5);
+            
+            // Normal line
+            if (showNormalLine) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.moveTo(mirrorX, mirrorY - h * 0.45);
+                ctx.lineTo(mirrorX, mirrorY + h * 0.2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.fillText('NORMAL', mirrorX + 6, mirrorY - h * 0.42);
+            }
+            
+            // Calculate ray positions
+            const rad = angle * Math.PI / 180;
+            const rayLen = Math.min(w * 0.42, h * 0.4);
+            
+            // Incident ray (coming from top-left toward mirror center)
+            const incStartX = mirrorX - rayLen * Math.cos(rad);
+            const incStartY = mirrorY - rayLen * Math.sin(rad);
+            
+            // Reflected ray (going top-right from mirror center)
+            const refEndX = mirrorX + rayLen * Math.cos(rad);
+            const refEndY = mirrorY - rayLen * Math.sin(rad);
+            
+            // Draw incident ray
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = 'rgba(255,215,0,0.7)';
+            ctx.beginPath();
+            ctx.moveTo(incStartX, incStartY);
+            ctx.lineTo(mirrorX, mirrorY);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Draw reflected ray
+            ctx.strokeStyle = '#FFA500';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = 'rgba(255,165,0,0.7)';
+            ctx.beginPath();
+            ctx.moveTo(mirrorX, mirrorY);
+            ctx.lineTo(refEndX, refEndY);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Arrow on incident ray
+            drawArrowHead(ctx, (incStartX + mirrorX) / 2, (incStartY + mirrorY) / 2, Math.PI + rad, '#FFD700');
+            // Arrow on reflected ray
+            drawArrowHead(ctx, (mirrorX + refEndX) / 2, (mirrorY + refEndY) / 2, -rad, '#FFA500');
+            
+            // Angle arcs
+            const arcR = 45;
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(mirrorX, mirrorY, arcR, -Math.PI/2, -Math.PI/2 - rad, true);
+            ctx.stroke();
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillText('∠i=' + angle + '°', mirrorX - arcR - 50, mirrorY - 22);
+            
+            ctx.strokeStyle = '#FFA500';
+            ctx.beginPath();
+            ctx.arc(mirrorX, mirrorY, arcR, -Math.PI/2, -Math.PI/2 + rad, false);
+            ctx.stroke();
+            ctx.fillStyle = '#FFA500';
+            ctx.fillText('∠r=' + angle + '°', mirrorX + 12, mirrorY - 22);
+            
+            // Light source dot
+            ctx.fillStyle = '#FFD700';
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = 'rgba(255,215,0,0.9)';
+            ctx.beginPath();
+            ctx.arc(incStartX, incStartY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'white';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillText('Light', incStartX - 20, incStartY - 14);
+            
+            document.getElementById('angleDisplay').textContent = 
+                '∠i = ' + angle + '° | ∠r = ' + angle + '° | ∠i = ∠r ✓';
+            
+            document.querySelectorAll('#tab-raydiagram .ray-btn').forEach(b => {
+                b.classList.remove('active-btn');
+                if (b.textContent.includes(angle + '°')) b.classList.add('active-btn');
+            });
+        }
+
+        function drawArrowHead(ctx, x, y, angle, color) {
+            const size = 10;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(size, 0);
+            ctx.lineTo(-size, -size/2);
+            ctx.lineTo(-size, size/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function setRayAngle(angle) { drawRayDiagram(angle); }
+        function toggleNormalLine() {
+            showNormalLine = !showNormalLine;
+            drawRayDiagram(currentRayAngle);
+        }
+
+        // ==================== MATERIAL EXPLORER ====================
+        function selectMaterial(type, row) {
+            document.querySelectorAll('.material-row').forEach(r => r.classList.remove('active-material'));
+            row.classList.add('active-material');
+            
+            const rayAfter = document.getElementById('lightRayAfter');
+            const wall = document.getElementById('materialWall');
+            const exitGlow = document.getElementById('exitGlow');
+            const matTitle = document.getElementById('matTitle');
+            const matSub = document.getElementById('matSub');
+            const matTip = document.getElementById('matTip');
+            
+            if (type === 'transparent') {
+                rayAfter.style.width = '55%';
+                rayAfter.style.opacity = '1';
+                wall.style.background = 'rgba(200,230,255,0.25)';
+                wall.style.color = 'white';
+                wall.textContent = 'Glass';
+                exitGlow.style.opacity = '1';
+                exitGlow.style.boxShadow = '0 0 20px 8px rgba(255,215,0,0.7)';
+                matTitle.textContent = 'Transparent Material';
+                matSub.textContent = 'Light passes through completely - objects clearly visible';
+                matTip.textContent = '💡 Examples: Glass window, clean water, air, clear plastic';
+            } else if (type === 'translucent') {
+                rayAfter.style.width = '55%';
+                rayAfter.style.opacity = '0.3';
+                wall.style.background = 'rgba(255,255,255,0.5)';
+                wall.style.color = '#333';
+                wall.textContent = 'Frosted';
+                exitGlow.style.opacity = '0.35';
+                exitGlow.style.boxShadow = '0 0 8px 3px rgba(255,215,0,0.3)';
+                matTitle.textContent = 'Translucent Material';
+                matSub.textContent = 'Some light passes through - objects appear blurry';
+                matTip.textContent = '💡 Examples: Frosted glass, butter paper, cloudy water, wax paper';
+            } else if (type === 'opaque') {
+                rayAfter.style.width = '55%';
+                rayAfter.style.opacity = '0';
+                wall.style.background = 'rgba(80,40,20,0.9)';
+                wall.style.color = '#ccc';
+                wall.textContent = 'Wood';
+                exitGlow.style.opacity = '0';
+                exitGlow.style.boxShadow = 'none';
+                matTitle.textContent = 'Opaque Material';
+                matSub.textContent = 'NO light passes through - a dark shadow forms behind';
+                matTip.textContent = '💡 Examples: Wood, metal, brick wall, book, cardboard';
+            }
+        }
+
+        // ==================== MIRROR DIAGRAM ====================
+        let currentMirrorAngle = 60;
+
+        function drawMirrorDiagram(angle) {
+            currentMirrorAngle = angle;
+            const canvas = document.getElementById('mirrorCanvas');
+            const container = document.getElementById('mirrorContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            const ctx = canvas.getContext('2d');
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w * 0.5;
+            const cy = h * 0.65;
+            const len = Math.min(w * 0.35, h * 0.45);
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const halfRad = (angle * Math.PI / 180) / 2;
+            
+            // Draw two mirrors forming a V shape
+            // Mirror 1 (left side, angled up-left)
+            const m1EndX = cx - len * Math.cos(halfRad);
+            const m1EndY = cy - len * Math.sin(halfRad);
+            
+            // Mirror 2 (right side, angled up-right)  
+            const m2EndX = cx + len * Math.cos(halfRad);
+            const m2EndY = cy - len * Math.sin(halfRad);
+            
+            // Draw mirror 1
+            ctx.strokeStyle = 'rgba(200,220,255,0.9)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(m1EndX, m1EndY);
+            ctx.stroke();
+            
+            // Draw mirror 2
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(m2EndX, m2EndY);
+            ctx.stroke();
+            
+            // Mirror labels
+            ctx.fillStyle = 'white';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillText('Mirror 1', m1EndX - 40, m1EndY - 8);
+            ctx.fillText('Mirror 2', m2EndX + 5, m2EndY - 8);
+            
+            // Object (small dot between mirrors, closer to vertex)
+            const objDist = len * 0.35;
+            const objX = cx;
+            const objY = cy - objDist;
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = 'rgba(255,215,0,0.9)';
+            ctx.beginPath();
+            ctx.arc(objX, objY, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Inter, sans-serif';
+            ctx.fillText('OBJECT', objX + 14, objY + 4);
+            
+            // Calculate number of images
+            const numImages = Math.floor(360 / angle) - 1;
+            
+            // Draw images in a circle around the vertex
+            const imageRadius = len * 0.55;
+            for (let i = 0; i < numImages; i++) {
+                // Position images symmetrically
+                const imgAngle = -Math.PI/2 - halfRad + ((i + 1) * (angle * Math.PI / 180) / (numImages + 1));
+                const imgX = cx + imageRadius * Math.cos(imgAngle);
+                const imgY = cy + imageRadius * Math.sin(imgAngle);
+                
+                // Only draw if within canvas
+                if (imgX > 15 && imgX < w - 15 && imgY > 15 && imgY < h - 15) {
+                    ctx.fillStyle = 'rgba(255,165,0,0.75)';
+                    ctx.beginPath();
+                    ctx.arc(imgX, imgY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.font = '9px Inter, sans-serif';
+                    ctx.fillText('I' + (i+1), imgX + 10, imgY + 3);
+                }
+            }
+            
+            // Angle label
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 16px Inter, sans-serif';
+            const labelX = cx - 55;
+            const labelY = cy + 22;
+            ctx.fillText(angle + '°', labelX, labelY);
+            
+            // Formula
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillText('Vertex', cx - 20, cy + 40);
+            
+            document.getElementById('mirrorInfo').textContent = 
+                'Angle: ' + angle + '° | Images: ' + numImages + ' | Formula: n = 360/' + angle + ' - 1 = ' + numImages;
+            
+            document.querySelectorAll('#tab-mirror .ray-btn').forEach(b => {
+                b.classList.remove('active-btn');
+                if (b.textContent.includes(angle + '°')) b.classList.add('active-btn');
+            });
+        }
+
+        function setMirrorAngle(angle) { drawMirrorDiagram(angle); }
+
+        // ==================== INIT ====================
+        window.addEventListener('load', () => {
+            drawRayDiagram(45);
+            selectMaterial('transparent', document.querySelector('.material-row.active-material'));
+            drawMirrorDiagram(60);
+        });
+
+        window.addEventListener('resize', () => {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab && activeTab.id === 'tab-raydiagram') drawRayDiagram(currentRayAngle);
+            if (activeTab && activeTab.id === 'tab-mirror') drawMirrorDiagram(currentMirrorAngle);
+        });
+    </script>
+</body>
+</html>
