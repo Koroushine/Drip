@@ -23,7 +23,6 @@
             min-height: 100vh;
             color: white;
             position: relative;
-            -webkit-overflow-scrolling: touch;
         }
 
         .bg-grid {
@@ -63,9 +62,7 @@
             min-height: 44px; min-width: 44px;
             -webkit-tap-highlight-color: transparent;
         }
-        .back-btn:active {
-            background: rgba(255,107,107,0.3); transform: scale(0.95);
-        }
+        .back-btn:active { background: rgba(255,107,107,0.3); transform: scale(0.95); }
         .breadcrumb {
             display: flex; align-items: center; gap: 10px; font-size: 15px;
             color: rgba(255,255,255,0.7);
@@ -73,10 +70,15 @@
         .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.3s; }
         .breadcrumb span:active { color: white; }
         .breadcrumb .current { color: #FF6B6B; font-weight: 600; }
-        .class-badge {
+        .subject-badge {
             background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
             padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
             margin-left: auto; box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(255,107,107,0.4); }
+            50% { box-shadow: 0 8px 30px rgba(255,107,107,0.7); }
         }
 
         /* Header */
@@ -116,9 +118,7 @@
             background: rgba(255,107,107,0.3); color: white;
             box-shadow: 0 4px 15px rgba(255,107,107,0.2);
         }
-        .tab-btn:active:not(.active) {
-            color: white; background: rgba(255,255,255,0.1);
-        }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.05); }
 
         /* Tab Content */
         .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
@@ -135,6 +135,10 @@
             background: var(--glass); backdrop-filter: blur(30px);
             border: 1px solid var(--glass-border); border-radius: var(--radius);
             padding: 28px; transition: all 0.3s;
+        }
+        .sim-card:hover {
+            border-color: rgba(255,107,107,0.4);
+            box-shadow: 0 12px 40px rgba(255,107,107,0.15);
         }
         .sim-card-header {
             display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
@@ -223,9 +227,8 @@
             margin-bottom: 8px; cursor: grab; font-size: 13px;
             transition: all 0.2s; display: flex; align-items: center; gap: 8px;
             -webkit-user-select: none; user-select: none;
-            -webkit-touch-callout: none;
         }
-        .draggable-item:active { background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.4); }
+        .draggable-item:hover { background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.4); }
         .draggable-item.dragging { opacity: 0.5; transform: scale(0.95); }
         .draggable-item.correct { border-color: #4ECDC4; background: rgba(78,205,196,0.15); cursor: default; }
         .draggable-item.wrong { border-color: #FF6B6B; background: rgba(255,107,107,0.2); animation: shake 0.5s; }
@@ -265,10 +268,7 @@
             .sim-cards { grid-template-columns: 1fr; }
             .sorter-container { flex-direction: column; }
             .page-header h1 { font-size: 28px; }
-            .tab-btn { font-size: 12px; padding: 10px 8px; }
-            .tab-btn i { display: none; }
-            .breadcrumb { font-size: 12px; }
-            .class-badge { font-size: 11px; padding: 6px 12px; margin-left: 0; }
+            .tab-btn { font-size: 13px; padding: 10px 12px; }
         }
     </style>
 </head>
@@ -286,11 +286,11 @@
             <div class="breadcrumb">
                 <span onclick="goHome()">Home</span>
                 <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-                <span onclick="goBack()">Physics Labs</span>
+                <span onclick="goBack()">Physics</span>
                 <i class="fas fa-chevron-right" style="font-size:12px;"></i>
                 <span class="current">Force & Pressure</span>
             </div>
-            <div class="class-badge"><i class="fas fa-hand-fist"></i> Force & Pressure Lab</div>
+            <div class="subject-badge"><i class="fas fa-hand-fist"></i> Force & Pressure Lab</div>
         </div>
 
         <!-- Page Header -->
@@ -361,10 +361,10 @@
                     <div class="info-cards">
                         <div class="info-card"><div class="emoji">🔪</div><div class="info-name">Sharp Knife</div><div class="info-desc">Small area = High pressure for easy cutting</div></div>
                         <div class="info-card"><div class="emoji">📌</div><div class="info-name">Drawing Pin</div><div class="info-desc">Sharp tip has tiny area = penetrates easily</div></div>
-                        <div class="info-card"><div class="emoji">🎿</div><div class="info-name">Snow Shoes</div><div class="info-desc">Large area = Low pressure = doesn't sink in snow</div></div>
-                        <div class="info-card"><div class="emoji">🐪</div><div class="info-name">Camel Feet</div><div class="info-desc">Wide feet spread weight = walk on sand easily</div></div>
+                        <div class="info-card"><div class="emoji">🎿</div><div class="info-name">Snow Shoes</div><div class="info-desc">Large area = Low pressure = doesn't sink</div></div>
+                        <div class="info-card"><div class="emoji">🐪</div><div class="info-name">Camel Feet</div><div class="info-desc">Wide feet spread weight = walk on sand</div></div>
                         <div class="info-card"><div class="emoji">🏗️</div><div class="info-name">Building Foundation</div><div class="info-desc">Wide base reduces pressure on ground</div></div>
-                        <div class="info-card"><div class="emoji">🪡</div><div class="info-name">Needle</div><div class="info-desc">Sharp point = high pressure to pierce fabric</div></div>
+                        <div class="info-card"><div class="emoji">🪡</div><div class="info-name">Needle</div><div class="info-desc">Sharp point = high pressure to pierce</div></div>
                     </div>
                 </div>
             </div>
@@ -411,14 +411,12 @@
                         </div>
                     </div>
                     <div class="info-cards">
-                        <div class="info-card"><div class="emoji">💪</div><div class="info-name">Force</div><div class="info-desc">A push or pull that changes the state of an object. SI Unit: Newton (N)</div></div>
-                        <div class="info-card"><div class="emoji">📐</div><div class="info-name">Pressure</div><div class="info-desc">Force per unit area. P = F/A. SI Unit: Pascal (Pa)</div></div>
-                        <div class="info-card"><div class="emoji">🤝</div><div class="info-name">Contact Force</div><div class="info-desc">Force that acts when objects are in physical contact. e.g., Friction, Muscular force</div></div>
-                        <div class="info-card"><div class="emoji">🧲</div><div class="info-name">Non-Contact Force</div><div class="info-desc">Force that acts without physical contact. e.g., Gravity, Magnetic, Electrostatic</div></div>
-                        <div class="info-card"><div class="emoji">🌍</div><div class="info-name">Gravitational Force</div><div class="info-desc">Attraction between any two masses. Earth pulls everything toward its center</div></div>
-                        <div class="info-card"><div class="emoji">⚡</div><div class="info-name">Electrostatic Force</div><div class="info-desc">Force between charged objects. Like charges repel, unlike charges attract</div></div>
-                        <div class="info-card"><div class="emoji">🧲</div><div class="info-name">Magnetic Force</div><div class="info-desc">Attraction or repulsion between magnets. Like poles repel, unlike poles attract</div></div>
-                        <div class="info-card"><div class="emoji">💪</div><div class="info-name">Muscular Force</div><div class="info-desc">Force generated by muscles. Used in lifting, pushing, pulling, and walking</div></div>
+                        <div class="info-card"><div class="emoji">💪</div><div class="info-name">Force</div><div class="info-desc">A push or pull. SI Unit: Newton (N)</div></div>
+                        <div class="info-card"><div class="emoji">📐</div><div class="info-name">Pressure</div><div class="info-desc">Force per unit area. P = F/A. Unit: Pascal (Pa)</div></div>
+                        <div class="info-card"><div class="emoji">🤝</div><div class="info-name">Contact Force</div><div class="info-desc">Acts when objects touch. e.g., Friction</div></div>
+                        <div class="info-card"><div class="emoji">🧲</div><div class="info-name">Non-Contact</div><div class="info-desc">Acts without touch. e.g., Gravity, Magnetic</div></div>
+                        <div class="info-card"><div class="emoji">🌍</div><div class="info-name">Gravity</div><div class="info-desc">Earth pulls everything toward its center</div></div>
+                        <div class="info-card"><div class="emoji">⚡</div><div class="info-name">Electrostatic</div><div class="info-desc">Force between charged objects</div></div>
                     </div>
                 </div>
             </div>
@@ -428,14 +426,11 @@
     <script>
         // ============ NAVIGATION ============
         function goBack() {
-            document.body.style.transition = 'opacity 0.4s';
-            document.body.style.opacity = '0';
-            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'physics_hub.html'; }, 400);
         }
-
         function goHome() {
-            document.body.style.transition = 'opacity 0.4s';
-            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
             setTimeout(() => { window.location.href = 'index.html'; }, 400);
         }
 
@@ -443,7 +438,6 @@
         function switchTab(tabName, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
             document.getElementById('tab-' + tabName).classList.add('active');
             if (btn) btn.classList.add('active');
         }
@@ -457,8 +451,7 @@
             document.getElementById('forceValue').textContent = force + ' N';
             document.getElementById('areaValue').textContent = area + ' m²';
             document.getElementById('pressureResult').textContent = pressure;
-            document.getElementById('formulaDisplay').textContent = 
-                `P = ${force}N ÷ ${area}m² = ${pressure} Pa`;
+            document.getElementById('formulaDisplay').textContent = `P = ${force}N ÷ ${area}m² = ${pressure} Pa`;
             
             const blockHeight = Math.min(90, Math.max(10, (force / area) * 3));
             const block = document.getElementById('visualBlock');
@@ -527,70 +520,39 @@
             initSorter();
         }
 
-        // Mouse events
-        function allowDrop(e) {
-            e.preventDefault();
-            const bucket = e.target.closest('.sort-bucket');
-            if (bucket) bucket.classList.add('highlight');
-        }
-
-        function drag(e) {
-            e.target.classList.add('dragging');
-            e.dataTransfer.setData('text', e.target.id);
-        }
-
-        function dragEnd(e) {
-            e.target.classList.remove('dragging');
-            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
-        }
-
+        function allowDrop(e) { e.preventDefault(); }
+        function drag(e) { e.target.classList.add('dragging'); e.dataTransfer.setData('text', e.target.id); }
+        function dragEnd(e) { e.target.classList.remove('dragging'); }
         function drop(e, category) {
             e.preventDefault();
-            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
             const itemId = e.dataTransfer.getData('text');
-            if (!itemId) return;
-            processDrop(itemId, category);
+            if (itemId) processDrop(itemId, category);
         }
 
-        // Touch events
         function touchStart(e) {
-            if (e.target.closest('button') || e.target.closest('a')) {
-                return;
-            }
-            
+            if (e.target.closest('button')) return;
             selectedItem = e.target.closest('.draggable-item');
             if (selectedItem && selectedItem.parentElement.id === 'draggableItems') {
                 e.preventDefault();
                 selectedItem.classList.add('dragging');
                 selectedItem.style.opacity = '0.6';
-                selectedItem.style.transform = 'scale(1.05)';
                 selectedItem.style.zIndex = '1000';
             }
         }
-
         function touchMove(e) {
             if (!selectedItem) return;
             e.preventDefault();
-            
             const touch = e.touches[0];
             selectedItem.style.position = 'fixed';
             selectedItem.style.left = (touch.clientX - 80) + 'px';
             selectedItem.style.top = (touch.clientY - 20) + 'px';
             selectedItem.style.width = '160px';
             selectedItem.style.pointerEvents = 'none';
-            
-            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
-            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-            const bucket = elemBelow?.closest('.sort-bucket');
-            if (bucket) bucket.classList.add('highlight');
         }
-
         function touchEnd(e) {
             if (!selectedItem) return;
-            
             selectedItem.classList.remove('dragging');
             selectedItem.style.opacity = '1';
-            selectedItem.style.transform = '';
             selectedItem.style.position = '';
             selectedItem.style.left = '';
             selectedItem.style.top = '';
@@ -598,32 +560,25 @@
             selectedItem.style.pointerEvents = '';
             selectedItem.style.zIndex = '';
             
-            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
-            
             const touch = e.changedTouches[0];
             const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
             const bucket = elemBelow?.closest('.sort-bucket');
-            
             if (bucket) {
                 let category = '';
                 if (bucket.id === 'contactBucket' || bucket.id === 'contactDropped') category = 'contact';
                 if (bucket.id === 'nonContactBucket' || bucket.id === 'nonContactDropped') category = 'noncontact';
                 if (category) processDrop(selectedItem.id, category);
             }
-            
             selectedItem = null;
         }
 
         function processDrop(itemId, category) {
             const item = document.getElementById(itemId);
             if (!item) return;
-            
             if (item.parentElement.id === 'contactDropped' || item.parentElement.id === 'nonContactDropped') return;
             
             const correctCategory = item.dataset.category;
-            const dropTarget = category === 'contact' ? 
-                document.getElementById('contactDropped') : 
-                document.getElementById('nonContactDropped');
+            const dropTarget = category === 'contact' ? document.getElementById('contactDropped') : document.getElementById('nonContactDropped');
             
             dropTarget.appendChild(item);
             item.draggable = false;
@@ -632,41 +587,25 @@
             item.style.left = '';
             item.style.top = '';
             item.style.opacity = '1';
-            item.style.transform = '';
-            item.style.zIndex = '';
             
             if (correctCategory === category) {
-                item.classList.add('correct');
-                item.classList.remove('wrong');
-                score++;
+                item.classList.add('correct'); item.classList.remove('wrong'); score++;
             } else {
-                item.classList.add('wrong');
-                item.classList.remove('correct');
+                item.classList.add('wrong'); item.classList.remove('correct');
                 setTimeout(() => item.classList.remove('wrong'), 500);
             }
             
             document.getElementById('scoreDisplay').textContent = '✅ Score: ' + score + ' / ' + totalItems;
-            
             if (score === totalItems) {
-                document.getElementById('scoreDisplay').textContent = '🎉 Perfect! All Correct! 10 / 10 🎉';
+                document.getElementById('scoreDisplay').textContent = '🎉 Perfect! 10 / 10 🎉';
                 document.getElementById('scoreDisplay').style.color = '#FFD700';
             }
         }
 
-        // ============ INITIALIZATION ============
+        // ============ INIT ============
         window.addEventListener('load', () => {
             updateCalculator();
             initSorter();
-            
-            document.querySelectorAll('.sort-bucket').forEach(bucket => {
-                bucket.addEventListener('dragenter', function(e) {
-                    e.preventDefault();
-                    this.classList.add('highlight');
-                });
-                bucket.addEventListener('dragleave', function(e) {
-                    this.classList.remove('highlight');
-                });
-            });
         });
     </script>
 </body>

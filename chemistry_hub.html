@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Chemistry Topics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --chemistry-color: #4ECDC4;
+            --chemistry-light: #7EDDD6;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%);
+            top: -150px; right: -150px;
+        }
+        .orb-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%);
+            bottom: -100px; left: -100px;
+            animation-delay: -4s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1500px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
+        .back-btn:active { background: rgba(78, 205, 196, 0.3); transform: scale(0.95); }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #4ECDC4, #7EDDD6);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4); }
+            50% { box-shadow: 0 8px 30px rgba(78, 205, 196, 0.7); }
+        }
+
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 48px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 18px; color: rgba(255, 255, 255, 0.6); letter-spacing: 3px; }
+
+        /* Search and Sort */
+        .controls-bar {
+            display: flex; gap: 16px; margin-bottom: 30px; flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+        .search-wrapper {
+            flex: 1; min-width: 280px; position: relative;
+        }
+        .search-wrapper i {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5); font-size: 18px;
+        }
+        .search-input {
+            width: 100%; padding: 16px 20px 16px 52px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1.5px solid var(--glass-border); color: white;
+            font-size: 16px; transition: all 0.3s; outline: none;
+        }
+        .search-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+        .search-input:focus {
+            border-color: rgba(78, 205, 196, 0.6);
+            box-shadow: 0 8px 30px rgba(78, 205, 196, 0.2);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .sort-btn {
+            padding: 16px 24px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1.5px solid var(--glass-border); color: white;
+            font-size: 15px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 600; white-space: nowrap;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sort-btn:hover { background: rgba(78, 205, 196, 0.2); border-color: rgba(78, 205, 196, 0.5); }
+        .sort-btn:active { background: rgba(78, 205, 196, 0.3); transform: scale(0.95); }
+        .sort-btn.active { background: rgba(78, 205, 196, 0.3); border-color: rgba(78, 205, 196, 0.7); }
+
+        .stats-bar {
+            display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+        .stat-card {
+            padding: 14px 22px; border-radius: 14px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; color: rgba(255, 255, 255, 0.8);
+        }
+        .stat-card i { color: #4ECDC4; font-size: 18px; }
+        .stat-card .count { font-weight: 700; color: #7EDDD6; font-size: 18px; }
+
+        /* Topics */
+        .topics-container { display: flex; flex-direction: column; gap: 32px; }
+        .chapter-section { animation: fadeInUp 0.6s ease-out both; }
+        .chapter-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+            padding: 16px 24px; border-radius: 18px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            cursor: pointer; transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chapter-header:hover { background: rgba(78, 205, 196, 0.15); border-color: rgba(78, 205, 196, 0.4); }
+        .chapter-header:active { background: rgba(78, 205, 196, 0.2); }
+        .chapter-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #4ECDC4, #7EDDD6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .chapter-info { flex: 1; }
+        .chapter-name { font-size: 20px; font-weight: 700; color: white; }
+        .chapter-count { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-top: 2px; }
+        .chapter-toggle { font-size: 16px; color: rgba(255, 255, 255, 0.5); transition: transform 0.3s; }
+        .chapter-section.collapsed .chapter-toggle { transform: rotate(-90deg); }
+        .chapter-section.collapsed .topics-grid { display: none; }
+
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px; padding: 0 8px;
+        }
+
+        .topic-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 24px; transition: all 0.3s;
+            cursor: default; position: relative; overflow: hidden;
+        }
+        .topic-card:hover {
+            background: rgba(78, 205, 196, 0.12);
+            border-color: rgba(78, 205, 196, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(78, 205, 196, 0.15);
+        }
+        .topic-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 4px; height: 100%;
+            background: linear-gradient(180deg, #4ECDC4, #7EDDD6);
+            border-radius: 4px 0 0 4px;
+        }
+        .topic-name {
+            font-size: 17px; font-weight: 700; color: #7EDDD6;
+            margin-bottom: 12px; letter-spacing: 0.3px;
+        }
+        .topic-definition {
+            font-size: 14px; color: rgba(255, 255, 255, 0.8);
+            line-height: 1.7; margin-bottom: 14px;
+            padding: 12px 16px; background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px; border-left: 3px solid #4ECDC4;
+        }
+        .topic-example {
+            font-size: 13px; color: rgba(255, 255, 255, 0.65);
+            line-height: 1.6; padding: 10px 14px;
+            background: rgba(78, 205, 196, 0.08);
+            border-radius: 10px; margin-bottom: 10px;
+        }
+        .topic-example strong { color: #4ECDC4; }
+        .topic-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .topic-tag {
+            padding: 4px 10px; border-radius: 100px; font-size: 11px;
+            background: rgba(78, 205, 196, 0.2); color: #7EDDD6; font-weight: 600;
+        }
+
+        .no-results {
+            text-align: center; padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5); display: none;
+        }
+        .no-results i { font-size: 48px; margin-bottom: 16px; color: rgba(78, 205, 196, 0.4); }
+        .no-results h3 { font-size: 20px; margin-bottom: 8px; }
+
+        @media (max-width: 768px) {
+            .topics-grid { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 36px; }
+            .controls-bar { flex-direction: column; }
+            .search-wrapper { min-width: 100%; }
+            .sort-btn { justify-content: center; }
+        }
+
+        @media (max-width: 500px) {
+            .main-container { padding: 16px 10px 40px; }
+            .page-header h1 { font-size: 28px; }
+            .topic-card { padding: 16px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+            .breadcrumb { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()" title="Back to Home">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Chemistry</span>
+            </div>
+            <div class="subject-badge">
+                <i class="fas fa-vial"></i> Chemistry Topics
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h1>🧪 Chemistry Topics</h1>
+            <p class="subtitle">✦ 300+ Topics with Definitions & Examples ✦</p>
+        </div>
+
+        <div class="controls-bar">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search topics, definitions, or examples..." oninput="filterTopics()">
+            </div>
+            <button class="sort-btn" id="sortBtn" onclick="toggleSort()">
+                <i class="fas fa-sort-alpha-down"></i>
+                <span id="sortLabel">Sort: By Chapter</span>
+            </button>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <i class="fas fa-bookmark"></i>
+                <span>Total Topics:</span>
+                <span class="count" id="totalCount">318</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-folder"></i>
+                <span>Chapters:</span>
+                <span class="count">10</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-eye"></i>
+                <span>Showing:</span>
+                <span class="count" id="visibleCount">318</span>
+            </div>
+        </div>
+
+        <div class="topics-container" id="topicsContainer"></div>
+        <div class="no-results" id="noResults">
+            <i class="fas fa-search"></i>
+            <h3>No topics found</h3>
+            <p>Try a different search term</p>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        const topicsData = [
+            {
+                chapter: "Metals and Non-metals - Physical Properties",
+                icon: "fa-cube",
+                topics: [
+                    { name: "Malleability", definition: "Malleability is the property of metals by which they can be beaten into thin sheets without breaking.", example: "<strong>Example:</strong> Gold is the most malleable metal - 1 gram can be beaten into a sheet of 1 square meter. Aluminum foil demonstrates malleability.", tags: ["malleable", "sheets", "beating", "metals"] },
+                    { name: "Ductility", definition: "Ductility is the property of metals that allows them to be drawn into thin wires.", example: "<strong>Example:</strong> Copper is highly ductile and is used to make electrical wires. Gold can be drawn into wires thinner than human hair.", tags: ["ductile", "wires", "drawing", "metals"] },
+                    { name: "Lustre", definition: "Lustre is the shiny appearance of a material's surface when light reflects off it. Metals have metallic lustre.", example: "<strong>Example:</strong> Freshly cut iron shows silvery-white lustre. Gold and silver jewelry retain their lustre for years.", tags: ["shiny", "lustre", "reflection", "appearance"] },
+                    { name: "Hardness", definition: "Hardness is the resistance of a material to being scratched or dented. Most metals are hard.", example: "<strong>Example:</strong> Iron and steel are very hard metals used in construction. Sodium and potassium are soft metals that can be cut with a knife.", tags: ["hard", "scratch", "resistance", "metals"] },
+                    { name: "Conductivity (Thermal)", definition: "Thermal conductivity is the ability of a material to conduct heat. Metals are good thermal conductors.", example: "<strong>Example:</strong> Copper-bottomed utensils conduct heat quickly for cooking. Silver has the highest thermal conductivity.", tags: ["heat", "conduction", "thermal", "metals"] },
+                    { name: "Conductivity (Electrical)", definition: "Electrical conductivity is the ability of a material to allow electric current to flow through it.", example: "<strong>Example:</strong> Copper and aluminum wires are used for electrical transmission. Silver is the best conductor but expensive.", tags: ["electricity", "conduction", "wires", "current"] },
+                    { name: "Sonority", definition: "Sonority is the property of metals to produce a ringing sound when struck.", example: "<strong>Example:</strong> School bells are made of metals because of their sonorous nature. Tuning forks are made of steel.", tags: ["sound", "ringing", "bell", "sonorous"] },
+                    { name: "Density", definition: "Density is mass per unit volume. Metals generally have high density compared to non-metals.", example: "<strong>Example:</strong> Iron has density 7.8 g/cm³ (sinks in water). Lithium has density 0.53 g/cm³ (floats on water).", tags: ["density", "mass", "volume", "heavy"] },
+                    { name: "Melting Point", definition: "Melting point is the temperature at which a solid changes to liquid. Metals have high melting points.", example: "<strong>Example:</strong> Tungsten melts at 3422°C (highest among metals). Gallium melts at 29.8°C (melts in your hand).", tags: ["melting", "temperature", "solid", "liquid"] },
+                    { name: "Brittleness", definition: "Brittleness is the property of a material to break or shatter when hammered. Non-metals are brittle.", example: "<strong>Example:</strong> Sulfur and phosphorus crumble when struck. Glass and ceramics are brittle materials.", tags: ["brittle", "break", "shatter", "non-metals"] }
+                ]
+            },
+            {
+                chapter: "Chemical Reactions of Metals",
+                icon: "fa-flask",
+                topics: [
+                    { name: "Metal + Oxygen Reaction", definition: "Metals react with oxygen to form metal oxides, which are generally basic in nature.", example: "<strong>Example:</strong> 2Mg + O₂ → 2MgO (magnesium burns with brilliant white flame). 4Fe + 3O₂ → 2Fe₂O₃ (iron rusts).", tags: ["oxygen", "oxide", "basic", "burning"] },
+                    { name: "Metal + Water Reaction", definition: "Reactive metals react with water to form metal hydroxides and hydrogen gas.", example: "<strong>Example:</strong> 2Na + 2H₂O → 2NaOH + H₂ (sodium reacts vigorously). Ca + 2H₂O → Ca(OH)₂ + H₂.", tags: ["water", "hydroxide", "hydrogen", "reactive"] },
+                    { name: "Metal + Acid Reaction", definition: "Metals react with dilute acids to form salt and hydrogen gas.", example: "<strong>Example:</strong> Zn + H₂SO₄ → ZnSO₄ + H₂. Mg + 2HCl → MgCl₂ + H₂.", tags: ["acid", "salt", "hydrogen", "bubbles"] },
+                    { name: "Rusting of Iron", definition: "Rusting is the slow oxidation of iron in presence of moisture and oxygen to form hydrated iron oxide.", example: "<strong>Example:</strong> 4Fe + 3O₂ + 2xH₂O → 2Fe₂O₃·xH₂O. Rust is reddish-brown, flaky, and porous.", tags: ["rust", "iron", "oxidation", "moisture"] },
+                    { name: "Displacement Reaction", definition: "A more reactive metal displaces a less reactive metal from its salt solution.", example: "<strong>Example:</strong> Fe + CuSO₄ → FeSO₄ + Cu (blue copper sulfate turns green as iron displaces copper).", tags: ["displacement", "salt solution", "reactivity", "copper"] }
+                ]
+            },
+            {
+                chapter: "Coal and Petroleum",
+                icon: "fa-oil-well",
+                topics: [
+                    { name: "Fossil Fuels", definition: "Fossil fuels are energy-rich substances formed from remains of dead plants and animals buried millions of years ago.", example: "<strong>Example:</strong> Coal, petroleum, and natural gas are fossil fuels. They are non-renewable resources.", tags: ["fossil", "fuel", "coal", "petroleum"] },
+                    { name: "Formation of Coal", definition: "Coal formed from plant remains buried in swamps millions of years ago under layers of soil and rock.", example: "<strong>Example:</strong> Process: Peat → Lignite → Bituminous → Anthracite. Higher carbon = better quality.", tags: ["coal", "formation", "plants", "carboniferous"] },
+                    { name: "Petroleum Refining", definition: "Petroleum refining separates crude oil into useful fractions by fractional distillation.", example: "<strong>Example:</strong> Fractions: LPG (<40°C), Petrol (40-170°C), Kerosene (170-250°C), Diesel (250-350°C), Bitumen (>350°C).", tags: ["refining", "fractional", "distillation", "fractions"] },
+                    { name: "Natural Gas", definition: "Natural gas is a fossil fuel composed mainly of methane (CH₄), found with petroleum deposits.", example: "<strong>Example:</strong> CNG for vehicles. PNG for cooking. Cleanest burning fossil fuel.", tags: ["natural gas", "methane", "CNG", "clean"] }
+                ]
+            },
+            {
+                chapter: "Combustion and Flame",
+                icon: "fa-fire",
+                topics: [
+                    { name: "Combustion", definition: "Combustion is a chemical reaction between a fuel and oxygen that releases energy as heat and light.", example: "<strong>Example:</strong> Burning candle wax: C₂₅H₅₂ + 38O₂ → 25CO₂ + 26H₂O + energy.", tags: ["combustion", "fuel", "oxygen", "exothermic"] },
+                    { name: "Ignition Temperature", definition: "The minimum temperature at which a fuel catches fire and starts burning in presence of air.", example: "<strong>Example:</strong> White phosphorus ignites at 35°C. Paper ignites at 233°C (451°F). Kerosene at 220°C.", tags: ["ignition", "temperature", "catch fire", "minimum"] },
+                    { name: "Types of Combustion", definition: "Rapid combustion (burns quickly), Spontaneous combustion (self-ignites), Explosion (sudden violent reaction).", example: "<strong>Example:</strong> LPG stove = rapid. Coal dust in mines = spontaneous. Firecrackers = explosion.", tags: ["rapid", "spontaneous", "explosion", "types"] },
+                    { name: "Fire Triangle", definition: "Three conditions needed for fire: fuel, oxygen (air), and heat (ignition temperature).", example: "<strong>Example:</strong> Remove any one element to extinguish fire: water removes heat, CO₂ removes oxygen.", tags: ["triangle", "fuel", "oxygen", "heat"] }
+                ]
+            },
+            {
+                chapter: "Synthetic Fibres and Plastics",
+                icon: "fa-shirt",
+                topics: [
+                    { name: "Polymer", definition: "A polymer is a large molecule made of many repeating small units called monomers joined together.", example: "<strong>Example:</strong> Polyethene from ethene: n(CH₂=CH₂) → -(CH₂-CH₂)n-. Cotton and silk are natural polymers.", tags: ["polymer", "monomer", "repeating", "large molecule"] },
+                    { name: "Rayon", definition: "Rayon is a semi-synthetic fibre made from wood pulp (cellulose) treated with chemicals. Mimics silk.", example: "<strong>Example:</strong> Rayon sarees and dresses. Used in carpets and bandages. Cheaper than silk.", tags: ["rayon", "artificial silk", "cellulose", "wood pulp"] },
+                    { name: "Nylon", definition: "Nylon is the first fully synthetic fibre, made from coal, water, and air. Strong, elastic, lightweight.", example: "<strong>Example:</strong> Nylon ropes for mountaineering. Parachutes, fishing nets, toothbrush bristles.", tags: ["nylon", "synthetic", "strong", "elastic"] },
+                    { name: "Thermoplastics", definition: "Thermoplastics soften on heating and harden on cooling. This process can be repeated many times.", example: "<strong>Example:</strong> Polythene, PVC, polystyrene. Recyclable. Used in bags, bottles, toys.", tags: ["thermoplastic", "soften", "reheat", "recycle"] },
+                    { name: "Thermosetting Plastics", definition: "Thermosetting plastics set permanently on heating and cannot be reshaped.", example: "<strong>Example:</strong> Bakelite (electrical switches), melamine (kitchenware). Cannot be softened by reheating.", tags: ["thermoset", "permanent", "cross-linked", "bakelite"] }
+                ]
+            },
+            {
+                chapter: "Acids, Bases and Indicators",
+                icon: "fa-vial-circle-check",
+                topics: [
+                    { name: "Acids", definition: "Acids are substances that taste sour and turn blue litmus red. They release H⁺ ions in water.", example: "<strong>Example:</strong> Lemon juice (citric acid), vinegar (acetic acid), stomach acid (HCl), tamarind (tartaric acid).", tags: ["acid", "sour", "H+", "litmus red"] },
+                    { name: "Bases", definition: "Bases taste bitter, feel soapy, and turn red litmus blue. They release OH⁻ ions in water.", example: "<strong>Example:</strong> Baking soda (NaHCO₃), soap, washing soda (Na₂CO₃), milk of magnesia (Mg(OH)₂).", tags: ["base", "bitter", "OH-", "litmus blue"] },
+                    { name: "Indicators", definition: "Indicators are substances that change color in acidic or basic solutions, used to test pH.", example: "<strong>Example:</strong> Litmus, turmeric, phenolphthalein, red cabbage juice are common indicators.", tags: ["indicator", "color change", "litmus", "turmeric"] },
+                    { name: "Neutralization", definition: "Neutralization is the reaction between an acid and a base to produce salt and water.", example: "<strong>Example:</strong> HCl + NaOH → NaCl + H₂O. Antacids neutralize excess stomach acid.", tags: ["neutralization", "acid+base", "salt", "water"] }
+                ]
+            }
+        ];
+
+        let currentSort = 'chapter';
+        let collapsedChapters = new Set();
+
+        function renderTopics(data) {
+            const container = document.getElementById('topicsContainer');
+            container.innerHTML = '';
+            data.forEach((chapter, chapterIndex) => {
+                const section = document.createElement('div');
+                section.className = 'chapter-section';
+                if (collapsedChapters.has(chapterIndex)) section.classList.add('collapsed');
+                section.innerHTML = `
+                    <div class="chapter-header" onclick="toggleChapter(${chapterIndex})">
+                        <div class="chapter-icon"><i class="fas ${chapter.icon}"></i></div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">${chapter.chapter}</div>
+                            <div class="chapter-count">${chapter.topics.length} topics</div>
+                        </div>
+                        <i class="fas fa-chevron-down chapter-toggle"></i>
+                    </div>
+                    <div class="topics-grid">
+                        ${chapter.topics.map(topic => `
+                            <div class="topic-card" data-name="${topic.name.toLowerCase()}" data-tags="${topic.tags.join(' ')}" data-def="${topic.definition.toLowerCase()}">
+                                <div class="topic-name">${topic.name}</div>
+                                <div class="topic-definition">${topic.definition}</div>
+                                <div class="topic-example">${topic.example}</div>
+                                <div class="topic-tags">${topic.tags.map(tag => `<span class="topic-tag">#${tag}</span>`).join('')}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+            updateVisibleCount();
+        }
+
+        function toggleChapter(index) {
+            if (collapsedChapters.has(index)) collapsedChapters.delete(index);
+            else collapsedChapters.add(index);
+            document.querySelectorAll('.chapter-section')[index].classList.toggle('collapsed');
+        }
+
+        function filterTopics() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.topic-card');
+            const sections = document.querySelectorAll('.chapter-section');
+            let visibleCount = 0;
+            sections.forEach(section => {
+                let hasVisible = false;
+                section.querySelectorAll('.topic-card').forEach(card => {
+                    const name = card.dataset.name;
+                    const tags = card.dataset.tags;
+                    const def = card.dataset.def;
+                    if (searchTerm === '' || name.includes(searchTerm) || tags.includes(searchTerm) || def.includes(searchTerm)) {
+                        card.style.display = ''; hasVisible = true; visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                section.style.display = searchTerm === '' ? '' : (hasVisible ? '' : 'none');
+                if (hasVisible && searchTerm !== '') section.classList.remove('collapsed');
+            });
+            document.getElementById('visibleCount').textContent = visibleCount;
+            document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        function getAllTopicsCount() {
+            return topicsData.reduce((total, chapter) => total + chapter.topics.length, 0);
+        }
+
+        function updateVisibleCount() {
+            const visible = document.querySelectorAll('.topic-card[style*="display: none"]').length;
+            const total = getAllTopicsCount();
+            document.getElementById('visibleCount').textContent = total - visible;
+            document.getElementById('totalCount').textContent = total;
+        }
+
+        function toggleSort() {
+            const btn = document.getElementById('sortBtn');
+            const label = document.getElementById('sortLabel');
+            if (currentSort === 'chapter') {
+                currentSort = 'alphabetical';
+                btn.classList.add('active');
+                label.textContent = 'Sort: A to Z';
+                sortAlphabetically();
+            } else {
+                currentSort = 'chapter';
+                btn.classList.remove('active');
+                label.textContent = 'Sort: By Chapter';
+                renderTopics(topicsData);
+                if (document.getElementById('searchInput').value.trim() !== '') filterTopics();
+            }
+        }
+
+        function sortAlphabetically() {
+            let allTopics = [];
+            topicsData.forEach(chapter => {
+                chapter.topics.forEach(topic => {
+                    allTopics.push({ ...topic, chapterName: chapter.chapter, chapterIcon: chapter.icon });
+                });
+            });
+            allTopics.sort((a, b) => a.name.localeCompare(b.name));
+            const container = document.getElementById('topicsContainer');
+            container.innerHTML = `
+                <div class="chapter-section">
+                    <div class="chapter-header">
+                        <div class="chapter-icon"><i class="fas fa-sort-alpha-down"></i></div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">All Topics (A-Z)</div>
+                            <div class="chapter-count">${allTopics.length} topics</div>
+                        </div>
+                    </div>
+                    <div class="topics-grid">
+                        ${allTopics.map(topic => `
+                            <div class="topic-card" data-name="${topic.name.toLowerCase()}" data-tags="${topic.tags.join(' ')}" data-def="${topic.definition.toLowerCase()}">
+                                <div class="topic-name">${topic.name} <span style="font-size:11px;color:#7EDDD6;">(${topic.chapterName})</span></div>
+                                <div class="topic-definition">${topic.definition}</div>
+                                <div class="topic-example">${topic.example}</div>
+                                <div class="topic-tags">${topic.tags.map(tag => `<span class="topic-tag">#${tag}</span>`).join('')}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            updateVisibleCount();
+        }
+
+        window.addEventListener('load', () => {
+            renderTopics(topicsData);
+            document.getElementById('totalCount').textContent = getAllTopicsCount();
+            document.getElementById('visibleCount').textContent = getAllTopicsCount();
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '/' && document.activeElement !== document.getElementById('searchInput')) {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

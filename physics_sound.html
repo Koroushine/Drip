@@ -75,7 +75,7 @@
         .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.3s; }
         .breadcrumb span:active { color: white; }
         .breadcrumb .current { color: #FF9800; font-weight: 600; }
-        .class-badge {
+        .subject-badge {
             background: linear-gradient(135deg, #FF9800, #FFB74D);
             padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
             margin-left: auto; box-shadow: 0 4px 15px rgba(255,152,0,0.4);
@@ -337,11 +337,11 @@
             <div class="breadcrumb">
                 <span onclick="goHome()">Home</span>
                 <i class="fas fa-chevron-right" style="font-size:12px;"></i>
-                <span onclick="goBack()">Physics Labs</span>
+                <span onclick="goBack()">Physics</span>
                 <i class="fas fa-chevron-right" style="font-size:12px;"></i>
                 <span class="current">Sound Studio</span>
             </div>
-            <div class="class-badge"><i class="fas fa-volume-high"></i> Sound Studio</div>
+            <div class="subject-badge"><i class="fas fa-volume-high"></i> Sound Studio</div>
         </div>
 
         <!-- Page Header -->
@@ -594,7 +594,7 @@
         function goBack() {
             document.body.style.transition = 'opacity 0.4s';
             document.body.style.opacity = '0';
-            setTimeout(() => { window.location.href = '8_physics.html'; }, 400);
+            setTimeout(() => { window.location.href = 'physics_hub.html'; }, 400);
         }
 
         function goHome() {
