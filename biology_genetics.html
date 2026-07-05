@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Genetics Lab</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bio-color: #45B7AA;
+            --bio-light: #6FD4C5;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a15 60%, #150a20 100%);
+            min-height: 100vh; color: white; position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(69,183,170,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(69,183,170,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 450px; height: 450px; background: radial-gradient(circle, rgba(69,183,170,0.2), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(111,212,197,0.15), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px; -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(69,183,170,0.3); transform: scale(0.95); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255,255,255,0.7); }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb .current { color: #45B7AA; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(69,183,170,0.4);
+        }
+
+        .page-header { text-align: center; margin-bottom: 30px; animation: fadeInUp 0.8s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #6FD4C5);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 28px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active { background: rgba(69,183,170,0.3); color: #6FD4C5; box-shadow: 0 4px 15px rgba(69,183,170,0.2); }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sim-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; }
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px;
+        }
+        .sim-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* DNA Canvas */
+        .dna-canvas-wrap {
+            width: 100%; background: rgba(0,0,0,0.3); border-radius: 14px;
+            overflow: hidden; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .dna-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+        .dna-legend {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px;
+        }
+        .dna-legend-item {
+            display: flex; align-items: center; gap: 6px; font-size: 12px;
+            padding: 6px 12px; border-radius: 100px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .dna-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* Punnett Square */
+        .punnett-section {
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+        .parent-selector {
+            display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+        }
+        .parent-box {
+            padding: 16px 20px; border-radius: 14px;
+            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+            text-align: center; min-width: 160px;
+        }
+        .parent-box h4 { font-size: 14px; color: #6FD4C5; margin-bottom: 10px; }
+        .parent-box .allele-row {
+            display: flex; gap: 8px; justify-content: center; margin-bottom: 4px;
+        }
+        .allele-btn {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-size: 18px; font-weight: 700;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .allele-btn:hover { background: rgba(69,183,170,0.2); }
+        .allele-btn.selected { 
+            border-color: #45B7AA; 
+            background: rgba(69,183,170,0.35); 
+            color: #6FD4C5;
+            box-shadow: 0 0 20px rgba(69,183,170,0.3);
+        }
+        .allele-btn.dominant-btn { color: #FF8E8E; }
+        .allele-btn.recessive-btn { color: #87CEEB; }
+        .allele-label { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+        .punnett-grid {
+            display: grid; 
+            grid-template-columns: 50px 80px 80px;
+            grid-template-rows: 50px 80px 80px; 
+            gap: 4px;
+        }
+        .punnett-cell {
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; font-weight: 700; font-size: 16px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            min-width: 50px; min-height: 50px;
+        }
+        .punnett-cell.corner { background: transparent; border: none; }
+        .punnett-cell.header-cell { 
+            background: rgba(69,183,170,0.2); 
+            border-color: rgba(69,183,170,0.4);
+            color: #6FD4C5; font-size: 18px;
+        }
+        .punnett-cell.result-cell { font-size: 18px; min-width: 80px; }
+        .result-dom { color: #FF8E8E; }
+        .result-rec { color: #87CEEB; }
+        .result-het { color: #FFD700; }
+
+        .probability-bar {
+            width: 100%; max-width: 400px;
+        }
+        .prob-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .prob-row .prob-label { width: 80px; text-align: right; font-weight: 600; }
+        .prob-row .prob-track {
+            flex: 1; height: 16px; background: rgba(255,255,255,0.1);
+            border-radius: 8px; overflow: hidden;
+        }
+        .prob-row .prob-fill {
+            height: 100%; border-radius: 8px; transition: width 0.5s ease;
+        }
+        .prob-row .prob-pct { width: 45px; font-weight: 700; }
+
+        .trait-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .trait-card {
+            padding: 16px; border-radius: 14px;
+            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08);
+            text-align: center; cursor: pointer; transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .trait-card:hover { background: rgba(69,183,170,0.1); border-color: rgba(69,183,170,0.3); }
+        .trait-card .trait-emoji { font-size: 36px; margin-bottom: 6px; }
+        .trait-card .trait-name { font-size: 14px; font-weight: 700; }
+        .trait-card .trait-info { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+        .trait-tag {
+            display: inline-block; padding: 4px 12px; border-radius: 100px;
+            font-size: 10px; font-weight: 700; margin-top: 6px;
+        }
+        .trait-tag.dominant-tag { background: rgba(255,142,142,0.2); color: #FF8E8E; }
+        .trait-tag.recessive-tag { background: rgba(135,206,235,0.2); color: #87CEEB; }
+
+        @media (max-width: 700px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .punnett-grid { grid-template-columns: 40px 60px 60px; grid-template-rows: 40px 60px 60px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Biology</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Genetics</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-dna"></i> Genetics Lab</div>
+        </div>
+
+        <div class="page-header">
+            <h1>🧬 Genetics Lab</h1>
+            <p class="subtitle">✦ DNA, Heredity & Punnett Squares ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('dna', this)"><i class="fas fa-dna"></i> DNA</button>
+            <button class="tab-btn" onclick="switchTab('punnett', this)"><i class="fas fa-th"></i> Punnett Square</button>
+            <button class="tab-btn" onclick="switchTab('traits', this)"><i class="fas fa-eye"></i> Traits</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Terms</button>
+        </div>
+
+        <!-- TAB 1: DNA -->
+        <div class="tab-content active" id="tab-dna">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-dna"></i></div>
+                        <div><div class="sim-card-title">DNA Double Helix</div><div class="sim-card-subtitle">Animated structure of deoxyribonucleic acid</div></div>
+                    </div>
+                    <div class="dna-canvas-wrap" style="height:350px;"><canvas id="dnaCanvas"></canvas></div>
+                    <div class="dna-legend">
+                        <div class="dna-legend-item"><div class="dna-legend-dot" style="background:#FF6B6B;"></div> Adenine (A)</div>
+                        <div class="dna-legend-item"><div class="dna-legend-dot" style="background:#4ECDC4;"></div> Thymine (T)</div>
+                        <div class="dna-legend-item"><div class="dna-legend-dot" style="background:#FFD700;"></div> Guanine (G)</div>
+                        <div class="dna-legend-item"><div class="dna-legend-dot" style="background:#A29BFE;"></div> Cytosine (C)</div>
+                        <div class="dna-legend-item"><div class="dna-legend-dot" style="background:#FF8E8E;"></div> Backbone</div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-info-circle"></i></div>
+                        <div><div class="sim-card-title">DNA Facts</div><div class="sim-card-subtitle">The blueprint of life</div></div>
+                    </div>
+                    <div class="trait-cards">
+                        <div class="trait-card"><div class="trait-emoji">📏</div><div class="trait-name">2 Meters Long</div><div class="trait-info">Each cell contains ~2m of DNA when stretched</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🧬</div><div class="trait-name">23 Pairs</div><div class="trait-info">Humans have 46 chromosomes (23 from each parent)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🔤</div><div class="trait-name">3 Billion Bases</div><div class="trait-info">The human genome has ~3 billion base pairs</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🔗</div><div class="trait-name">A-T & G-C</div><div class="trait-info">Adenine-Thymine, Guanine-Cytosine pairs only</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: PUNNETT SQUARE -->
+        <div class="tab-content" id="tab-punnett">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-th"></i></div>
+                        <div><div class="sim-card-title">Punnett Square Calculator</div><div class="sim-card-subtitle">Click alleles to change parents and see results!</div></div>
+                    </div>
+                    <div class="punnett-section">
+                        <div class="parent-selector">
+                            <!-- Parent 1 -->
+                            <div class="parent-box">
+                                <h4>👨 Parent 1</h4>
+                                <p style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:6px;">Allele 1</p>
+                                <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
+                                    <button class="allele-btn dominant-btn selected" id="p1a1_d" onclick="updateAllele('p1', 0, 'D')">D</button>
+                                    <button class="allele-btn recessive-btn" id="p1a1_r" onclick="updateAllele('p1', 0, 'd')">d</button>
+                                </div>
+                                <p style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:6px;">Allele 2</p>
+                                <div style="display:flex;gap:8px;justify-content:center;">
+                                    <button class="allele-btn dominant-btn" id="p1a2_d" onclick="updateAllele('p1', 1, 'D')">D</button>
+                                    <button class="allele-btn recessive-btn selected" id="p1a2_r" onclick="updateAllele('p1', 1, 'd')">d</button>
+                                </div>
+                            </div>
+                            <!-- Parent 2 -->
+                            <div class="parent-box">
+                                <h4>👩 Parent 2</h4>
+                                <p style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:6px;">Allele 1</p>
+                                <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
+                                    <button class="allele-btn dominant-btn selected" id="p2a1_d" onclick="updateAllele('p2', 0, 'D')">D</button>
+                                    <button class="allele-btn recessive-btn" id="p2a1_r" onclick="updateAllele('p2', 0, 'd')">d</button>
+                                </div>
+                                <p style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:6px;">Allele 2</p>
+                                <div style="display:flex;gap:8px;justify-content:center;">
+                                    <button class="allele-btn dominant-btn" id="p2a2_d" onclick="updateAllele('p2', 1, 'D')">D</button>
+                                    <button class="allele-btn recessive-btn selected" id="p2a2_r" onclick="updateAllele('p2', 1, 'd')">d</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Punnett Grid -->
+                        <div class="punnett-grid">
+                            <div class="punnett-cell corner"></div>
+                            <div class="punnett-cell header-cell" id="h_p2a1">D</div>
+                            <div class="punnett-cell header-cell" id="h_p2a2">d</div>
+                            <div class="punnett-cell header-cell" id="h_p1a1">D</div>
+                            <div class="punnett-cell result-cell result-het" id="r_0_0">DD</div>
+                            <div class="punnett-cell result-cell result-het" id="r_0_1">Dd</div>
+                            <div class="punnett-cell header-cell" id="h_p1a2">d</div>
+                            <div class="punnett-cell result-cell result-het" id="r_1_0">Dd</div>
+                            <div class="punnett-cell result-cell result-rec" id="r_1_1">dd</div>
+                        </div>
+                        <!-- Probability Bars -->
+                        <div class="probability-bar">
+                            <div class="prob-row">
+                                <span class="prob-label" style="color:#FF8E8E;">DD (Homozygous Dom):</span>
+                                <div class="prob-track"><div class="prob-fill" id="barDD" style="width:25%;background:#FF8E8E;"></div></div>
+                                <span class="prob-pct" id="pctDD">25%</span>
+                            </div>
+                            <div class="prob-row">
+                                <span class="prob-label" style="color:#FFD700;">Dd (Heterozygous):</span>
+                                <div class="prob-track"><div class="prob-fill" id="barDd" style="width:50%;background:#FFD700;"></div></div>
+                                <span class="prob-pct" id="pctDd">50%</span>
+                            </div>
+                            <div class="prob-row">
+                                <span class="prob-label" style="color:#87CEEB;">dd (Homozygous Rec):</span>
+                                <div class="prob-track"><div class="prob-fill" id="bardd" style="width:25%;background:#87CEEB;"></div></div>
+                                <span class="prob-pct" id="pctdd">25%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div><div class="sim-card-title">How It Works</div><div class="sim-card-subtitle">Understanding inheritance patterns</div></div>
+                    </div>
+                    <div class="trait-cards">
+                        <div class="trait-card"><div class="trait-emoji">📖</div><div class="trait-name">Law of Segregation</div><div class="trait-info">Each parent passes only ONE allele to offspring</div></div>
+                        <div class="trait-card"><div class="trait-emoji">💪</div><div class="trait-name">Dominant (D)</div><div class="trait-info">Expressed even if only one copy is present</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🤫</div><div class="trait-name">Recessive (d)</div><div class="trait-info">Only expressed when both copies are recessive</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🔀</div><div class="trait-name">Heterozygous (Dd)</div><div class="trait-info">Carries recessive but shows dominant trait</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: TRAITS -->
+        <div class="tab-content" id="tab-traits">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-eye"></i></div>
+                        <div><div class="sim-card-title">Human Traits</div><div class="sim-card-subtitle">Dominant vs Recessive in humans</div></div>
+                    </div>
+                    <div class="trait-cards">
+                        <div class="trait-card"><div class="trait-emoji">👅</div><div class="trait-name">Tongue Rolling</div><div class="trait-info">Ability to roll tongue into U-shape</div><div class="trait-tag dominant-tag">Dominant</div></div>
+                        <div class="trait-card"><div class="trait-emoji">👂</div><div class="trait-name">Free Earlobes</div><div class="trait-info">Earlobes hang free (vs attached)</div><div class="trait-tag dominant-tag">Dominant</div></div>
+                        <div class="trait-card"><div class="trait-emoji">👃</div><div class="trait-name">Widow's Peak</div><div class="trait-info">V-shaped hairline on forehead</div><div class="trait-tag dominant-tag">Dominant</div></div>
+                        <div class="trait-card"><div class="trait-emoji">👍</div><div class="trait-name">Hitchhiker's Thumb</div><div class="trait-info">Thumb bends backward at 90°</div><div class="trait-tag recessive-tag">Recessive</div></div>
+                        <div class="trait-card"><div class="trait-emoji">👁️</div><div class="trait-name">Blue Eyes</div><div class="trait-info">Blue eye color (vs brown)</div><div class="trait-tag recessive-tag">Recessive</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🦱</div><div class="trait-name">Straight Hair</div><div class="trait-info">Straight vs curly hair texture</div><div class="trait-tag recessive-tag">Recessive</div></div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-seedling"></i></div>
+                        <div><div class="sim-card-title">Mendel's Pea Plants</div><div class="sim-card-subtitle">The experiments that started genetics</div></div>
+                    </div>
+                    <div class="trait-cards">
+                        <div class="trait-card"><div class="trait-emoji">🟢</div><div class="trait-name">Seed Color</div><div class="trait-info">Yellow (Dominant) vs Green (Recessive)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🟤</div><div class="trait-name">Seed Shape</div><div class="trait-info">Round (Dominant) vs Wrinkled (Recessive)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">📏</div><div class="trait-name">Plant Height</div><div class="trait-info">Tall (Dominant) vs Short (Recessive)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🌸</div><div class="trait-name">Flower Color</div><div class="trait-info">Purple (Dominant) vs White (Recessive)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: TERMS -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div><div class="sim-card-title">Genetics Vocabulary</div><div class="sim-card-subtitle">Important terms to know</div></div>
+                    </div>
+                    <div class="trait-cards">
+                        <div class="trait-card"><div class="trait-emoji">🧬</div><div class="trait-name">Gene</div><div class="trait-info">A segment of DNA that codes for a specific trait</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🔤</div><div class="trait-name">Allele</div><div class="trait-info">Different versions of the same gene (e.g., D or d)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">💪</div><div class="trait-name">Dominant</div><div class="trait-info">Allele that masks the recessive (uppercase: D)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🤫</div><div class="trait-name">Recessive</div><div class="trait-info">Allele masked by dominant (lowercase: d)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🔗</div><div class="trait-name">Homozygous</div><div class="trait-info">Two identical alleles (DD or dd)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🔀</div><div class="trait-name">Heterozygous</div><div class="trait-info">Two different alleles (Dd)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">👁️</div><div class="trait-name">Phenotype</div><div class="trait-info">Physical appearance (what you see)</div></div>
+                        <div class="trait-card"><div class="trait-emoji">🧬</div><div class="trait-name">Genotype</div><div class="trait-info">Genetic makeup (DD, Dd, or dd)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'biology_hub.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (tabName === 'dna') initDNA();
+        }
+
+        // ==================== DNA ANIMATION ====================
+        let dnaAnimId;
+        function initDNA() {
+            if (dnaAnimId) cancelAnimationFrame(dnaAnimId);
+            const canvas = document.getElementById('dnaCanvas');
+            if (!canvas) return;
+            const wrap = canvas.parentElement;
+            canvas.width = wrap.clientWidth;
+            canvas.height = wrap.clientHeight;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height, cx = w/2;
+            let phase = 0;
+
+            function draw() {
+                ctx.fillStyle = 'rgba(10,10,26,0.3)';
+                ctx.fillRect(0, 0, w, h);
+                const pairs = 8, spacing = h / (pairs + 1);
+                
+                for (let i = 0; i < pairs; i++) {
+                    const y = spacing * (i + 0.7);
+                    const offset = Math.sin(phase + i * 0.8) * 60;
+                    
+                    ctx.strokeStyle = '#FF8E8E';
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = 'rgba(255,142,142,0.5)';
+                    ctx.beginPath(); ctx.moveTo(cx - offset - 8, y - spacing*0.3); ctx.lineTo(cx - offset - 8, y + spacing*0.3); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx + offset + 8, y - spacing*0.3); ctx.lineTo(cx + offset + 8, y + spacing*0.3); ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    
+                    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(cx - offset, y); ctx.lineTo(cx + offset, y); ctx.stroke();
+                    
+                    const bases = [{c:'#FF6B6B',l:'A'},{c:'#4ECDC4',l:'T'},{c:'#FFD700',l:'G'},{c:'#A29BFE',l:'C'}];
+                    const b = bases[i % 4], pair = i % 2 === 0 ? bases[(i+1)%4] : bases[(i+3)%4];
+                    
+                    ctx.fillStyle = b.c; ctx.beginPath(); ctx.arc(cx - offset, y, 8, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = 'bold 9px Inter'; ctx.fillText(b.l, cx - offset - 4, y + 3);
+                    ctx.fillStyle = pair.c; ctx.beginPath(); ctx.arc(cx + offset, y, 8, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.font = 'bold 9px Inter'; ctx.fillText(pair.l, cx + offset - 4, y + 3);
+                }
+                phase += 0.03;
+                dnaAnimId = requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        // ==================== PUNNETT SQUARE ====================
+        let p1 = ['D', 'd']; // Parent 1 alleles
+        let p2 = ['D', 'd']; // Parent 2 alleles
+
+        function updateAllele(parent, index, value) {
+            // Update the data
+            if (parent === 'p1') p1[index] = value;
+            if (parent === 'p2') p2[index] = value;
+            
+            // Update button visuals
+            const prefix = parent + 'a' + (index + 1);
+            const domBtn = document.getElementById(prefix + '_d');
+            const recBtn = document.getElementById(prefix + '_r');
+            
+            if (domBtn && recBtn) {
+                domBtn.classList.remove('selected');
+                recBtn.classList.remove('selected');
+                if (value === 'D') domBtn.classList.add('selected');
+                else recBtn.classList.add('selected');
+            }
+            
+            // Update the Punnett square display
+            updatePunnettDisplay();
+        }
+
+        function updatePunnettDisplay() {
+            // Update header cells
+            document.getElementById('h_p1a1').textContent = p1[0];
+            document.getElementById('h_p1a2').textContent = p1[1];
+            document.getElementById('h_p2a1').textContent = p2[0];
+            document.getElementById('h_p2a2').textContent = p2[1];
+            
+            // Calculate results
+            const results = [
+                p1[0] + p2[0], // r_0_0
+                p1[0] + p2[1], // r_0_1
+                p1[1] + p2[0], // r_1_0
+                p1[1] + p2[1]  // r_1_1
+            ];
+            
+            const cellIds = ['r_0_0', 'r_0_1', 'r_1_0', 'r_1_1'];
+            let countDD = 0, countDd = 0, countdd = 0;
+            
+            cellIds.forEach((id, i) => {
+                const cell = document.getElementById(id);
+                if (!cell) return;
+                
+                // Normalize: sort so Dd and dD both show as Dd
+                let display = results[i];
+                if (display === 'dD') display = 'Dd';
+                
+                cell.textContent = display;
+                cell.className = 'punnett-cell result-cell';
+                
+                if (display === 'DD') { cell.classList.add('result-dom'); countDD++; }
+                else if (display === 'dd') { cell.classList.add('result-rec'); countdd++; }
+                else { cell.classList.add('result-het'); countDd++; }
+            });
+            
+            // Update probability bars
+            document.getElementById('barDD').style.width = (countDD/4*100) + '%';
+            document.getElementById('barDd').style.width = (countDd/4*100) + '%';
+            document.getElementById('bardd').style.width = (countdd/4*100) + '%';
+            document.getElementById('pctDD').textContent = (countDD/4*100) + '%';
+            document.getElementById('pctDd').textContent = (countDd/4*100) + '%';
+            document.getElementById('pctdd').textContent = (countdd/4*100) + '%';
+        }
+
+        // ==================== INIT ====================
+        window.addEventListener('load', () => {
+            initDNA();
+            updatePunnettDisplay();
+        });
+
+        window.addEventListener('resize', () => {
+            const activeTab = document.querySelector('.tab-content.active');
+            if (activeTab && activeTab.id === 'tab-dna') initDNA();
+        });
+    </script>
+</body>
+</html>

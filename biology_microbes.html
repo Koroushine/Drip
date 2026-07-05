@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Microorganisms</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bio-color: #45B7AA;
+            --bio-light: #6FD4C5;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a15 60%, #150a20 100%);
+            min-height: 100vh; color: white; position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(69,183,170,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(69,183,170,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 450px; height: 450px; background: radial-gradient(circle, rgba(69,183,170,0.2), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(111,212,197,0.15), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px; -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(69,183,170,0.3); transform: scale(0.95); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255,255,255,0.7); }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb .current { color: #45B7AA; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(69,183,170,0.4);
+        }
+
+        .page-header { text-align: center; margin-bottom: 30px; animation: fadeInUp 0.8s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #6FD4C5);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 28px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active { background: rgba(69,183,170,0.3); color: #6FD4C5; box-shadow: 0 4px 15px rgba(69,183,170,0.2); }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sim-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; }
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px;
+        }
+        .sim-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* Microbe Cards */
+        .microbe-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+        .microbe-card {
+            padding: 20px; border-radius: 16px;
+            background: rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.08);
+            cursor: pointer; transition: all 0.3s; text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .microbe-card:hover {
+            border-color: rgba(69,183,170,0.5);
+            background: rgba(69,183,170,0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(69,183,170,0.15);
+        }
+        .microbe-card:active { transform: scale(0.97); }
+        .microbe-card.active-card {
+            border-color: #45B7AA;
+            background: rgba(69,183,170,0.2);
+            box-shadow: 0 8px 25px rgba(69,183,170,0.3);
+        }
+        .microbe-card .m-emoji { font-size: 45px; margin-bottom: 8px; }
+        .microbe-card .m-name { font-size: 16px; font-weight: 700; color: #6FD4C5; }
+        .microbe-card .m-size { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+        .microbe-card .m-tag {
+            display: inline-block; padding: 4px 10px; border-radius: 100px;
+            font-size: 10px; font-weight: 700; margin-top: 8px;
+        }
+        .tag-friendly { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .tag-harmful { background: rgba(255,107,107,0.2); color: #FF6B6B; }
+        .tag-both { background: rgba(255,193,7,0.2); color: #FFC107; }
+
+        /* Image + Info Panel */
+        .detail-panel {
+            display: flex; gap: 20px; margin-top: 20px;
+            padding: 20px; border-radius: 16px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            flex-wrap: wrap;
+        }
+        .detail-image {
+            flex: 0 0 250px; max-width: 100%;
+            border-radius: 14px; overflow: hidden;
+            border: 2px solid rgba(69,183,170,0.3);
+            background: rgba(0,0,0,0.4);
+        }
+        .detail-image img {
+            width: 100%; display: block; max-height: 250px;
+            object-fit: cover;
+        }
+        .detail-info { flex: 1; min-width: 250px; }
+        .detail-info h3 { font-size: 20px; color: #6FD4C5; margin-bottom: 8px; }
+        .detail-info p { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.7; margin-bottom: 12px; }
+        .detail-facts {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .detail-fact-item {
+            padding: 12px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+        }
+        .detail-fact-item .fact-val { font-size: 15px; font-weight: 700; color: #6FD4C5; }
+        .detail-fact-item .fact-lbl { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+        /* Useful/Harmful */
+        .use-harm-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+        .use-harm-col {
+            padding: 16px; border-radius: 14px;
+        }
+        .use-harm-col.useful { background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.2); }
+        .use-harm-col.harmful { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); }
+        .use-harm-col h4 { font-size: 16px; margin-bottom: 10px; text-align: center; }
+        .use-harm-col.useful h4 { color: #4CAF50; }
+        .use-harm-col.harmful h4 { color: #FF6B6B; }
+        .use-harm-item {
+            padding: 10px; border-radius: 8px; margin-bottom: 6px;
+            font-size: 12px; background: rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Quiz */
+        .quiz-question {
+            font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 16px;
+        }
+        .quiz-options {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .quiz-option {
+            padding: 14px; border-radius: 14px;
+            background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
+            color: white; cursor: pointer; font-size: 14px; font-weight: 600;
+            transition: all 0.3s; text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .quiz-option:hover { background: rgba(69,183,170,0.15); border-color: rgba(69,183,170,0.4); }
+        .quiz-option:active { transform: scale(0.96); }
+        .quiz-option.correct-answer { background: rgba(76,175,80,0.3); border-color: #4CAF50; color: #4CAF50; }
+        .quiz-option.wrong-answer { background: rgba(255,107,107,0.3); border-color: #FF6B6B; color: #FF6B6B; }
+        .quiz-score {
+            text-align: center; font-size: 16px; font-weight: 700; color: #FFD700; margin-top: 12px;
+        }
+
+        @media (max-width: 700px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .quiz-options { grid-template-columns: 1fr; }
+            .use-harm-grid { grid-template-columns: 1fr; }
+            .detail-panel { flex-direction: column; }
+            .detail-image { flex: 0 0 auto; }
+            .detail-facts { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Biology</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Microbes</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-bacteria"></i> Microorganisms</div>
+        </div>
+
+        <div class="page-header">
+            <h1>🦠 Microorganisms</h1>
+            <p class="subtitle">✦ Friend & Foe - Explore the Microbial World ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('types', this)"><i class="fas fa-shapes"></i> Types</button>
+            <button class="tab-btn" onclick="switchTab('useful', this)"><i class="fas fa-heart"></i> Useful</button>
+            <button class="tab-btn" onclick="switchTab('harmful', this)"><i class="fas fa-skull"></i> Harmful</button>
+            <button class="tab-btn" onclick="switchTab('quiz', this)"><i class="fas fa-question-circle"></i> Quiz</button>
+        </div>
+
+        <!-- TAB 1: TYPES OF MICROBES -->
+        <div class="tab-content active" id="tab-types">
+            <div class="sim-cards">
+                <div class="sim-card" style="grid-column: 1/-1;">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-shapes"></i></div>
+                        <div><div class="sim-card-title">Types of Microorganisms</div><div class="sim-card-subtitle">Click on any microbe to see its image and details</div></div>
+                    </div>
+                    <div class="microbe-grid">
+                        <div class="microbe-card active-card" onclick="showMicrobe('bacteria', this)">
+                            <div class="m-emoji">🦠</div>
+                            <div class="m-name">Bacteria</div>
+                            <div class="m-size">0.5 - 5 µm</div>
+                            <div class="m-tag tag-both">Both</div>
+                        </div>
+                        <div class="microbe-card" onclick="showMicrobe('virus', this)">
+                            <div class="m-emoji">🧬</div>
+                            <div class="m-name">Viruses</div>
+                            <div class="m-size">20 - 400 nm</div>
+                            <div class="m-tag tag-harmful">Harmful</div>
+                        </div>
+                        <div class="microbe-card" onclick="showMicrobe('fungi', this)">
+                            <div class="m-emoji">🍄</div>
+                            <div class="m-name">Fungi</div>
+                            <div class="m-size">2 - 10 µm</div>
+                            <div class="m-tag tag-both">Both</div>
+                        </div>
+                        <div class="microbe-card" onclick="showMicrobe('protozoa', this)">
+                            <div class="m-emoji">🔬</div>
+                            <div class="m-name">Protozoa</div>
+                            <div class="m-size">10 - 50 µm</div>
+                            <div class="m-tag tag-harmful">Harmful</div>
+                        </div>
+                        <div class="microbe-card" onclick="showMicrobe('algae', this)">
+                            <div class="m-emoji">🌿</div>
+                            <div class="m-name">Algae</div>
+                            <div class="m-size">1 - 100+ µm</div>
+                            <div class="m-tag tag-friendly">Useful</div>
+                        </div>
+                    </div>
+                    <!-- Detail Panel with Image -->
+                    <div class="detail-panel" id="microbeDetailPanel">
+                        <div class="detail-image">
+                            <img src="photoes/bacteria.webp" alt="Bacteria" id="microbeImage">
+                        </div>
+                        <div class="detail-info">
+                            <h3 id="microbeName">🦠 Bacteria</h3>
+                            <p id="microbeDesc">Single-celled organisms without a nucleus (prokaryotes). Found everywhere - soil, water, air, and inside our bodies. Some cause diseases like cholera and typhoid, while others help in making curd and decomposing waste.</p>
+                            <div class="detail-facts">
+                                <div class="detail-fact-item"><div class="fact-val">3.5 Billion Years</div><div class="fact-lbl">Oldest life form on Earth</div></div>
+                                <div class="detail-fact-item"><div class="fact-val">~1 Trillion</div><div class="fact-lbl">Estimated species exist</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: USEFUL MICROBES -->
+        <div class="tab-content" id="tab-useful">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-heart"></i></div>
+                        <div><div class="sim-card-title">Useful Microorganisms</div><div class="sim-card-subtitle">How microbes help us every day</div></div>
+                    </div>
+                    <div class="use-harm-grid">
+                        <div class="use-harm-col useful">
+                            <h4>✅ In Food</h4>
+                            <div class="use-harm-item">🥛 <span>Lactobacillus - Makes curd/yogurt from milk</span></div>
+                            <div class="use-harm-item">🍞 <span>Yeast (Saccharomyces) - Makes bread rise</span></div>
+                            <div class="use-harm-item">🧀 <span>Fungi & Bacteria - Cheese production</span></div>
+                            <div class="use-harm-item">🥒 <span>Lactobacillus - Pickle fermentation</span></div>
+                        </div>
+                        <div class="use-harm-col useful">
+                            <h4>✅ In Medicine & Environment</h4>
+                            <div class="use-harm-item">💊 <span>Penicillium fungus - Antibiotic penicillin</span></div>
+                            <div class="use-harm-item">💉 <span>Bacteria - Making vaccines & insulin</span></div>
+                            <div class="use-harm-item">🌱 <span>Rhizobium - Nitrogen fixation in soil</span></div>
+                            <div class="use-harm-item">🧹 <span>Decomposer bacteria - Clean environment</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: HARMFUL MICROBES -->
+        <div class="tab-content" id="tab-harmful">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-skull"></i></div>
+                        <div><div class="sim-card-title">Harmful Microorganisms</div><div class="sim-card-subtitle">Diseases caused by microbes</div></div>
+                    </div>
+                    <div class="use-harm-grid">
+                        <div class="use-harm-col harmful">
+                            <h4>⚠️ Human Diseases</h4>
+                            <div class="use-harm-item">🦠 <span><strong>Bacteria:</strong> Cholera, Typhoid, Tuberculosis</span></div>
+                            <div class="use-harm-item">🧬 <span><strong>Virus:</strong> Common cold, Flu, COVID-19, Polio</span></div>
+                            <div class="use-harm-item">🍄 <span><strong>Fungi:</strong> Ringworm, Athlete's foot</span></div>
+                            <div class="use-harm-item">🔬 <span><strong>Protozoa:</strong> Malaria, Amoebic dysentery</span></div>
+                        </div>
+                        <div class="use-harm-col harmful">
+                            <h4>⚠️ Other Harms</h4>
+                            <div class="use-harm-item">🌾 <span><strong>Plant diseases:</strong> Citrus canker, Rust of wheat</span></div>
+                            <div class="use-harm-item">🍞 <span><strong>Food spoilage:</strong> Mold on bread, rotting fruit</span></div>
+                            <div class="use-harm-item">🦟 <span><strong>Vectors:</strong> Mosquito (malaria), Housefly (typhoid)</span></div>
+                            <div class="use-harm-item">🥫 <span><strong>Prevention:</strong> Pasteurization, vaccination, hygiene</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: QUIZ -->
+        <div class="tab-content" id="tab-quiz">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-question-circle"></i></div>
+                        <div><div class="sim-card-title">Microbe Quiz</div><div class="sim-card-subtitle">Test your knowledge!</div></div>
+                    </div>
+                    <div class="quiz-question" id="quizQuestion">Loading question...</div>
+                    <div class="quiz-options" id="quizOptions"></div>
+                    <div class="quiz-score">Score: <span id="quizScoreDisplay">0</span>/5</div>
+                    <div style="text-align:center;margin-top:12px;">
+                        <button class="quiz-option" style="display:inline-block;width:auto;padding:10px 24px;" onclick="resetQuiz()"><i class="fas fa-redo"></i> Restart Quiz</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'biology_hub.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            if (tabName === 'quiz') loadQuiz();
+        }
+
+        // ==================== MICROBE DETAIL WITH IMAGES ====================
+        const microbeData = {
+            bacteria: {
+                name: '🦠 Bacteria',
+                desc: 'Single-celled organisms without a nucleus (prokaryotes). Found everywhere - soil, water, air, and inside our bodies. Some cause diseases like cholera and typhoid, while others help in making curd, decomposing waste, and fixing nitrogen in soil.',
+                image: 'photoes/bacteria.webp',
+                fact1: '3.5 Billion Years', fact1lbl: 'Oldest life form on Earth',
+                fact2: '~1 Trillion Species', fact2lbl: 'Estimated to exist worldwide'
+            },
+            virus: {
+                name: '🧬 Viruses',
+                desc: 'Tiny infectious agents that can only reproduce inside living cells. They are borderline between living and non-living. Cause diseases like common cold, flu, COVID-19, and polio. Cannot be killed by antibiotics - vaccines are used for prevention.',
+                image: 'photoes/viruses.webp',
+                fact1: '20-400 nm', fact1lbl: 'Smallest of all microbes',
+                fact2: 'Not Alive', fact2lbl: 'Need host cell to reproduce'
+            },
+            fungi: {
+                name: '🍄 Fungi',
+                desc: 'Plant-like organisms that lack chlorophyll. Include molds, yeasts, and mushrooms. Some are useful (yeast for bread, Penicillium for antibiotics) while others cause diseases like ringworm and athlete\'s foot. They thrive in warm, moist environments.',
+                image: 'photoes/fungi.webp',
+                fact1: 'Largest Organism', fact1lbl: 'Honey fungus: 3.8 km wide',
+                fact2: 'Decomposers', fact2lbl: 'Break down dead matter'
+            },
+            protozoa: {
+                name: '🔬 Protozoa',
+                desc: 'Single-celled organisms with a nucleus (eukaryotes). Found in water and soil. Some cause serious diseases like malaria (Plasmodium) and amoebic dysentery (Entamoeba). They move using pseudopodia, cilia, or flagella.',
+                image: 'photoes/protozoa.webp',
+                fact1: 'Eukaryotic', fact1lbl: 'Have a true nucleus',
+                fact2: 'Malaria Vector', fact2lbl: 'Spread by mosquitoes'
+            },
+            algae: {
+                name: '🌿 Algae',
+                desc: 'Plant-like organisms that perform photosynthesis. Found in water bodies like ponds, lakes, and oceans. Produce about 70% of Earth\'s oxygen! Used in food supplements, biofuels, and as fertilizer. Some cause harmful algal blooms.',
+                image: 'photoes/algae.webp',
+                fact1: '70% of O₂', fact1lbl: 'Earth\'s oxygen producers',
+                fact2: 'Photosynthetic', fact2lbl: 'Make their own food'
+            }
+        };
+
+        function showMicrobe(type, cardElement) {
+            // Highlight active card
+            document.querySelectorAll('.microbe-card').forEach(c => c.classList.remove('active-card'));
+            if (cardElement) cardElement.classList.add('active-card');
+            
+            const data = microbeData[type];
+            
+            // Update image
+            document.getElementById('microbeImage').src = data.image;
+            
+            // Update text
+            document.getElementById('microbeName').textContent = data.name;
+            document.getElementById('microbeDesc').textContent = data.desc;
+            
+            // Update facts
+            const factItems = document.querySelectorAll('.detail-fact-item');
+            if (factItems.length >= 2) {
+                factItems[0].querySelector('.fact-val').textContent = data.fact1;
+                factItems[0].querySelector('.fact-lbl').textContent = data.fact1lbl;
+                factItems[1].querySelector('.fact-val').textContent = data.fact2;
+                factItems[1].querySelector('.fact-lbl').textContent = data.fact2lbl;
+            }
+        }
+
+        // ==================== QUIZ ====================
+        const quizQuestions = [
+            { q: 'Which microorganism is used to make curd from milk?', opts: ['Virus', 'Lactobacillus (Bacteria)', 'Fungi', 'Protozoa'], ans: 1 },
+            { q: 'Which disease is caused by a virus?', opts: ['Typhoid', 'Cholera', 'Common Cold', 'Ringworm'], ans: 2 },
+            { q: 'What does Penicillium fungus produce?', opts: ['Bread', 'Antibiotic', 'Curd', 'Alcohol'], ans: 1 },
+            { q: 'Malaria is caused by which microorganism?', opts: ['Bacteria', 'Virus', 'Fungi', 'Protozoa (Plasmodium)'], ans: 3 },
+            { q: 'Which microbe helps in nitrogen fixation in soil?', opts: ['Yeast', 'Rhizobium', 'Penicillium', 'Influenza virus'], ans: 1 }
+        ];
+
+        let quizIndex = 0;
+        let quizScore = 0;
+        let quizAnswered = false;
+
+        function loadQuiz() {
+            quizIndex = 0;
+            quizScore = 0;
+            quizAnswered = false;
+            document.getElementById('quizScoreDisplay').textContent = '0';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (quizIndex >= quizQuestions.length) {
+                document.getElementById('quizQuestion').textContent = '🎉 Quiz Complete!';
+                document.getElementById('quizOptions').innerHTML = `
+                    <div style="text-align:center;grid-column:1/-1;padding:20px;">
+                        <p style="font-size:24px;font-weight:700;color:#FFD700;">Your Score: ${quizScore}/5</p>
+                        <p style="color:rgba(255,255,255,0.5);">${quizScore === 5 ? 'Perfect! You\'re a microbe expert! 🏆' : quizScore >= 3 ? 'Good job! Keep learning! 👍' : 'Try again to improve! 💪'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const q = quizQuestions[quizIndex];
+            document.getElementById('quizQuestion').textContent = `Q${quizIndex + 1}: ${q.q}`;
+            
+            document.getElementById('quizOptions').innerHTML = q.opts.map((opt, i) => 
+                `<div class="quiz-option" onclick="checkAnswer(${i})">${opt}</div>`
+            ).join('');
+            
+            quizAnswered = false;
+        }
+
+        function checkAnswer(choice) {
+            if (quizAnswered) return;
+            quizAnswered = true;
+            
+            const q = quizQuestions[quizIndex];
+            const correct = q.ans;
+            
+            document.getElementById('opt' + correct).classList.add('correct-answer');
+            
+            if (choice !== correct) {
+                document.getElementById('opt' + choice).classList.add('wrong-answer');
+            } else {
+                quizScore++;
+                document.getElementById('quizScoreDisplay').textContent = quizScore;
+            }
+            
+            setTimeout(() => { quizIndex++; showQuestion(); }, 1200);
+        }
+
+        function resetQuiz() { loadQuiz(); }
+
+        // ==================== INIT ====================
+        window.addEventListener('load', () => {
+            showMicrobe('bacteria', document.querySelector('.microbe-card.active-card'));
+            loadQuiz();
+        });
+    </script>
+</body>
+</html>
