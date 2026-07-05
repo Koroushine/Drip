@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Human Body Systems</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bio-color: #45B7AA;
+            --bio-light: #6FD4C5;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a15 60%, #150a20 100%);
+            min-height: 100vh; color: white; position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(69,183,170,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(69,183,170,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 450px; height: 450px; background: radial-gradient(circle, rgba(69,183,170,0.2), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(111,212,197,0.15), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px; -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(69,183,170,0.3); transform: scale(0.95); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255,255,255,0.7); }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; }
+        .breadcrumb .current { color: #45B7AA; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(69,183,170,0.4);
+        }
+
+        .page-header { text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #6FD4C5);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 18px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+            min-height: 44px; min-width: 110px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active { background: rgba(69,183,170,0.3); color: #6FD4C5; box-shadow: 0 4px 15px rgba(69,183,170,0.2); }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sim-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; }
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px;
+        }
+        .sim-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* Animation Video Wrapper */
+        .animation-video-wrapper {
+            width: 100%; background: #000; border-radius: 18px;
+            overflow: hidden; border: 2px solid rgba(69,183,170,0.3);
+            box-shadow: 0 8px 30px rgba(69,183,170,0.2);
+        }
+        .animation-video-wrapper video { width: 100%; display: block; max-height: 500px; }
+
+        /* Timeline Chapter Buttons */
+        .timeline-chapters {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            padding: 16px; background: rgba(0,0,0,0.3);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .chapter-btn {
+            padding: 10px 15px; border-radius: 100px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.75); cursor: pointer;
+            font-size: 11px; font-weight: 600; transition: all 0.3s;
+            display: flex; align-items: center; gap: 6px;
+            -webkit-tap-highlight-color: transparent; white-space: nowrap;
+        }
+        .chapter-btn:hover { background: rgba(69,183,170,0.2); border-color: rgba(69,183,170,0.4); color: white; }
+        .chapter-btn:active { transform: scale(0.95); }
+        .chapter-btn.active-chapter { background: rgba(69,183,170,0.3); border-color: #45B7AA; color: #6FD4C5; font-weight: 700; }
+        .chapter-btn .ch-icon { font-size: 15px; }
+        .chapter-btn .ch-time { color: rgba(255,255,255,0.4); font-size: 10px; }
+
+        .video-info-text {
+            text-align: center; padding: 14px; font-size: 13px;
+            color: rgba(255,255,255,0.6); background: rgba(0,0,0,0.2);
+            border-radius: 0 0 18px 18px;
+        }
+        .video-info-text i { color: #45B7AA; margin-right: 6px; }
+
+        /* Breathing video */
+        .breathing-video-box {
+            width: 100%; border-radius: 18px; overflow: hidden;
+            border: 2px solid rgba(69,183,170,0.3);
+            box-shadow: 0 8px 30px rgba(69,183,170,0.15);
+        }
+        .breathing-video-box video { width: 100%; display: block; }
+
+        /* Steps */
+        .step-list { display: flex; flex-direction: column; gap: 10px; }
+        .step-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px; border-radius: 14px;
+            background: rgba(0,0,0,0.2); border: 2px solid transparent;
+            cursor: pointer; transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .step-item:hover { background: rgba(69,183,170,0.1); border-color: rgba(69,183,170,0.3); }
+        .step-item:active { transform: scale(0.98); }
+        .step-item.active-step { background: rgba(69,183,170,0.2); border-color: #45B7AA; box-shadow: 0 4px 20px rgba(69,183,170,0.2); }
+        .step-num {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; flex-shrink: 0;
+        }
+        .step-text { flex: 1; }
+        .step-text h4 { font-size: 14px; color: white; margin-bottom: 2px; }
+        .step-text span { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+        /* Image panel */
+        .image-panel {
+            width: 100%; border-radius: 18px; overflow: hidden;
+            border: 2px solid rgba(69,183,170,0.3);
+            background: rgba(0,0,0,0.4); margin-top: 16px;
+        }
+        .image-panel img { width: 100%; display: block; max-height: 350px; object-fit: cover; }
+        .image-panel .caption {
+            padding: 14px 18px; text-align: center;
+            background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .image-panel .caption h4 { font-size: 16px; color: #6FD4C5; margin-bottom: 4px; }
+        .image-panel .caption p { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+
+        .info-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 26px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 11px; font-weight: 700; color: #6FD4C5; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        @media (max-width: 700px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .image-panel img { max-height: 220px; }
+            .animation-video-wrapper video { max-height: 280px; }
+            .chapter-btn { font-size: 10px; padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Biology</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Body Systems</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-lungs"></i> Respiratory System</div>
+        </div>
+
+        <div class="page-header">
+            <h1>🫁 Human Respiratory System</h1>
+            <p class="subtitle">✦ How We Breathe - An Animated Journey ✦</p>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('video', this)"><i class="fas fa-play-circle"></i> Animation</button>
+            <button class="tab-btn" onclick="switchTab('process', this)"><i class="fas fa-list-ol"></i> Breathing Process</button>
+            <button class="tab-btn" onclick="switchTab('parts', this)"><i class="fas fa-diagram-project"></i> Organs</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Key Facts</button>
+        </div>
+
+        <!-- ==================== TAB 1: ANIMATION WITH TIMELINE ==================== -->
+        <div class="tab-content active" id="tab-video">
+            <div class="animation-video-wrapper">
+                <video id="mainAnimationVideo" controls preload="metadata">
+                    <source src="vidoes/Respiratory System of the Human Body - How the Lungs Work! (Animation) - Thomas Schwenke (720p).mp4" type="video/mp4">
+                </video>
+                <!-- Timeline Chapter Buttons -->
+                <div class="timeline-chapters" id="timelineChapters">
+                    <button class="chapter-btn active-chapter" onclick="jumpToTime(0, this)">
+                        <span class="ch-icon">🏁</span> Start <span class="ch-time">0:00</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(55, this)">
+                        <span class="ch-icon">👃</span> Nasal Cavity <span class="ch-time">0:55</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(117, this)">
+                        <span class="ch-icon">🛡️</span> Epiglottis <span class="ch-time">1:57</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(157, this)">
+                        <span class="ch-icon">🫁</span> Trachea & Bronchi <span class="ch-time">2:37</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(224, this)">
+                        <span class="ch-icon">🫧</span> Alveoli <span class="ch-time">3:44</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(272, this)">
+                        <span class="ch-icon">🔬</span> Gas Exchange <span class="ch-time">4:32</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(344, this)">
+                        <span class="ch-icon">🩸</span> Erythrocytes <span class="ch-time">5:44</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(418, this)">
+                        <span class="ch-icon">💪</span> Breathing Muscles <span class="ch-time">6:58</span>
+                    </button>
+                    <button class="chapter-btn" onclick="jumpToTime(557, this)">
+                        <span class="ch-icon">🎯</span> Diaphragm <span class="ch-time">9:17</span>
+                    </button>
+                </div>
+                <div class="video-info-text">
+                    <i class="fas fa-info-circle"></i>
+                    This animation illustrates the human respiratory system. Click the timeline buttons above to jump to specific sections!
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: BREATHING PROCESS ==================== -->
+        <div class="tab-content" id="tab-process">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-film"></i></div>
+                        <div>
+                            <div class="sim-card-title">Live Respiration Animation</div>
+                            <div class="sim-card-subtitle">Watch how the lungs and diaphragm work together</div>
+                        </div>
+                    </div>
+                    <div class="breathing-video-box">
+                        <video autoplay loop muted playsinline>
+                            <source src="vidoes/live breathing.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    <p style="text-align:center;font-size:13px;color:#6FD4C5;font-weight:600;margin-top:10px;">🫁 Inhaling & Exhaling - Continuous Loop</p>
+                    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;">💡 The diaphragm moves down (inhale) and up (exhale). Lungs expand and contract continuously.</p>
+                </div>
+
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-hand-pointer"></i></div>
+                        <div>
+                            <div class="sim-card-title">Click to Explore Each Part</div>
+                            <div class="sim-card-subtitle">Tap any step to see its detailed image below</div>
+                        </div>
+                    </div>
+                    <div class="step-list">
+                        <div class="step-item active-step" onclick="showImage('nasal', this)">
+                            <div class="step-num">1</div>
+                            <div class="step-text"><h4>👃 Nasal Cavity</h4><span>Filters, warms & moistens air</span></div>
+                        </div>
+                        <div class="step-item" onclick="showImage('pharynx', this)">
+                            <div class="step-num">2</div>
+                            <div class="step-text"><h4>🔊 Pharynx & Larynx</h4><span>Throat passage & voice box</span></div>
+                        </div>
+                        <div class="step-item" onclick="showImage('trachea', this)">
+                            <div class="step-num">3</div>
+                            <div class="step-text"><h4>🫁 Trachea</h4><span>Windpipe with cartilage rings</span></div>
+                        </div>
+                        <div class="step-item" onclick="showImage('bronchi', this)">
+                            <div class="step-num">4</div>
+                            <div class="step-text"><h4>🌳 Bronchi & Bronchioles</h4><span>Branching tree of airways</span></div>
+                        </div>
+                        <div class="step-item" onclick="showImage('alveoli', this)">
+                            <div class="step-num">5</div>
+                            <div class="step-text"><h4>🫧 Alveoli</h4><span>300-400 million tiny air sacs</span></div>
+                        </div>
+                        <div class="step-item" onclick="showImage('exchange', this)">
+                            <div class="step-num">6</div>
+                            <div class="step-text"><h4>🔬 Gas Exchange</h4><span>O₂ in, CO₂ out via diffusion</span></div>
+                        </div>
+                    </div>
+                    <div class="image-panel" id="imagePanel">
+                        <img src="photoes/nasal-cavity-arteries.webp" alt="Nasal Cavity" id="partImage">
+                        <div class="caption">
+                            <h4 id="partTitle">👃 Nasal Cavity</h4>
+                            <p id="partDesc">Air enters through the nose. Nasal hairs filter large particles. The mucous membrane traps dust and germs. Blood vessels warm the air, and moisture humidifies it before it travels deeper.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: ORGANS ==================== -->
+        <div class="tab-content" id="tab-parts">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-diagram-project"></i></div>
+                        <div><div class="sim-card-title">Upper Respiratory Tract</div><div class="sim-card-subtitle">Nose, throat, and voice box</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">👃</div><div class="info-name">Nasal Cavity</div><div class="info-desc">Filters, warms, moistens air</div></div>
+                        <div class="info-card"><div class="emoji">🔊</div><div class="info-name">Pharynx</div><div class="info-desc">Throat. Common passage for air & food</div></div>
+                        <div class="info-card"><div class="emoji">🗣️</div><div class="info-name">Larynx</div><div class="info-desc">Voice box. Contains vocal cords</div></div>
+                        <div class="info-card"><div class="emoji">🛡️</div><div class="info-name">Epiglottis</div><div class="info-desc">Flap that closes larynx during swallowing</div></div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-lungs"></i></div>
+                        <div><div class="sim-card-title">Lower Respiratory Tract</div><div class="sim-card-subtitle">Windpipe, bronchi, and lungs</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🫁</div><div class="info-name">Trachea</div><div class="info-desc">Windpipe. Cartilage rings prevent collapse</div></div>
+                        <div class="info-card"><div class="emoji">🌳</div><div class="info-name">Bronchi</div><div class="info-desc">Two main branches to left & right lungs</div></div>
+                        <div class="info-card"><div class="emoji">🫧</div><div class="info-name">Alveoli</div><div class="info-desc">300-400 million air sacs. Gas exchange</div></div>
+                        <div class="info-card"><div class="emoji">💪</div><div class="info-name">Diaphragm</div><div class="info-desc">Main breathing muscle below lungs</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: FACTS ==================== -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header"><div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div><div class="sim-card-title">Amazing Facts</div><div class="sim-card-subtitle">Did you know?</div></div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🫧</div><div class="info-name">300-400 Million</div><div class="info-desc">Number of alveoli in human lungs</div></div>
+                        <div class="info-card"><div class="emoji">📏</div><div class="info-name">70 m²</div><div class="info-desc">Total surface area of all alveoli</div></div>
+                        <div class="info-card"><div class="emoji">🫁</div><div class="info-name">3 Lobes (Right)</div><div class="info-desc">Right lung has 3 lobes, left has 2</div></div>
+                        <div class="info-card"><div class="emoji">💨</div><div class="info-name">20,000 Breaths</div><div class="info-desc">Average per day per person</div></div>
+                        <div class="info-card"><div class="emoji">🔴</div><div class="info-name">Hemoglobin</div><div class="info-desc">Iron protein in RBCs binds oxygen</div></div>
+                        <div class="info-card"><div class="emoji">🔄</div><div class="info-name">Diffusion</div><div class="info-desc">O₂ & CO₂ move high→low concentration</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'biology_hub.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+        }
+
+        // ==================== TIMELINE VIDEO JUMP ====================
+        const chapterTimes = [0, 55, 117, 157, 224, 272, 344, 418, 557];
+
+        function jumpToTime(seconds, btn) {
+            const video = document.getElementById('mainAnimationVideo');
+            if (video) {
+                video.currentTime = seconds;
+                video.play();
+            }
+            // Highlight active button
+            document.querySelectorAll('.chapter-btn').forEach(b => b.classList.remove('active-chapter'));
+            if (btn) btn.classList.add('active-chapter');
+        }
+
+        // Auto-highlight chapter as video plays
+        const video = document.getElementById('mainAnimationVideo');
+        if (video) {
+            video.addEventListener('timeupdate', function() {
+                const ct = video.currentTime;
+                let activeIdx = 0;
+                for (let i = chapterTimes.length - 1; i >= 0; i--) {
+                    if (ct >= chapterTimes[i]) { activeIdx = i; break; }
+                }
+                const buttons = document.querySelectorAll('.chapter-btn');
+                buttons.forEach((b, i) => b.classList.toggle('active-chapter', i === activeIdx));
+            });
+        }
+
+        // ==================== STEP-BY-STEP IMAGES ====================
+        const partData = {
+            nasal: {
+                title: '👃 Nasal Cavity',
+                desc: 'Air enters through the nose. Nasal hairs filter large particles like dust and insects. The mucous membrane traps smaller particles. Blood vessels warm the air, and moisture humidifies it before it travels deeper into the respiratory tract.',
+                image: 'photoes/nasal-cavity-arteries.webp'
+            },
+            pharynx: {
+                title: '🔊 Pharynx & Larynx',
+                desc: 'The pharynx (throat) is a common passage for both air and food. The epiglottis closes the larynx during swallowing to prevent food from entering the windpipe. The larynx contains vocal cords for speech.',
+                image: 'photoes/larynx-and-internal-pharynx-anatomy-human-head-legend-ideal-for-training-materials-and.webp'
+            },
+            trachea: {
+                title: '🫁 Trachea (Windpipe)',
+                desc: 'A 10-12 cm long tube reinforced with C-shaped rings of hyaline cartilage. These rings prevent the trachea from collapsing. Ciliated cells line the trachea and move mucus upward toward the pharynx.',
+                image: 'photoes/illustration-of-human-trachea-and-bronchus-showing-bronchial-tubes-illustration-id85594782.webp'
+            },
+            bronchi: {
+                title: '🌳 Bronchi & Bronchioles',
+                desc: 'Near the heart, the trachea branches into two main bronchi (left and right). These further divide into smaller bronchioles, forming a tree-like structure called the bronchial tree.',
+                image: 'photoes/Bronchi & Bronchioles.webp'
+            },
+            alveoli: {
+                title: '🫧 Alveoli (Air Sacs)',
+                desc: 'Humans have 300-400 million alveoli - tiny air sacs about 50 micrometers in size. They are composed of extremely thin type 1 pneumocytes, allowing efficient gas exchange.',
+                image: 'photoes/Alveoli.webp'
+            },
+            exchange: {
+                title: '🔬 Gas Exchange (Diffusion)',
+                desc: 'Oxygen diffuses from the alveoli (high concentration) into the blood (low concentration). Carbon dioxide diffuses from the blood into the alveoli to be exhaled.',
+                image: 'photoes/Gas Exchange.webp'
+            }
+        };
+
+        function showImage(part, element) {
+            document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active-step'));
+            element.classList.add('active-step');
+            const data = partData[part];
+            document.getElementById('partImage').src = data.image;
+            document.getElementById('partTitle').textContent = data.title;
+            document.getElementById('partDesc').textContent = data.desc;
+        }
+    </script>
+</body>
+</html>

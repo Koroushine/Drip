@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Cell Explorer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --biology-color: #45B7AA;
+            --biology-light: #6FD4C5;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --radius: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0a2a25 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(69, 183, 170, 0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(69, 183, 170, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(69, 183, 170, 0.25), transparent 70%); top: -100px; right: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: radial-gradient(circle, rgba(111, 212, 197, 0.2), transparent 70%); bottom: -100px; left: -100px; }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1300px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 44px; min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .back-btn:active { background: rgba(69, 183, 170, 0.3); transform: scale(0.95); }
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+        .breadcrumb span { color: rgba(255,255,255,0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:active { color: white; }
+        .breadcrumb .current { color: #6FD4C5; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(69, 183, 170, 0.4);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(69, 183, 170, 0.4); }
+            50% { box-shadow: 0 8px 30px rgba(69, 183, 170, 0.7); }
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 42px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #6FD4C5);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.6); letter-spacing: 3px; }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 18px;
+            padding: 6px; animation: fadeInUp 0.8s ease-out 0.2s both;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+            background: transparent; color: rgba(255,255,255,0.6);
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+            min-height: 44px; min-width: 100px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        .tab-btn.active {
+            background: rgba(69, 183, 170, 0.3); color: white;
+            box-shadow: 0 4px 15px rgba(69, 183, 170, 0.2);
+        }
+        .tab-btn:active:not(.active) { color: white; background: rgba(255,255,255,0.1); }
+
+        /* Tab Content */
+        .tab-content { display: none; animation: fadeInUp 0.5s ease-out; }
+        .tab-content.active { display: block; }
+
+        /* Cards Grid */
+        .sim-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+        }
+
+        /* Simulation Card */
+        .sim-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            padding: 28px; transition: all 0.3s;
+        }
+        .sim-card:hover {
+            border-color: rgba(69, 183, 170, 0.4);
+            box-shadow: 0 12px 40px rgba(69, 183, 170, 0.15);
+        }
+        .sim-card-header {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+        }
+        .sim-card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, #45B7AA, #6FD4C5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: white;
+        }
+        .sim-card-title { font-size: 20px; font-weight: 700; }
+        .sim-card-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+        /* ======== CELL EXPLORER (NEW) ======== */
+        .explorer-area {
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .explorer-canvas-wrap {
+            width: 100%; aspect-ratio: 1/1; max-width: 500px;
+            margin: 0 auto; background: rgba(0,0,0,0.4);
+            border-radius: 14px; overflow: hidden;
+            position: relative; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .explorer-canvas { width: 100%; height: 100%; display: block; }
+
+        .explorer-controls {
+            display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+        }
+        .explorer-btn {
+            padding: 10px 20px; border-radius: 100px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: white; cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: all 0.3s; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .explorer-btn:active { transform: scale(0.95); }
+        .explorer-btn.active-mode { background: rgba(69, 183, 170, 0.3); border-color: #6FD4C5; }
+        .explorer-btn.danger { background: rgba(255,80,80,0.2); border-color: rgba(255,80,80,0.3); color: #ff6b6b; }
+
+        .label-pool {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            padding: 12px; background: rgba(0,0,0,0.2); border-radius: 14px;
+            min-height: 60px;
+        }
+        .label-tag {
+            padding: 8px 16px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: grab; font-size: 13px; font-weight: 600;
+            transition: all 0.2s; user-select: none;
+        }
+        .label-tag:active { transform: scale(0.95); }
+        .label-tag.dragging { opacity: 0.5; }
+        .label-tag.placed { background: rgba(69, 183, 170, 0.3); border-color: #6FD4C5; cursor: default; }
+        .label-tag.wrong { animation: shake 0.5s; border-color: #FF6B6B; background: rgba(255,107,107,0.2); }
+
+        .explorer-info {
+            text-align: center; font-size: 14px; color: rgba(255,255,255,0.7);
+            min-height: 24px;
+        }
+        .explorer-score {
+            text-align: center; font-size: 16px; font-weight: 700; color: #6FD4C5;
+        }
+
+        /* ======== Microscope View ======== */
+        .microscope-area {
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .microscope-canvas-wrap {
+            width: 100%; aspect-ratio: 4/3; max-width: 500px;
+            margin: 0 auto; background: rgba(0,0,0,0.4);
+            border-radius: 14px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .microscope-canvas { width: 100%; height: 100%; display: block; }
+        .microscope-label {
+            text-align: center; font-size: 14px; font-weight: 700;
+            color: #6FD4C5; min-height: 24px;
+        }
+        .microscope-zoom {
+            display: flex; align-items: center; gap: 12px; justify-content: center;
+        }
+        .microscope-zoom input[type="range"] {
+            width: 60%; height: 6px; -webkit-appearance: none; appearance: none;
+            background: rgba(255,255,255,0.2); border-radius: 4px; outline: none;
+        }
+        .microscope-zoom input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 20px; height: 20px;
+            border-radius: 50%; background: #6FD4C5; cursor: pointer;
+            border: 2px solid white;
+        }
+        .microscope-zoom span { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+        /* ======== Plant vs Animal Sorter ======== */
+        .sorter-container {
+            display: flex; gap: 16px; flex-wrap: wrap;
+        }
+        .sort-bucket {
+            flex: 1; min-width: 160px;
+            background: rgba(0,0,0,0.2); border-radius: 14px;
+            padding: 16px; border: 2px dashed rgba(255,255,255,0.15);
+            transition: all 0.3s; min-height: 200px;
+        }
+        .sort-bucket.highlight {
+            border-color: #6FD4C5; background: rgba(69, 183, 170, 0.1);
+        }
+        .sort-bucket h4 {
+            font-size: 14px; text-align: center; margin-bottom: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+        .sort-item {
+            padding: 10px 14px; border-radius: 10px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            margin-bottom: 8px; cursor: grab; font-size: 13px;
+            transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+            -webkit-user-select: none; user-select: none;
+        }
+        .sort-item:active { background: rgba(69, 183, 170, 0.2); }
+        .sort-item.dragging { opacity: 0.5; transform: scale(0.95); }
+        .sort-item.correct { border-color: #6FD4C5; background: rgba(69, 183, 170, 0.15); cursor: default; }
+        .sort-item.wrong { border-color: #FF6B6B; background: rgba(255,107,107,0.2); animation: shake 0.5s; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .sort-score {
+            text-align: center; padding: 10px; font-weight: 700; font-size: 16px;
+            color: #6FD4C5;
+        }
+        .reset-sorter {
+            padding: 12px 24px; border-radius: 100px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; cursor: pointer; font-weight: 600; font-size: 15px;
+            transition: all 0.3s; display: block; margin: 16px auto 0; min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .reset-sorter:active { background: rgba(69, 183, 170, 0.3); transform: scale(0.95); }
+
+        /* Learn Info Cards */
+        .info-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px; margin-top: 12px;
+        }
+        .info-card {
+            background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .info-card .emoji { font-size: 26px; margin-bottom: 4px; }
+        .info-card .info-name { font-size: 11px; font-weight: 700; color: #6FD4C5; }
+        .info-card .info-desc { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        @media (max-width: 600px) {
+            .sim-cards { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 28px; }
+            .tab-btn { font-size: 11px; padding: 8px 6px; }
+            .tab-btn i { display: none; }
+            .explorer-canvas-wrap { max-width: 350px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goBack()">Biology</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Cell Explorer</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-microscope"></i> Cell Explorer</div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🧬 Cell Explorer</h1>
+            <p class="subtitle">✦ Explore, Label & Compare Cells ✦</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('explore', this)"><i class="fas fa-eye"></i> Explore Cell</button>
+            <button class="tab-btn" onclick="switchTab('microscope', this)"><i class="fas fa-search-plus"></i> Microscope</button>
+            <button class="tab-btn" onclick="switchTab('sorter', this)"><i class="fas fa-arrows-alt-h"></i> Plant vs Animal</button>
+            <button class="tab-btn" onclick="switchTab('learn', this)"><i class="fas fa-book"></i> Learn</button>
+        </div>
+
+        <!-- ========== TAB 1: EXPLORE CELL (NEW) ========== -->
+        <div class="tab-content active" id="tab-explore">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-eye"></i></div>
+                        <div>
+                            <div class="sim-card-title">🔬 Cell Explorer</div>
+                            <div class="sim-card-subtitle">Click any organelle to learn. Drag labels to test yourself!</div>
+                        </div>
+                    </div>
+                    <div class="explorer-area">
+                        <div class="explorer-canvas-wrap">
+                            <canvas id="explorerCanvas" class="explorer-canvas"></canvas>
+                        </div>
+                        <div class="explorer-info" id="explorerInfo">🔬 Click on an organelle to learn about it</div>
+                        
+                        <div class="explorer-controls">
+                            <button class="explorer-btn active-mode" onclick="setExploreMode('explore')">
+                                <i class="fas fa-hand-pointer"></i> Explore
+                            </button>
+                            <button class="explorer-btn" onclick="setExploreMode('label')">
+                                <i class="fas fa-tag"></i> Label Challenge
+                            </button>
+                            <button class="explorer-btn" onclick="switchCellType()">
+                                <i class="fas fa-sync"></i> Switch to <span id="cellTypeLabel">Plant</span>
+                            </button>
+                            <button class="explorer-btn danger" onclick="resetLabels()">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
+
+                        <div class="label-pool" id="labelPool"></div>
+                        <div class="explorer-score" id="explorerScore"></div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-lightbulb"></i></div>
+                        <div>
+                            <div class="sim-card-title">Organelle Guide</div>
+                            <div class="sim-card-subtitle">What does each part do?</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🧠</div><div class="info-name">Nucleus</div><div class="info-desc">Control center. Contains DNA.</div></div>
+                        <div class="info-card"><div class="emoji">⚡</div><div class="info-name">Mitochondria</div><div class="info-desc">Powerhouse. Produces energy.</div></div>
+                        <div class="info-card"><div class="emoji">🛢️</div><div class="info-name">Vacuole</div><div class="info-desc">Storage. Large in plant cells.</div></div>
+                        <div class="info-card"><div class="emoji">🧱</div><div class="info-name">Cell Wall</div><div class="info-desc">Rigid outer layer (Plant only).</div></div>
+                        <div class="info-card"><div class="emoji">☀️</div><div class="info-name">Chloroplast</div><div class="info-desc">Photosynthesis (Plant only).</div></div>
+                        <div class="info-card"><div class="emoji">🧪</div><div class="info-name">Ribosome</div><div class="info-desc">Makes proteins.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== TAB 2: MICROSCOPE VIEW ========== -->
+        <div class="tab-content" id="tab-microscope">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-search-plus"></i></div>
+                        <div>
+                            <div class="sim-card-title">Microscope View</div>
+                            <div class="sim-card-subtitle">Click on any part of the cell to learn about it!</div>
+                        </div>
+                    </div>
+                    <div class="microscope-area">
+                        <div class="microscope-canvas-wrap">
+                            <canvas id="microscopeCanvas" class="microscope-canvas"></canvas>
+                        </div>
+                        <div class="microscope-label" id="microscopeLabel">🔬 Click on an organelle</div>
+                        <div class="microscope-zoom">
+                            <span>🔍 Zoom</span>
+                            <input type="range" id="zoomSlider" min="0.8" max="2.5" step="0.1" value="1.2" oninput="drawMicroscope()">
+                            <span id="zoomPercent">120%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-info-circle"></i></div>
+                        <div>
+                            <div class="sim-card-title">Cell Parts</div>
+                            <div class="sim-card-subtitle">Common organelles found in cells</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🧫</div><div class="info-name">Cell Membrane</div><div class="info-desc">Outer boundary of the cell</div></div>
+                        <div class="info-card"><div class="emoji">🧠</div><div class="info-name">Nucleus</div><div class="info-desc">Contains genetic material</div></div>
+                        <div class="info-card"><div class="emoji">⚡</div><div class="info-name">Mitochondria</div><div class="info-desc">Energy production</div></div>
+                        <div class="info-card"><div class="emoji">🛢️</div><div class="info-name">Vacuole</div><div class="info-desc">Storage of water and nutrients</div></div>
+                        <div class="info-card"><div class="emoji">🧪</div><div class="info-name">Ribosome</div><div class="info-desc">Protein synthesis</div></div>
+                        <div class="info-card"><div class="emoji">☀️</div><div class="info-name">Chloroplast</div><div class="info-desc">Photosynthesis (Plant only)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== TAB 3: PLANT vs ANIMAL SORTER ========== -->
+        <div class="tab-content" id="tab-sorter">
+            <div class="sim-card" style="margin-bottom:20px;">
+                <div class="sim-card-header">
+                    <div class="sim-card-icon"><i class="fas fa-arrows-alt-h"></i></div>
+                    <div>
+                        <div class="sim-card-title">Plant vs Animal Sorter</div>
+                        <div class="sim-card-subtitle">Drag each feature into the correct cell type!</div>
+                    </div>
+                </div>
+                <div class="sort-score" id="sortScore">✅ Score: 0 / 8</div>
+                <div class="sorter-container">
+                    <div class="sort-bucket" id="itemsBucket">
+                        <h4>📦 Features (Drag these)</h4>
+                        <div id="draggableItems"></div>
+                    </div>
+                    <div class="sort-bucket" id="plantBucket" ondragover="allowDropSort(event)" ondrop="dropSort(event, 'plant')">
+                        <h4>🌱 Plant Cell</h4>
+                        <div id="plantDropped"></div>
+                    </div>
+                    <div class="sort-bucket" id="animalBucket" ondragover="allowDropSort(event)" ondrop="dropSort(event, 'animal')">
+                        <h4>🦁 Animal Cell</h4>
+                        <div id="animalDropped"></div>
+                    </div>
+                </div>
+                <button class="reset-sorter" onclick="resetSorter()"><i class="fas fa-redo"></i> Reset Game</button>
+            </div>
+        </div>
+
+        <!-- ========== TAB 4: LEARN ========== -->
+        <div class="tab-content" id="tab-learn">
+            <div class="sim-cards">
+                <div class="sim-card">
+                    <div class="sim-card-header">
+                        <div class="sim-card-icon"><i class="fas fa-book-open"></i></div>
+                        <div>
+                            <div class="sim-card-title">Cell Basics</div>
+                            <div class="sim-card-subtitle">Key concepts for Class 8, 9 & 10</div>
+                        </div>
+                    </div>
+                    <div class="info-cards">
+                        <div class="info-card"><div class="emoji">🔬</div><div class="info-name">Cell Theory</div><div class="info-desc">All living things are made of cells. Cell is the basic unit of life.</div></div>
+                        <div class="info-card"><div class="emoji">🧬</div><div class="info-name">Prokaryotic</div><div class="info-desc">No nucleus. e.g., Bacteria. (Class 9)</div></div>
+                        <div class="info-card"><div class="emoji">🧫</div><div class="info-name">Eukaryotic</div><div class="info-desc">Has nucleus. Plant & Animal cells. (Class 9)</div></div>
+                        <div class="info-card"><div class="emoji">🧱</div><div class="info-name">Cell Wall</div><div class="info-desc">Plant cells have rigid cell walls. Animal cells do not. (Class 9)</div></div>
+                        <div class="info-card"><div class="emoji">☀️</div><div class="info-name">Chloroplast</div><div class="info-desc">Contains chlorophyll. Does photosynthesis. Plant only. (Class 10)</div></div>
+                        <div class="info-card"><div class="emoji">🧬</div><div class="info-name">Nucleus</div><div class="info-desc">Contains DNA. Controls all cell activities. (Class 8, 9, 10)</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ NAVIGATION ============
+        function goBack() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'biology_hub.html'; }, 400);
+        }
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (btn) btn.classList.add('active');
+            
+            setTimeout(() => {
+                if (tabName === 'explore') initExplorer();
+                if (tabName === 'microscope') drawMicroscope();
+                if (tabName === 'sorter') initSorter();
+            }, 100);
+        }
+
+        // ============ CELL EXPLORER (NEW) ============
+        const CELL_DATA = {
+            animal: {
+                organelles: [
+                    { id: 'nucleus', label: '🧠 Nucleus', x: 0.45, y: 0.35, desc: 'Control center. Contains DNA.' },
+                    { id: 'mitochondria', label: '⚡ Mitochondria', x: 0.7, y: 0.55, desc: 'Powerhouse. Produces energy.' },
+                    { id: 'vacuole', label: '🛢️ Vacuole', x: 0.3, y: 0.7, desc: 'Storage. Small in animal cells.' },
+                    { id: 'ribosome', label: '🧪 Ribosome', x: 0.6, y: 0.25, desc: 'Makes proteins.' },
+                    { id: 'membrane', label: '🧫 Membrane', x: 0.9, y: 0.5, desc: 'Outer boundary.' }
+                ]
+            },
+            plant: {
+                organelles: [
+                    { id: 'nucleus', label: '🧠 Nucleus', x: 0.45, y: 0.35, desc: 'Control center. Contains DNA.' },
+                    { id: 'mitochondria', label: '⚡ Mitochondria', x: 0.7, y: 0.55, desc: 'Powerhouse. Produces energy.' },
+                    { id: 'vacuole', label: '🛢️ Vacuole', x: 0.3, y: 0.65, desc: 'Storage. Large central vacuole.' },
+                    { id: 'ribosome', label: '🧪 Ribosome', x: 0.6, y: 0.25, desc: 'Makes proteins.' },
+                    { id: 'membrane', label: '🧫 Membrane', x: 0.9, y: 0.45, desc: 'Outer boundary.' },
+                    { id: 'wall', label: '🧱 Cell Wall', x: 0.9, y: 0.7, desc: 'Rigid outer layer.' },
+                    { id: 'chloroplast', label: '☀️ Chloroplast', x: 0.25, y: 0.35, desc: 'Photosynthesis.' }
+                ]
+            }
+        };
+
+        let currentCell = 'animal';
+        let explorerMode = 'explore'; // 'explore' or 'label'
+        let placedLabels = {};
+        let labelScore = 0;
+        let totalLabels = 0;
+        let explorerCanvas, explorerCtx;
+
+        function initExplorer() {
+            const wrap = document.querySelector('.explorer-canvas-wrap');
+            explorerCanvas = document.getElementById('explorerCanvas');
+            explorerCanvas.width = wrap.clientWidth;
+            explorerCanvas.height = wrap.clientHeight;
+            explorerCtx = explorerCanvas.getContext('2d');
+            
+            document.getElementById('cellTypeLabel').textContent = currentCell === 'animal' ? 'Plant' : 'Animal';
+            drawExplorer();
+            
+            if (explorerMode === 'label') {
+                setupLabels();
+            } else {
+                document.getElementById('labelPool').innerHTML = '';
+                document.getElementById('explorerScore').textContent = '';
+            }
+        }
+
+        function drawExplorer() {
+            const ctx = explorerCtx;
+            const w = explorerCanvas.width;
+            const h = explorerCanvas.height;
+            const cx = w/2, cy = h/2;
+            const radius = Math.min(w,h) * 0.35;
+            const data = CELL_DATA[currentCell];
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw cell shape
+            if (currentCell === 'plant') {
+                const size = radius * 1.6;
+                ctx.fillStyle = 'rgba(100,200,150,0.1)';
+                ctx.strokeStyle = 'rgba(100,200,150,0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(cx-size/2, cy-size/2, size, size, 12);
+                ctx.fill();
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(160,160,160,0.3)';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.roundRect(cx-size/2-4, cy-size/2-4, size+8, size+8, 14);
+                ctx.stroke();
+            } else {
+                const grad = ctx.createRadialGradient(cx-10, cy-10, 5, cx, cy, radius);
+                grad.addColorStop(0, 'rgba(200,180,255,0.1)');
+                grad.addColorStop(1, 'rgba(200,180,255,0.02)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(200,180,255,0.3)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Draw organelles
+            data.organelles.forEach(org => {
+                const px = cx + (org.x-0.5) * radius * 1.6;
+                const py = cy + (org.y-0.5) * radius * 1.6;
+                const size = 20;
+                
+                const colors = {
+                    'nucleus': '#8B5CF6',
+                    'mitochondria': '#F97316',
+                    'vacuole': '#3B82F6',
+                    'ribosome': '#EC4899',
+                    'membrane': '#6FD4C5',
+                    'wall': '#A3A3A3',
+                    'chloroplast': '#22C55E'
+                };
+                
+                ctx.fillStyle = colors[org.id] || '#6FD4C5';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(255,255,255,0.15)';
+                ctx.beginPath();
+                ctx.arc(px, py, size/2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Label (if placed correctly or in explore mode)
+                if (explorerMode === 'explore') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = '10px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(org.label, px, py + size/2 + 14);
+                } else if (placedLabels[org.id]) {
+                    ctx.fillStyle = '#6FD4C5';
+                    ctx.font = 'bold 10px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('✅ ' + org.label, px, py + size/2 + 14);
+                }
+            });
+
+            // Click handler
+            explorerCanvas.onclick = (e) => {
+                if (explorerMode === 'label') return;
+                const rect = explorerCanvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                let found = false;
+                data.organelles.forEach(org => {
+                    const px = cx + (org.x-0.5) * radius * 1.6;
+                    const py = cy + (org.y-0.5) * radius * 1.6;
+                    if (Math.sqrt((mx-px)**2 + (my-py)**2) < 25) {
+                        document.getElementById('explorerInfo').innerHTML = 
+                            `<strong>${org.label}</strong>: ${org.desc}`;
+                        found = true;
+                    }
+                });
+                if (!found) {
+                    document.getElementById('explorerInfo').innerHTML = '🔬 Click on an organelle to learn about it';
+                }
+            };
+        }
+
+        function setExploreMode(mode) {
+            explorerMode = mode;
+            document.querySelectorAll('.explorer-btn').forEach(b => b.classList.remove('active-mode'));
+            if (mode === 'explore') {
+                document.querySelector('.explorer-btn[onclick*="explore"]').classList.add('active-mode');
+                document.getElementById('labelPool').innerHTML = '';
+                document.getElementById('explorerScore').textContent = '';
+                placedLabels = {};
+                labelScore = 0;
+            } else {
+                document.querySelector('.explorer-btn[onclick*="label"]').classList.add('active-mode');
+                setupLabels();
+            }
+            drawExplorer();
+        }
+
+        function switchCellType() {
+            currentCell = currentCell === 'animal' ? 'plant' : 'animal';
+            document.getElementById('cellTypeLabel').textContent = currentCell === 'animal' ? 'Plant' : 'Animal';
+            placedLabels = {};
+            labelScore = 0;
+            if (explorerMode === 'label') setupLabels();
+            drawExplorer();
+        }
+
+        function setupLabels() {
+            const pool = document.getElementById('labelPool');
+            const data = CELL_DATA[currentCell];
+            totalLabels = data.organelles.length;
+            
+            // Shuffle labels
+            const labels = data.organelles.map(o => o.label);
+            for (let i = labels.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [labels[i], labels[j]] = [labels[j], labels[i]];
+            }
+            
+            pool.innerHTML = '';
+            labels.forEach(label => {
+                const tag = document.createElement('div');
+                tag.className = 'label-tag';
+                tag.textContent = label;
+                tag.draggable = true;
+                tag.dataset.label = label;
+                
+                tag.addEventListener('dragstart', (e) => {
+                    tag.classList.add('dragging');
+                    e.dataTransfer.setData('text', label);
+                });
+                tag.addEventListener('dragend', () => tag.classList.remove('dragging'));
+                
+                // Touch support
+                tag.addEventListener('touchstart', (e) => {
+                    if (e.target.closest('.label-tag.placed')) return;
+                    tag.classList.add('dragging');
+                }, {passive: true});
+                tag.addEventListener('touchend', (e) => {
+                    tag.classList.remove('dragging');
+                    const touch = e.changedTouches[0];
+                    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (elemBelow && elemBelow.closest('.explorer-canvas')) {
+                        const rect = explorerCanvas.getBoundingClientRect();
+                        const mx = touch.clientX - rect.left;
+                        const my = touch.clientY - rect.top;
+                        checkLabelPlacement(label, mx, my, tag);
+                    }
+                }, {passive: true});
+                
+                pool.appendChild(tag);
+            });
+            
+            document.getElementById('explorerScore').textContent = `🏷️ Score: ${labelScore} / ${totalLabels}`;
+            drawExplorer();
+            
+            // Canvas drop for mouse
+            explorerCanvas.ondragover = (e) => e.preventDefault();
+            explorerCanvas.ondrop = (e) => {
+                e.preventDefault();
+                const label = e.dataTransfer.getData('text');
+                const rect = explorerCanvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                const tag = document.querySelector(`.label-tag[data-label="${label}"]`);
+                checkLabelPlacement(label, mx, my, tag);
+            };
+        }
+
+        function checkLabelPlacement(label, mx, my, tag) {
+            if (tag.classList.contains('placed')) return;
+            const data = CELL_DATA[currentCell];
+            const w = explorerCanvas.width;
+            const h = explorerCanvas.height;
+            const cx = w/2, cy = h/2;
+            const radius = Math.min(w,h) * 0.35;
+            
+            let correct = false;
+            data.organelles.forEach(org => {
+                const px = cx + (org.x-0.5) * radius * 1.6;
+                const py = cy + (org.y-0.5) * radius * 1.6;
+                if (org.label === label && Math.sqrt((mx-px)**2 + (my-py)**2) < 30) {
+                    correct = true;
+                    placedLabels[org.id] = true;
+                    tag.classList.add('placed');
+                    tag.draggable = false;
+                    labelScore++;
+                    document.getElementById('explorerScore').textContent = `🏷️ Score: ${labelScore} / ${totalLabels}`;
+                    drawExplorer();
+                }
+            });
+            
+            if (!correct) {
+                tag.classList.add('wrong');
+                setTimeout(() => tag.classList.remove('wrong'), 500);
+            }
+        }
+
+        function resetLabels() {
+            placedLabels = {};
+            labelScore = 0;
+            if (explorerMode === 'label') setupLabels();
+            drawExplorer();
+        }
+
+        // ============ MICROSCOPE VIEW ============
+        const MICRO_PARTS = [
+            { id: 'nucleus', label: '🧠 Nucleus', x: 0.45, y: 0.35, desc: 'Control center. Contains DNA.' },
+            { id: 'mito1', label: '⚡ Mitochondria', x: 0.7, y: 0.5, desc: 'Powerhouse. Produces energy.' },
+            { id: 'vacuole', label: '🛢️ Vacuole', x: 0.3, y: 0.7, desc: 'Storage. Holds water and nutrients.' },
+            { id: 'ribosome', label: '🧪 Ribosome', x: 0.6, y: 0.25, desc: 'Protein synthesis.' },
+            { id: 'membrane', label: '🧫 Cell Membrane', x: 0.9, y: 0.5, desc: 'Outer boundary. Controls entry/exit.' }
+        ];
+
+        function drawMicroscope() {
+            const canvas = document.getElementById('microscopeCanvas');
+            const wrap = canvas.parentElement;
+            canvas.width = wrap.clientWidth;
+            canvas.height = wrap.clientHeight;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const zoom = parseFloat(document.getElementById('zoomSlider').value);
+            document.getElementById('zoomPercent').textContent = Math.round(zoom*100) + '%';
+
+            ctx.clearRect(0, 0, w, h);
+            
+            ctx.fillStyle = 'rgba(240,248,255,0.05)';
+            ctx.fillRect(0, 0, w, h);
+            
+            const cx = w/2, cy = h/2;
+            const radius = Math.min(w,h) * 0.35 * zoom;
+            
+            const grad = ctx.createRadialGradient(cx-10, cy-10, 5, cx, cy, radius);
+            grad.addColorStop(0, 'rgba(200,220,240,0.15)');
+            grad.addColorStop(1, 'rgba(150,200,220,0.05)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(200,220,240,0.3)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            MICRO_PARTS.forEach(p => {
+                const px = cx + (p.x-0.5) * radius * 1.6;
+                const py = cy + (p.y-0.5) * radius * 1.6;
+                const size = 18 * zoom;
+                
+                ctx.fillStyle = p.id === 'nucleus' ? '#8B5CF6' : 
+                               p.id === 'mito1' ? '#F97316' :
+                               p.id === 'vacuole' ? '#3B82F6' :
+                               p.id === 'ribosome' ? '#EC4899' : '#6FD4C5';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(255,255,255,0.2)';
+                ctx.beginPath();
+                ctx.arc(px, py, size/2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(p.label, px, py + size/2 + 14);
+            });
+
+            canvas.onclick = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                let found = false;
+                MICRO_PARTS.forEach(p => {
+                    const px = cx + (p.x-0.5) * radius * 1.6;
+                    const py = cy + (p.y-0.5) * radius * 1.6;
+                    if (Math.sqrt((mx-px)**2 + (my-py)**2) < 20 * zoom) {
+                        document.getElementById('microscopeLabel').innerHTML = 
+                            `${p.label}: ${p.desc}`;
+                        found = true;
+                    }
+                });
+                if (!found) {
+                    document.getElementById('microscopeLabel').innerHTML = '🔬 Click on an organelle to learn more!';
+                }
+            };
+        }
+
+        // ============ PLANT vs ANIMAL SORTER ============
+        const sortItems = [
+            { id: 1, text: '🧱 Has Cell Wall', category: 'plant' },
+            { id: 2, text: '☀️ Has Chloroplasts', category: 'plant' },
+            { id: 3, text: '🛢️ Large Central Vacuole', category: 'plant' },
+            { id: 4, text: '🟩 Rectangular Shape', category: 'plant' },
+            { id: 5, text: '🚫 No Cell Wall', category: 'animal' },
+            { id: 6, text: '❌ No Chloroplasts', category: 'animal' },
+            { id: 7, text: '🛢️ Small Vacuoles', category: 'animal' },
+            { id: 8, text: '⚪ Round / Irregular Shape', category: 'animal' }
+        ];
+
+        let sortScore = 0;
+        let selectedSortItem = null;
+
+        function initSorter() {
+            const container = document.getElementById('draggableItems');
+            container.innerHTML = '';
+            document.getElementById('plantDropped').innerHTML = '';
+            document.getElementById('animalDropped').innerHTML = '';
+            
+            const shuffled = [...sortItems].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'sort-item';
+                div.draggable = true;
+                div.id = 'sort-item-' + item.id;
+                div.textContent = item.text;
+                div.dataset.category = item.category;
+                
+                div.addEventListener('dragstart', dragSort);
+                div.addEventListener('dragend', dragEndSort);
+                div.addEventListener('touchstart', touchStartSort, {passive: false});
+                div.addEventListener('touchmove', touchMoveSort, {passive: false});
+                div.addEventListener('touchend', touchEndSort);
+                
+                container.appendChild(div);
+            });
+            
+            sortScore = 0;
+            document.getElementById('sortScore').textContent = '✅ Score: 0 / 8';
+            document.getElementById('sortScore').style.color = '#6FD4C5';
+        }
+
+        function resetSorter() { initSorter(); }
+
+        function allowDropSort(e) { e.preventDefault(); }
+        function dragSort(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text', e.target.id);
+        }
+        function dragEndSort(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+        }
+        function dropSort(e, category) {
+            e.preventDefault();
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+            const itemId = e.dataTransfer.getData('text');
+            if (itemId) processSortDrop(itemId, category);
+        }
+
+        function touchStartSort(e) {
+            if (e.target.closest('button')) return;
+            selectedSortItem = e.target.closest('.sort-item');
+            if (selectedSortItem && selectedSortItem.parentElement.id === 'draggableItems') {
+                e.preventDefault();
+                selectedSortItem.classList.add('dragging');
+                selectedSortItem.style.opacity = '0.6';
+                selectedSortItem.style.zIndex = '1000';
+            }
+        }
+        function touchMoveSort(e) {
+            if (!selectedSortItem) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            selectedSortItem.style.position = 'fixed';
+            selectedSortItem.style.left = (touch.clientX - 80) + 'px';
+            selectedSortItem.style.top = (touch.clientY - 20) + 'px';
+            selectedSortItem.style.width = '160px';
+            selectedSortItem.style.pointerEvents = 'none';
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bucket = elemBelow?.closest('.sort-bucket');
+            if (bucket) bucket.classList.add('highlight');
+        }
+        function touchEndSort(e) {
+            if (!selectedSortItem) return;
+            selectedSortItem.classList.remove('dragging');
+            selectedSortItem.style.opacity = '1';
+            selectedSortItem.style.position = '';
+            selectedSortItem.style.left = '';
+            selectedSortItem.style.top = '';
+            selectedSortItem.style.width = '';
+            selectedSortItem.style.pointerEvents = '';
+            selectedSortItem.style.zIndex = '';
+            document.querySelectorAll('.sort-bucket').forEach(b => b.classList.remove('highlight'));
+            const touch = e.changedTouches[0];
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bucket = elemBelow?.closest('.sort-bucket');
+            if (bucket) {
+                let category = '';
+                if (bucket.id === 'plantBucket' || bucket.id === 'plantDropped') category = 'plant';
+                if (bucket.id === 'animalBucket' || bucket.id === 'animalDropped') category = 'animal';
+                if (category) processSortDrop(selectedSortItem.id, category);
+            }
+            selectedSortItem = null;
+        }
+
+        function processSortDrop(itemId, category) {
+            const item = document.getElementById(itemId);
+            if (!item) return;
+            if (item.parentElement.id === 'plantDropped' || item.parentElement.id === 'animalDropped') return;
+            
+            const correctCategory = item.dataset.category;
+            const dropTarget = category === 'plant' ? 
+                document.getElementById('plantDropped') : 
+                document.getElementById('animalDropped');
+            
+            dropTarget.appendChild(item);
+            item.draggable = false;
+            item.style.cursor = 'default';
+            item.style.position = '';
+            item.style.left = '';
+            item.style.top = '';
+            item.style.opacity = '1';
+            
+            if (correctCategory === category) {
+                item.classList.add('correct');
+                item.classList.remove('wrong');
+                sortScore++;
+            } else {
+                item.classList.add('wrong');
+                item.classList.remove('correct');
+                setTimeout(() => item.classList.remove('wrong'), 500);
+            }
+            
+            document.getElementById('sortScore').textContent = '✅ Score: ' + sortScore + ' / 8';
+            if (sortScore === 8) {
+                document.getElementById('sortScore').textContent = '🎉 Perfect! All Correct! 8 / 8 🎉';
+                document.getElementById('sortScore').style.color = '#FFD700';
+            }
+        }
+
+        // ============ INIT ============
+        window.addEventListener('load', () => {
+            initExplorer();
+            drawMicroscope();
+            initSorter();
+        });
+
+        window.addEventListener('resize', () => {
+            const at = document.querySelector('.tab-content.active');
+            if (at) {
+                if (at.id === 'tab-explore') initExplorer();
+                if (at.id === 'tab-microscope') drawMicroscope();
+            }
+        });
+    </script>
+</body>
+</html>
