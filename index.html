@@ -9,10 +9,12 @@
         :root {
             --physics-color: #FF6B6B;
             --physics-light: #FF8E8E;
-            --chemistry-color: #4ECDC4;
-            --chemistry-light: #7EDDD6;
+            --chemistry-color: #FBBF24;
+            --chemistry-light: #FCD34D;
             --biology-color: #45B7AA;
             --biology-light: #6FD4C5;
+            --ai-color: #A78BFA;
+            --ai-light: #C4B5FD;
             --glass: rgba(255, 255, 255, 0.08);
             --glass-border: rgba(255, 255, 255, 0.15);
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -37,7 +39,7 @@
             pointer-events: none; z-index: 0;
             background-image: 
                 linear-gradient(rgba(255,107,107,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(78,205,196,0.04) 1px, transparent 1px);
+                linear-gradient(90deg, rgba(251,191,36,0.04) 1px, transparent 1px);
             background-size: 60px 60px;
             animation: gridMove 25s linear infinite;
         }
@@ -58,7 +60,7 @@
         }
         .orb-2 {
             width: 450px; height: 450px;
-            background: radial-gradient(circle, rgba(78,205,196,0.25), transparent 70%);
+            background: radial-gradient(circle, rgba(251,191,36,0.25), transparent 70%);
             bottom: -150px; left: -150px; animation-delay: -4s;
         }
         .orb-3 {
@@ -66,6 +68,11 @@
             background: radial-gradient(circle, rgba(69,183,170,0.2), transparent 70%);
             top: 50%; left: 50%; transform: translate(-50%, -50%);
             animation-delay: -8s;
+        }
+        .orb-4 {
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(167,139,250,0.2), transparent 70%);
+            top: 20%; right: 10%; animation-delay: -12s;
         }
 
         @keyframes orbFloat {
@@ -112,7 +119,7 @@
         }
         .logo-icon {
             width: 90px; height: 90px;
-            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #45B7AA 100%);
+            background: linear-gradient(135deg, #FF6B6B 0%, #FBBF24 50%, #45B7AA 100%);
             border-radius: 26px; display: flex; align-items: center;
             justify-content: center; font-size: 44px; color: white;
             animation: iconPulse 4s ease-in-out infinite;
@@ -131,14 +138,14 @@
         }
         @keyframes iconPulse {
             0%, 100% { transform: scale(1) rotate(0deg); box-shadow: 0 12px 40px rgba(255,107,107,0.5); }
-            25% { transform: scale(1.08) rotate(3deg); box-shadow: 0 16px 50px rgba(78,205,196,0.6); }
+            25% { transform: scale(1.08) rotate(3deg); box-shadow: 0 16px 50px rgba(251,191,36,0.6); }
             50% { transform: scale(0.95) rotate(-2deg); box-shadow: 0 8px 30px rgba(69,183,170,0.5); }
             75% { transform: scale(1.05) rotate(1deg); box-shadow: 0 14px 45px rgba(255,107,107,0.55); }
         }
 
         .logo-text {
             font-size: 80px; font-weight: 900;
-            background: linear-gradient(135deg, #ffffff 0%, #FF8E8E 30%, #7EDDD6 60%, #6FD4C5 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #FF8E8E 30%, #FCD34D 60%, #6FD4C5 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text; letter-spacing: -3px;
             animation: textGlow 4s ease-in-out infinite;
@@ -146,7 +153,7 @@
         }
         @keyframes textGlow {
             0%, 100% { filter: brightness(1) drop-shadow(0 0 20px rgba(255,107,107,0.3)); background-position: 0% 50%; }
-            50% { filter: brightness(1.3) drop-shadow(0 0 40px rgba(78,205,196,0.5)); background-position: 100% 50%; }
+            50% { filter: brightness(1.3) drop-shadow(0 0 40px rgba(251,191,36,0.5)); background-position: 100% 50%; }
         }
 
         .tagline {
@@ -161,9 +168,9 @@
 
         .cards-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 36px;
-            max-width: 1100px;
+            max-width: 1450px;
             width: 100%;
             animation: cardsEntrance 1.2s ease-out 0.8s both;
         }
@@ -191,11 +198,15 @@
             background-size: 200% 100%; animation: gradientSlide 3s linear infinite;
         }
         .subject-card:nth-child(2)::before { 
-            background: linear-gradient(90deg, #4ECDC4, #7EDDD6, #4ECDC4);
+            background: linear-gradient(90deg, #FBBF24, #FCD34D, #FBBF24);
             background-size: 200% 100%; animation: gradientSlide 3s linear infinite;
         }
         .subject-card:nth-child(3)::before { 
             background: linear-gradient(90deg, #45B7AA, #6FD4C5, #45B7AA);
+            background-size: 200% 100%; animation: gradientSlide 3s linear infinite;
+        }
+        .subject-card:nth-child(4)::before { 
+            background: linear-gradient(90deg, #A78BFA, #C4B5FD, #A78BFA);
             background-size: 200% 100%; animation: gradientSlide 3s linear infinite;
         }
         @keyframes gradientSlide {
@@ -208,8 +219,9 @@
             opacity: 0; transition: opacity 0.6s; z-index: 0;
         }
         .subject-card:nth-child(1)::after { background: radial-gradient(circle at 50% 0%, rgba(255,107,107,0.25), transparent 70%); }
-        .subject-card:nth-child(2)::after { background: radial-gradient(circle at 50% 0%, rgba(78,205,196,0.25), transparent 70%); }
+        .subject-card:nth-child(2)::after { background: radial-gradient(circle at 50% 0%, rgba(251,191,36,0.25), transparent 70%); }
         .subject-card:nth-child(3)::after { background: radial-gradient(circle at 50% 0%, rgba(69,183,170,0.25), transparent 70%); }
+        .subject-card:nth-child(4)::after { background: radial-gradient(circle at 50% 0%, rgba(167,139,250,0.25), transparent 70%); }
 
         .subject-card:hover::after { opacity: 1; }
         .subject-card:hover {
@@ -218,8 +230,9 @@
             box-shadow: var(--shadow-hover);
         }
         .subject-card:nth-child(1):hover { box-shadow: 0 24px 70px rgba(255,107,107,0.45); border-color: rgba(255,107,107,0.6); }
-        .subject-card:nth-child(2):hover { box-shadow: 0 24px 70px rgba(78,205,196,0.45); border-color: rgba(78,205,196,0.6); }
+        .subject-card:nth-child(2):hover { box-shadow: 0 24px 70px rgba(251,191,36,0.45); border-color: rgba(251,191,36,0.6); }
         .subject-card:nth-child(3):hover { box-shadow: 0 24px 70px rgba(69,183,170,0.45); border-color: rgba(69,183,170,0.6); }
+        .subject-card:nth-child(4):hover { box-shadow: 0 24px 70px rgba(167,139,250,0.45); border-color: rgba(167,139,250,0.6); }
 
         .card-icon-wrapper {
             width: 110px; height: 110px; border-radius: 30px;
@@ -232,12 +245,16 @@
             box-shadow: 0 10px 30px rgba(255,107,107,0.5);
         }
         .subject-card:nth-child(2) .card-icon-wrapper { 
-            background: linear-gradient(135deg, #4ECDC4, #7EDDD6);
-            box-shadow: 0 10px 30px rgba(78,205,196,0.5);
+            background: linear-gradient(135deg, #FBBF24, #FCD34D);
+            box-shadow: 0 10px 30px rgba(251,191,36,0.5);
         }
         .subject-card:nth-child(3) .card-icon-wrapper { 
             background: linear-gradient(135deg, #45B7AA, #6FD4C5);
             box-shadow: 0 10px 30px rgba(69,183,170,0.5);
+        }
+        .subject-card:nth-child(4) .card-icon-wrapper { 
+            background: linear-gradient(135deg, #A78BFA, #C4B5FD);
+            box-shadow: 0 10px 30px rgba(167,139,250,0.5);
         }
         .subject-card:hover .card-icon-wrapper {
             transform: scale(1.12) rotate(-5deg); border-radius: 40px;
@@ -288,12 +305,16 @@
             box-shadow: 0 8px 25px rgba(255,107,107,0.4);
         }
         .subject-card:nth-child(2) .cta-button { 
-            background: linear-gradient(135deg, #4ECDC4, #3ab5ad);
-            box-shadow: 0 8px 25px rgba(78,205,196,0.4);
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            box-shadow: 0 8px 25px rgba(251,191,36,0.4);
         }
         .subject-card:nth-child(3) .cta-button { 
             background: linear-gradient(135deg, #45B7AA, #359d91);
             box-shadow: 0 8px 25px rgba(69,183,170,0.4);
+        }
+        .subject-card:nth-child(4) .cta-button { 
+            background: linear-gradient(135deg, #A78BFA, #8b6fe0);
+            box-shadow: 0 8px 25px rgba(167,139,250,0.4);
         }
         .cta-button:hover { transform: scale(1.04); box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4); letter-spacing: 2px; }
         .cta-button:active { transform: scale(0.94); transition: transform 0.1s; }
@@ -308,6 +329,13 @@
         }
         @keyframes rippleEffect {
             to { transform: scale(5); opacity: 0; }
+        }
+
+        @media (max-width: 1200px) {
+            .cards-container {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 800px;
+            }
         }
 
         @media (max-width: 900px) {
@@ -339,6 +367,7 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
     <div class="particles-container" id="particles"></div>
 
     <div class="main-container">
@@ -367,9 +396,9 @@
                 <button class="cta-button">Explore Labs <i class="fas fa-arrow-right"></i></button>
             </div>
 
-            <!-- Chemistry Card -->
+            <!-- Chemistry Card - Yellow Theme -->
             <div class="subject-card" onclick="navigateTo('chemistry', event)">
-                <div class="card-icon-wrapper"><i class="fas fa-vial"></i></div>
+                <div class="card-icon-wrapper"><i class="fas fa-flask"></i></div>
                 <div class="card-title">Chemistry</div>
                 <div class="card-subtitle">🧪 Topics & Examples</div>
                 <div class="topics-list">
@@ -387,7 +416,7 @@
             <div class="subject-card" onclick="navigateTo('biology', event)">
                 <div class="card-icon-wrapper"><i class="fas fa-dna"></i></div>
                 <div class="card-title">Biology</div>
-                <div class="card-subtitle">🧬 Coming Soon</div>
+                <div class="card-subtitle">🧬 INTERACTIVE LABS</div>
                 <div class="topics-list">
                     <span class="topic-chip">Cell Structure</span>
                     <span class="topic-chip">Microorganisms</span>
@@ -397,6 +426,22 @@
                     <span class="topic-chip">Genetics</span>
                 </div>
                 <button class="cta-button">Explore Topics <i class="fas fa-arrow-right"></i></button>
+            </div>
+
+            <!-- AI Chatbot Card -->
+            <div class="subject-card" onclick="navigateTo('chatbot', event)">
+                <div class="card-icon-wrapper"><i class="fas fa-robot"></i></div>
+                <div class="card-title">AI Tutor</div>
+                <div class="card-subtitle">🤖 Smart Learning Assistant</div>
+                <div class="topics-list">
+                    <span class="topic-chip">Ask Questions</span>
+                    <span class="topic-chip">Get Explanations</span>
+                    <span class="topic-chip">Science Help</span>
+                    <span class="topic-chip">24/7 Support</span>
+                    <span class="topic-chip">Interactive</span>
+                    <span class="topic-chip">Personalized</span>
+                </div>
+                <button class="cta-button">Chat Now <i class="fas fa-comment-dots"></i></button>
             </div>
         </div>
     </div>
@@ -450,7 +495,8 @@
                     const pages = {
                         'physics': 'physics_hub.html',
                         'chemistry': 'chemistry_hub.html',
-                        'biology': 'biology_hub.html'
+                        'biology': 'biology_hub.html',
+                        'chatbot': 'chatbot.html'
                     };
                     window.location.href = pages[subject];
                 }, 500);
@@ -486,6 +532,7 @@
             if (e.key === '1') document.querySelector('.subject-card:nth-child(1)').click();
             if (e.key === '2') document.querySelector('.subject-card:nth-child(2)').click();
             if (e.key === '3') document.querySelector('.subject-card:nth-child(3)').click();
+            if (e.key === '4') document.querySelector('.subject-card:nth-child(4)').click();
         });
 
         // Initialize
