@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "retrieval_chapter_accuracy": 100.0,
+    "retrieval_grade_accuracy": 80.0,
+    "answer_accuracy": 95.0,
+    "quiz_quality": 75.0,
+    "total_chunks": 4204,
+    "loaded_files": 43
+  },
+  "retrieval": [
+    {
+      "question": "What is a cell?",
+      "found_chapter": true,
+      "found_grade": true
+    },
+    {
+      "question": "What is Newton's first law?",
+      "found_chapter": true,
+      "found_grade": true
+    },
+    {
+      "question": "What is Ohm's law?",
+      "found_chapter": true,
+      "found_grade": true
+    },
+    {
+      "question": "What is photosynthesis?",
+      "found_chapter": true,
+      "found_grade": false
+    },
+    {
+      "question": "What is a chemical reaction?",
+      "found_chapter": true,
+      "found_grade": true
+    }
+  ],
+  "answers": [
+    {
+      "question": "What is a cell?",
+      "found": [
+        "cell",
+        "unit",
+        "life",
+        "living"
+      ],
+      "missing": [
+        "basic"
+      ],
+      "score": 80.0
+    },
+    {
+      "question": "What is Newton's first law?",
+      "found": [
+        "rest",
+        "motion",
+        "force",
+        "constant",
+        "velocity"
+      ],
+      "missing": [],
+      "score": 100.0
+    },
+    {
+      "question": "What is Ohm's law?",
+      "found": [
+        "current",
+        "voltage",
+        "resistance",
+        "ohm"
+      ],
+      "missing": [],
+      "score": 100.0
+    },
+    {
+      "question": "What is photosynthesis?",
+      "found": [
+        "sunlight",
+        "carbon dioxide",
+        "water",
+        "oxygen"
+      ],
+      "missing": [],
+      "score": 100.0
+    }
+  ],
+  "quiz": [
+    50.0,
+    75.0,
+    100.0
+  ]
+}
