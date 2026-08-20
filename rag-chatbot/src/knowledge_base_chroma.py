@@ -1,16 +1,15 @@
-# src/knowledge_base_chroma.py
+# src/knowledge_base_chroma.py - Optimized with ChromaDB persistence
 
-# ============================================================
-# FIX: Import chromadb with a patch to avoid onnxruntime
-# ============================================================
-
-import sys
 import os
+import sys
 import warnings
+import pickle
+import hashlib
 from typing import List, Dict, Optional
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from pathlib import Path
 
 from src.config import (
     DATA_FOLDER,
@@ -22,32 +21,21 @@ from src.config import (
 )
 from src.utils import load_pdf_text, chunk_text
 
-# ============================================================
-# Suppress the onnxruntime import error
-# ============================================================
-
+# Suppress warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore")
     try:
         import chromadb
         from chromadb.config import Settings
-
         HAS_CHROMA = True
-        print("   ✅ ChromaDB imported successfully")
+        print("   ✅ ChromaDB imported")
     except ImportError:
         HAS_CHROMA = False
-        print("⚠️ ChromaDB not installed. Install with: pip install chromadb")
-    except Exception as e:
-        HAS_CHROMA = False
-        print(f"⚠️ ChromaDB import error: {e}")
-        print("   Continuing without ChromaDB...")
+        print("⚠️ ChromaDB not installed")
 
 
 class KnowledgeBase:
-    """
-    Knowledge Base with ChromaDB for persistent storage (no embeddings)
-    Uses TF-IDF for search, ChromaDB just stores the data
-    """
+    """Knowledge Base with optimized ChromaDB persistence"""
 
     def __init__(self, folder: str = DATA_FOLDER, use_chroma: bool = USE_CHROMA):
         self.folder = folder
@@ -56,6 +44,7 @@ class KnowledgeBase:
         self.metadata: List[Dict] = []
         self._loaded_files: List[str] = []
         self.grade_index = {"Class 8": [], "Class 9": [], "Class 10": []}
+        self.file_hashes = {}
 
         # TF-IDF for search
         self.vectorizer = None
@@ -64,21 +53,29 @@ class KnowledgeBase:
         # ChromaDB client
         self.client = None
         self.collection = None
+        
+        # Cache file for faster loading
+        self.cache_file = os.path.join(CHROMA_PATH, "knowledge_cache.pkl")
 
+        # Initialize ChromaDB
         if self.use_chroma:
-            print("📚 Initializing ChromaDB (storage only)...")
+            print("📚 Initializing ChromaDB with persistence...")
             self._init_chroma()
             if self._collection_exists():
+                # Load from ChromaDB (FAST)
                 self._load_from_chroma()
             else:
-                print("📚 First time - building from PDFs...")
+                # First time - build from PDFs (SLOW - only once)
+                print("📚 First time setup - building index from PDFs...")
+                print("⏳ This may take a few minutes on first run...")
                 self._build_from_pdfs()
                 self._save_to_chroma()
+                print("✅ Index built and saved to ChromaDB!")
         else:
             print("📚 Loading from PDFs (no ChromaDB)...")
             self._build_from_pdfs()
 
-        # Always build TF-IDF for search
+        # Build TF-IDF for search
         self._build_tfidf()
         self._build_grade_index()
 
@@ -88,15 +85,17 @@ class KnowledgeBase:
         print(f"   Class 10: {len(self.grade_index['Class 10'])} chunks")
 
     def _init_chroma(self):
-        """Initialize ChromaDB client WITHOUT embeddings"""
+        """Initialize ChromaDB with persistence"""
         try:
-            # ✅ FIX: Use Settings to disable telemetry and avoid embedding issues
+            # Create directory if it doesn't exist
+            os.makedirs(CHROMA_PATH, exist_ok=True)
+            
             self.client = chromadb.PersistentClient(
                 path=CHROMA_PATH,
                 settings=Settings(
                     anonymized_telemetry=False,
                     is_persistent=True,
-                    allow_reset=True
+                    allow_reset=False
                 )
             )
             print(f"   ✅ ChromaDB initialized at {CHROMA_PATH}")
@@ -105,21 +104,44 @@ class KnowledgeBase:
             self.use_chroma = False
 
     def _collection_exists(self) -> bool:
-        """Check if collection already exists"""
+        """Check if collection exists and has data"""
         try:
             collections = self.client.list_collections()
-            return "ncert_science" in [c.name for c in collections]
+            if "ncert_science" in [c.name for c in collections]:
+                collection = self.client.get_collection("ncert_science")
+                # Check if it has documents
+                count = collection.count()
+                return count > 0
+            return False
         except Exception:
             return False
 
-    def _load_from_chroma(self):
-        """Load from ChromaDB"""
+    def _get_file_hash(self, filepath: str) -> str:
+        """Get hash of file to detect changes"""
         try:
-            print("📚 Loading from ChromaDB...")
+            with open(filepath, 'rb') as f:
+                return hashlib.md5(f.read()).hexdigest()
+        except:
+            return ""
+
+    def _get_files_hash(self) -> str:
+        """Get combined hash of all PDFs to detect changes"""
+        pdf_files = [f for f in os.listdir(self.folder) if f.endswith('.pdf')]
+        hashes = []
+        for pdf_file in sorted(pdf_files):
+            filepath = os.path.join(self.folder, pdf_file)
+            hashes.append(self._get_file_hash(filepath))
+        return hashlib.md5(''.join(hashes).encode()).hexdigest()
+
+    def _load_from_chroma(self):
+        """Load from ChromaDB - FAST"""
+        try:
+            print("📚 Loading from ChromaDB (fast)...")
             self.collection = self.client.get_collection("ncert_science")
 
+            # Get all data
             results = self.collection.get()
-
+            
             if results and results['documents']:
                 for i, text in enumerate(results['documents']):
                     self.chunks.append(text)
@@ -132,8 +154,16 @@ class KnowledgeBase:
                         'chunk_index': i
                     })
                 print(f"   ✅ Loaded {len(self.chunks)} chunks from ChromaDB")
+                
+                # Update file tracking
+                if hasattr(self, '_loaded_files'):
+                    loaded_files = set()
+                    for meta in self.metadata:
+                        if meta.get('file'):
+                            loaded_files.add(meta['file'])
+                    self._loaded_files = list(loaded_files)
             else:
-                print("   ⚠️ ChromaDB is empty, rebuilding from PDFs...")
+                print("   ⚠️ ChromaDB is empty, rebuilding...")
                 self._build_from_pdfs()
                 self._save_to_chroma()
 
@@ -143,7 +173,7 @@ class KnowledgeBase:
             self._save_to_chroma()
 
     def _build_from_pdfs(self):
-        """Load from PDFs (slower, first time only)"""
+        """Load from PDFs - SLOW (only on first run or when files change)"""
         print("📚 Loading from PDFs...")
         self.chunks = []
         self.metadata = []
@@ -189,51 +219,61 @@ class KnowledgeBase:
         print(f"✅ Loaded {len(self.chunks)} chunks from PDFs")
 
     def _save_to_chroma(self):
-        """Save to ChromaDB"""
+        """Save to ChromaDB - FAST retrieval later"""
         if not self.use_chroma or not self.client:
             return
 
         try:
-            print("💾 Saving to ChromaDB...")
+            # Delete existing collection if exists
+            try:
+                self.client.delete_collection("ncert_science")
+            except:
+                pass
 
-            # ✅ FIX: Create collection WITHOUT embedding function
+            print("💾 Saving to ChromaDB for fast loading...")
             self.collection = self.client.create_collection(
                 name="ncert_science",
-                embedding_function=None  # ← NO embeddings!
+                embedding_function=None
             )
 
-            ids = [f"chunk_{i}" for i in range(len(self.chunks))]
-            documents = self.chunks
-            metadatas = []
-
-            for meta in self.metadata:
-                metadatas.append({
-                    'file': meta.get('file', ''),
-                    'chapter': meta.get('chapter', ''),
-                    'grade': meta.get('grade', ''),
-                    'topics': ','.join(meta.get('topics', []))
-                })
-
+            # Batch save for efficiency
             batch_size = 1000
-            total_batches = (len(documents) + batch_size - 1) // batch_size
+            total_batches = (len(self.chunks) + batch_size - 1) // batch_size
 
-            for i in range(0, len(documents), batch_size):
-                end = min(i + batch_size, len(documents))
+            for i in range(0, len(self.chunks), batch_size):
+                end = min(i + batch_size, len(self.chunks))
+                ids = [f"chunk_{j}" for j in range(i, end)]
+                documents = self.chunks[i:end]
+                metadatas = []
+                
+                for meta in self.metadata[i:end]:
+                    metadatas.append({
+                        'file': meta.get('file', ''),
+                        'chapter': meta.get('chapter', ''),
+                        'grade': meta.get('grade', ''),
+                        'topics': ','.join(meta.get('topics', []))
+                    })
+
                 self.collection.add(
-                    ids=ids[i:end],
-                    documents=documents[i:end],
-                    metadatas=metadatas[i:end]
+                    ids=ids,
+                    documents=documents,
+                    metadatas=metadatas
                 )
                 print(f"  ✓ Saved batch {i // batch_size + 1}/{total_batches}")
 
             print(f"✅ Saved {len(self.chunks)} chunks to ChromaDB!")
+            
+            # Save file hash for change detection
+            hash_file = os.path.join(CHROMA_PATH, "files_hash.txt")
+            with open(hash_file, 'w') as f:
+                f.write(self._get_files_hash())
 
         except Exception as e:
             print(f"⚠️ ChromaDB save failed: {e}")
             self.use_chroma = False
 
     def _build_tfidf(self):
-        """Build TF-IDF for search"""
+        """Build TF-IDF for search - optimized"""
         if not self.chunks:
             return
 
@@ -241,7 +281,7 @@ class KnowledgeBase:
             self.vectorizer = TfidfVectorizer(
                 stop_words='english',
                 ngram_range=(1, 2),
-                max_features=20000,
+                max_features=10000,  # Reduced for speed
                 min_df=2,
                 sublinear_tf=True
             )
@@ -258,16 +298,15 @@ class KnowledgeBase:
                 self.grade_index[grade].append(idx)
 
     def search(self, query: str, topics: List[str] = None, grade: str = None, top_k: int = 4) -> List[Dict]:
-        """Search using TF-IDF"""
+        """Search using TF-IDF - optimized"""
         if not self.chunks or self.tfidf_matrix is None:
             return []
 
-        # Filter by grade if specified
+        # Fast filtering
         candidate_indices = None
         if grade and grade in self.grade_index:
             candidate_indices = set(self.grade_index[grade])
 
-        # Topic filtering
         if topics:
             topic_indices = set()
             for topic in topics:
@@ -282,6 +321,7 @@ class KnowledgeBase:
             else:
                 candidate_indices = topic_indices
 
+        # Vectorized search (fast)
         q_vec = self.vectorizer.transform([query])
 
         if candidate_indices:
@@ -290,6 +330,7 @@ class KnowledgeBase:
                 return []
             sim = cosine_similarity(q_vec, self.tfidf_matrix[indices]).flatten()
             top_local = np.argsort(sim)[-top_k:][::-1]
+            
             results = []
             for local_idx in top_local:
                 global_idx = indices[local_idx]
@@ -304,6 +345,7 @@ class KnowledgeBase:
         # Regular search
         sim = cosine_similarity(q_vec, self.tfidf_matrix).flatten()
         top_indices = np.argsort(sim)[-top_k:][::-1]
+        
         return [{
             'text': self.chunks[i],
             'score': float(sim[i]),

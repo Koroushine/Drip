@@ -45,11 +45,36 @@ DATA_FOLDER = "./data"
 RESULTS_FOLDER = "./results"
 
 # ============================================================
-# ChromaDB Settings
+# ChromaDB Settings - OPTIMIZED FOR SPEED
 # ============================================================
 
+# Enable ChromaDB persistence (set to False to disable)
 USE_CHROMA = True
+
+# Path where ChromaDB stores data (persistent across restarts)
 CHROMA_PATH = "./chroma_db"
+
+# Batch size for saving chunks to ChromaDB (optimized for speed)
+CHROMA_BATCH_SIZE = 1000
+
+# Maximum features for TF-IDF (reduced for faster search)
+TFIDF_MAX_FEATURES = 10000
+
+# Minimum document frequency for TF-IDF
+TFIDF_MIN_DF = 2
+
+# ============================================================
+# Performance Settings
+# ============================================================
+
+# Number of chunks to return in search results
+DEFAULT_TOP_K = 4
+
+# Maximum chunk size for text splitting
+CHUNK_SIZE = 500
+
+# Overlap between chunks for better context
+CHUNK_OVERLAP = 50
 
 # ============================================================
 # Grade Mapping

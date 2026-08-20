@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Chemistry Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --chemistry-color: #FBBF24;
+            --chemistry-light: #FCD34D;
+            --chemistry-dark: #d97706;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --radius: 28px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: 
+                linear-gradient(rgba(251,191,36,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(251,191,36,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(251,191,36,0.25), transparent 70%);
+            top: -150px; right: -150px; animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, rgba(255,107,107,0.2), transparent 70%);
+            bottom: -150px; left: -150px; animation-delay: -4s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(80px, -60px) scale(1.15); }
+            50% { transform: translate(-40px, -100px) scale(0.9); }
+            75% { transform: translate(-80px, 40px) scale(1.1); }
+        }
+
+        .particles-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1;
+        }
+
+        .particle {
+            position: absolute; background: white; border-radius: 50%;
+            animation: particleFloat 10s linear infinite; opacity: 0;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(110vh) translateX(0) scale(0); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) translateX(100px) scale(1.5); opacity: 0; }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1200px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 40px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(251,191,36,0.3); transform: translateX(-4px); }
+
+        .breadcrumb {
+            display: flex; align-items: center; gap: 10px; font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #FBBF24; font-weight: 600; }
+
+        .subject-badge {
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(251,191,36,0.4);
+            color: #1a1a2e;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 50px; animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header h1 {
+            font-size: 48px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #FCD34D);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+
+        .page-header .subtitle {
+            font-size: 18px; color: rgba(255, 255, 255, 0.6); letter-spacing: 3px;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            animation: cardsEntrance 1.2s ease-out 0.4s both;
+        }
+
+        @keyframes cardsEntrance {
+            0% { opacity: 0; transform: translateY(60px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .option-card {
+            background: var(--glass); backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 44px 32px 40px;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-height: 400px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .option-card:hover {
+            transform: translateY(-16px) scale(1.02);
+            border-color: rgba(251,191,36,0.5);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .option-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 5px; transition: all var(--transition); z-index: 3;
+        }
+
+        .option-card:nth-child(1)::before {
+            background: linear-gradient(90deg, #FBBF24, #FCD34D, #FBBF24);
+            background-size: 200% 100%; animation: gradientSlide 3s linear infinite;
+        }
+
+        .option-card:nth-child(2)::before {
+            background: linear-gradient(90deg, #4ECDC4, #7EDDD6, #4ECDC4);
+            background-size: 200% 100%; animation: gradientSlide 3s linear infinite;
+        }
+
+        @keyframes gradientSlide {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .option-card::after {
+            content: ''; position: absolute; inset: 0;
+            opacity: 0; transition: opacity 0.6s; z-index: 0;
+        }
+
+        .option-card:nth-child(1)::after {
+            background: radial-gradient(circle at 50% 0%, rgba(251,191,36,0.2), transparent 70%);
+        }
+
+        .option-card:nth-child(2)::after {
+            background: radial-gradient(circle at 50% 0%, rgba(78,205,196,0.2), transparent 70%);
+        }
+
+        .option-card:hover::after { opacity: 1; }
+
+        .card-icon-wrapper {
+            width: 120px; height: 120px; border-radius: 32px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 24px; font-size: 56px; color: white;
+            transition: all var(--transition); position: relative; z-index: 1;
+        }
+
+        .option-card:nth-child(1) .card-icon-wrapper {
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            box-shadow: 0 10px 30px rgba(251,191,36,0.5);
+        }
+
+        .option-card:nth-child(2) .card-icon-wrapper {
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            box-shadow: 0 10px 30px rgba(78,205,196,0.5);
+        }
+
+        .option-card:hover .card-icon-wrapper {
+            transform: scale(1.12) rotate(-5deg);
+            border-radius: 40px;
+        }
+
+        .card-title {
+            font-size: 36px; font-weight: 800; margin-bottom: 12px;
+            position: relative; z-index: 1;
+            line-height: 1.2;
+        }
+
+        .option-card:nth-child(1) .card-title {
+            background: linear-gradient(180deg, #fff, #FCD34D);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .option-card:nth-child(2) .card-title {
+            background: linear-gradient(180deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card-subtitle {
+            font-size: 16px; color: rgba(255, 255, 255, 0.6);
+            position: relative; z-index: 1; line-height: 1.6;
+            max-width: 400px;
+        }
+
+        .card-features {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: center; margin-top: 20px;
+            position: relative; z-index: 1;
+        }
+
+        .feature-chip {
+            padding: 8px 16px; border-radius: 100px; font-size: 12px;
+            font-weight: 600; background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s;
+        }
+
+        .option-card:hover .feature-chip {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .cta-arrow {
+            margin-top: 24px;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.4);
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .option-card:hover .cta-arrow {
+            transform: translateX(8px);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+                margin: 0 auto;
+            }
+
+            .page-header h1 { font-size: 36px; }
+            .option-card { min-height: 320px; padding: 36px 24px 32px; }
+            .card-title { font-size: 28px; }
+            .card-icon-wrapper { width: 90px; height: 90px; font-size: 40px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+        }
+
+        @media (max-width: 500px) {
+            .main-container { padding: 16px 12px 40px; }
+            .page-header h1 { font-size: 28px; }
+            .option-card { min-height: 280px; padding: 28px 20px 24px; }
+            .card-title { font-size: 24px; }
+            .card-icon-wrapper { width: 70px; height: 70px; font-size: 32px; border-radius: 24px; }
+            .card-subtitle { font-size: 14px; }
+            .feature-chip { font-size: 10px; padding: 6px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="particles-container" id="particles"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="index.html" class="back-btn" title="Back to Home">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Chemistry</span>
+            </div>
+            <div class="subject-badge">
+                <i class="fas fa-flask"></i> Chemistry
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🧪 Chemistry</h1>
+            <p class="subtitle">✦ Choose how you want to learn ✦</p>
+        </div>
+
+        <!-- Cards -->
+        <div class="cards-grid">
+            <!-- Theory Card -->
+            <a href="chemistry_hub.html" class="option-card" id="theoryCard">
+                <div class="card-icon-wrapper"><i class="fas fa-book-open"></i></div>
+                <div class="card-title">Theory</div>
+                <div class="card-subtitle">
+                    Learn Chemistry concepts with detailed definitions, examples, and explanations
+                </div>
+                <div class="card-features">
+                    <span class="feature-chip">📖 300+ Topics</span>
+                    <span class="feature-chip">🧪 NCERT Aligned</span>
+                    <span class="feature-chip">📚 Definitions & Examples</span>
+                </div>
+                <div class="cta-arrow"><i class="fas fa-arrow-right"></i></div>
+            </a>
+
+            <!-- Interactive Labs Card -->
+            <a href="chemistry_labs.html" class="option-card" id="labsCard">
+                <div class="card-icon-wrapper"><i class="fas fa-vial"></i></div>
+                <div class="card-title">Interactive Labs</div>
+                <div class="card-subtitle">
+                    Perform virtual chemistry experiments with interactive simulations and real-time feedback
+                </div>
+                <div class="card-features">
+                    <span class="feature-chip">🧪 Periodic Table</span>
+                    <span class="feature-chip">⚖️ Equation Balancer</span>
+                    <span class="feature-chip">🧮 Molar Mass</span>
+                    <span class="feature-chip">🔬 Virtual Lab</span>
+                </div>
+                <div class="cta-arrow"><i class="fas fa-arrow-right"></i></div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 6) + 's';
+                particle.style.animationDelay = (Math.random() * 10) + 's';
+                const size = Math.random() * 5 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.opacity = Math.random() * 0.5 + 0.2;
+                container.appendChild(particle);
+            }
+        }
+
+        function goHome() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 300);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1') document.getElementById('theoryCard').click();
+            if (e.key === '2') document.getElementById('labsCard').click();
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            createParticles();
+        });
+    </script>
+</body>
+</html>

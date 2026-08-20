@@ -1,6 +1,7 @@
 """
 Drip AI Chatbot Server
 Integrated with NCERT Science RAG System (Class 8, 9, 10)
+Optimized with ChromaDB persistence for fast loading
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -9,6 +10,7 @@ import os
 import sys
 import json
 import logging
+import time
 from datetime import datetime
 
 # Set up logging
@@ -39,6 +41,8 @@ CORS(app)
 
 # Initialize AITutor if available
 tutor = None
+knowledge_stats = None
+
 if RAG_AVAILABLE:
     try:
         # Check API key
@@ -48,9 +52,13 @@ if RAG_AVAILABLE:
         else:
             logger.warning("⚠️ OPENROUTER_API_KEY not set in .env file")
             logger.warning("⚠️ AITutor will work in fallback mode (knowledge base only)")
-            # Still initialize without API key (will use knowledge base)
             tutor = AITutor(folder=DATA_FOLDER)
             logger.info("✅ AITutor initialized (fallback mode)")
+        
+        # Get knowledge base stats for display
+        if tutor:
+            knowledge_stats = tutor.knowledge.get_stats()
+            
     except Exception as e:
         logger.error(f"❌ Failed to initialize AITutor: {e}")
         RAG_AVAILABLE = False
@@ -381,7 +389,8 @@ def health_check():
         'rag_available': RAG_AVAILABLE,
         'tutor_initialized': tutor is not None,
         'server': 'Drip AI Chatbot',
-        'version': '2.0.0'
+        'version': '2.0.0',
+        'timestamp': datetime.now().isoformat()
     }
     
     if tutor:
@@ -432,6 +441,8 @@ def serve_static(path):
 # ============================================================
 
 if __name__ == '__main__':
+    start_time = time.time()
+    
     print("=" * 70)
     print("🚀 DRIP AI CHATBOT SERVER")
     print("=" * 70)
@@ -452,7 +463,7 @@ if __name__ == '__main__':
     if RAG_AVAILABLE and tutor:
         try:
             stats = tutor.knowledge.get_stats()
-            print(f"📚 Knowledge Base Stats:")
+            print(f"📚 Knowledge Base Stats (from ChromaDB):")
             print(f"   • Total chunks: {stats.get('total_chunks', 0)}")
             print(f"   • Files loaded: {stats.get('loaded_files', 0)}")
             grade_counts = stats.get('grade_counts', {})
@@ -460,12 +471,15 @@ if __name__ == '__main__':
                 print(f"   • Class 8: {grade_counts.get('Class 8', 0)} chunks")
                 print(f"   • Class 9: {grade_counts.get('Class 9', 0)} chunks")
                 print(f"   • Class 10: {grade_counts.get('Class 10', 0)} chunks")
+            print(f"   • Using ChromaDB: {stats.get('using_chroma', False)}")
         except Exception as e:
             print(f"⚠️ Could not get stats: {e}")
     else:
         print("📚 Running in fallback mode with built-in knowledge base")
         print(f"   • Available topics: {len(KNOWLEDGE_BASE)}")
     
+    load_time = time.time() - start_time
+    print(f"⏱️  Load time: {load_time:.2f} seconds")
     print("=" * 70)
     print("💡 Tips:")
     print("   • Try asking: 'What is photosynthesis?'")
@@ -473,6 +487,7 @@ if __name__ == '__main__':
     print("   • Try asking: 'What is an acid?'")
     print("   • Try asking: 'How does electricity work?'")
     print("=" * 70)
+    print("📌 ChromaDB cache is active - subsequent starts will be faster!")
     print("Press Ctrl+C to stop the server")
     print("=" * 70)
     

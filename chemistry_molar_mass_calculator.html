@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Molar Mass Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --chemistry-color: #4ECDC4;
+            --chemistry-light: #7EDDD6;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%); top: -150px; right: -150px; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%); bottom: -100px; left: -100px; animation-delay: -4s; }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1000px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255, 255, 255, 0.7); }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #4ECDC4, #7EDDD6);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 44px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.6); letter-spacing: 2px; }
+
+        /* Tool */
+        .tool-container {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 32px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .input-section {
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .formula-input {
+            display: flex; flex-wrap: wrap; gap: 12px;
+            align-items: center;
+        }
+        .formula-input label {
+            font-weight: 600; color: rgba(255,255,255,0.8);
+            min-width: 80px;
+        }
+        .formula-input input {
+            flex: 1; min-width: 200px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid var(--glass-border);
+            color: white;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .formula-input input:focus {
+            border-color: rgba(78, 205, 196, 0.6);
+            box-shadow: 0 0 30px rgba(78, 205, 196, 0.1);
+        }
+        .formula-input input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .btn-primary {
+            padding: 14px 32px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(78, 205, 196, 0.4); }
+        .btn-primary:active { transform: scale(0.95); }
+        .btn-secondary {
+            padding: 14px 32px;
+            border-radius: 12px;
+            border: 1.5px solid var(--glass-border);
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); }
+
+        .examples-section {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            margin-top: 8px;
+        }
+        .example-chip {
+            padding: 6px 14px;
+            border-radius: 100px;
+            background: rgba(78, 205, 196, 0.15);
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+        .example-chip:hover {
+            background: rgba(78, 205, 196, 0.25);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Results */
+        .result-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+        }
+        .result-section.visible { display: block; }
+
+        .result-main {
+            text-align: center;
+            padding: 24px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .result-main .formula {
+            font-size: 28px;
+            font-weight: 700;
+            color: #7EDDD6;
+            font-family: 'Courier New', monospace;
+        }
+        .result-main .mass {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #4ECDC4, #7EDDD6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 8px;
+        }
+        .result-main .unit {
+            font-size: 16px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .detail-card {
+            background: rgba(0,0,0,0.2);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .detail-card .label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .detail-card .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #7EDDD6;
+            margin-top: 4px;
+        }
+
+        .element-breakdown {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+        .element-breakdown h4 {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .element-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        .element-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            background: rgba(78, 205, 196, 0.06);
+            border-radius: 8px;
+            border-left: 3px solid #4ECDC4;
+        }
+        .element-item .symbol {
+            color: #7EDDD6;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .element-item .name {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .element-item .details {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+        }
+        .element-item .count { color: rgba(255,255,255,0.7); }
+        .element-item .mass { color: #4ECDC4; font-weight: 600; }
+
+        .error-message {
+            color: #FF6B6B;
+            text-align: center;
+            padding: 12px;
+            background: rgba(255,107,107,0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255,107,107,0.2);
+            display: none;
+            margin-top: 12px;
+        }
+        .error-message.visible { display: block; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header h1 { font-size: 32px; }
+            .tool-container { padding: 20px; }
+            .formula-input { flex-direction: column; align-items: stretch; }
+            .formula-input label { min-width: auto; }
+            .result-main .formula { font-size: 22px; }
+            .result-main .mass { font-size: 28px; }
+            .btn-primary { justify-content: center; }
+        }
+        @media (max-width: 500px) {
+            .main-container { padding: 16px 12px 40px; }
+            .page-header h1 { font-size: 26px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+            .element-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="chemistry_labs.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goHub()">Chemistry</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goLabs()">Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Molar Mass</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-calculator"></i> Molar Mass</div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🧮 Molar Mass Calculator</h1>
+            <p class="subtitle">✦ Compute molecular weights with element-by-element breakdown ✦</p>
+        </div>
+
+        <!-- Tool -->
+        <div class="tool-container">
+            <div class="input-section">
+                <div class="formula-input">
+                    <label><i class="fas fa-atom"></i> Formula</label>
+                    <input type="text" id="formulaInput" placeholder="e.g., H2O, NaCl, C6H12O6" 
+                           onkeydown="if(event.key==='Enter') calculateMolarMass()">
+                </div>
+
+                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                    <button class="btn-primary" onclick="calculateMolarMass()">
+                        <i class="fas fa-calculator"></i> Calculate
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-undo"></i> Clear
+                    </button>
+                </div>
+
+                <div class="examples-section">
+                    <span style="color:rgba(255,255,255,0.4); font-size:13px;">Examples:</span>
+                    <span class="example-chip" onclick="setExample('H2O')">H₂O</span>
+                    <span class="example-chip" onclick="setExample('NaCl')">NaCl</span>
+                    <span class="example-chip" onclick="setExample('C6H12O6')">C₆H₁₂O₆</span>
+                    <span class="example-chip" onclick="setExample('CaCO3')">CaCO₃</span>
+                    <span class="example-chip" onclick="setExample('H2SO4')">H₂SO₄</span>
+                    <span class="example-chip" onclick="setExample('NaOH')">NaOH</span>
+                    <span class="example-chip" onclick="setExample('CO2')">CO₂</span>
+                    <span class="example-chip" onclick="setExample('CH4')">CH₄</span>
+                    <span class="example-chip" onclick="setExample('HCl')">HCl</span>
+                    <span class="example-chip" onclick="setExample('NH3')">NH₃</span>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> 
+                <span id="errorText">Invalid formula. Please check your input.</span>
+            </div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-main">
+                    <div class="formula" id="resultFormula"></div>
+                    <div class="mass" id="resultMass"></div>
+                    <div class="unit">g/mol</div>
+                </div>
+
+                <div class="result-details" id="resultDetails"></div>
+
+                <div class="element-breakdown" id="elementBreakdown">
+                    <h4><i class="fas fa-list"></i> Element Breakdown</h4>
+                    <div class="element-grid" id="elementGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goHome() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 400);
+        }
+        function goHub() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_hub_landing.html'; }, 400);
+        }
+        function goLabs() {
+            document.body.style.transition = 'opacity 0.4s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_labs.html'; }, 400);
+        }
+
+        function setExample(formula) {
+            document.getElementById('formulaInput').value = formula;
+            calculateMolarMass();
+        }
+
+        function clearAll() {
+            document.getElementById('formulaInput').value = '';
+            document.getElementById('resultSection').classList.remove('visible');
+            document.getElementById('errorMessage').classList.remove('visible');
+        }
+
+        // ============================================================
+        // MOLAR MASS CALCULATOR ENGINE
+        // ============================================================
+
+        // Periodic table data with atomic masses
+        const ELEMENTS = {
+            'H': { name: 'Hydrogen', mass: 1.008 },
+            'He': { name: 'Helium', mass: 4.003 },
+            'Li': { name: 'Lithium', mass: 6.941 },
+            'Be': { name: 'Beryllium', mass: 9.012 },
+            'B': { name: 'Boron', mass: 10.81 },
+            'C': { name: 'Carbon', mass: 12.011 },
+            'N': { name: 'Nitrogen', mass: 14.007 },
+            'O': { name: 'Oxygen', mass: 15.999 },
+            'F': { name: 'Fluorine', mass: 18.998 },
+            'Ne': { name: 'Neon', mass: 20.180 },
+            'Na': { name: 'Sodium', mass: 22.990 },
+            'Mg': { name: 'Magnesium', mass: 24.305 },
+            'Al': { name: 'Aluminum', mass: 26.982 },
+            'Si': { name: 'Silicon', mass: 28.086 },
+            'P': { name: 'Phosphorus', mass: 30.974 },
+            'S': { name: 'Sulfur', mass: 32.065 },
+            'Cl': { name: 'Chlorine', mass: 35.453 },
+            'Ar': { name: 'Argon', mass: 39.948 },
+            'K': { name: 'Potassium', mass: 39.098 },
+            'Ca': { name: 'Calcium', mass: 40.078 },
+            'Sc': { name: 'Scandium', mass: 44.956 },
+            'Ti': { name: 'Titanium', mass: 47.867 },
+            'V': { name: 'Vanadium', mass: 50.942 },
+            'Cr': { name: 'Chromium', mass: 51.996 },
+            'Mn': { name: 'Manganese', mass: 54.938 },
+            'Fe': { name: 'Iron', mass: 55.845 },
+            'Co': { name: 'Cobalt', mass: 58.933 },
+            'Ni': { name: 'Nickel', mass: 58.693 },
+            'Cu': { name: 'Copper', mass: 63.546 },
+            'Zn': { name: 'Zinc', mass: 65.380 },
+            'Ga': { name: 'Gallium', mass: 69.723 },
+            'Ge': { name: 'Germanium', mass: 72.630 },
+            'As': { name: 'Arsenic', mass: 74.922 },
+            'Se': { name: 'Selenium', mass: 78.960 },
+            'Br': { name: 'Bromine', mass: 79.904 },
+            'Kr': { name: 'Krypton', mass: 83.798 },
+            'Rb': { name: 'Rubidium', mass: 85.468 },
+            'Sr': { name: 'Strontium', mass: 87.620 },
+            'Y': { name: 'Yttrium', mass: 88.906 },
+            'Zr': { name: 'Zirconium', mass: 91.224 },
+            'Nb': { name: 'Niobium', mass: 92.906 },
+            'Mo': { name: 'Molybdenum', mass: 95.950 },
+            'Tc': { name: 'Technetium', mass: 98.000 },
+            'Ru': { name: 'Ruthenium', mass: 101.070 },
+            'Rh': { name: 'Rhodium', mass: 102.906 },
+            'Pd': { name: 'Palladium', mass: 106.420 },
+            'Ag': { name: 'Silver', mass: 107.868 },
+            'Cd': { name: 'Cadmium', mass: 112.414 },
+            'In': { name: 'Indium', mass: 114.818 },
+            'Sn': { name: 'Tin', mass: 118.710 },
+            'Sb': { name: 'Antimony', mass: 121.760 },
+            'Te': { name: 'Tellurium', mass: 127.600 },
+            'I': { name: 'Iodine', mass: 126.904 },
+            'Xe': { name: 'Xenon', mass: 131.293 },
+            'Cs': { name: 'Cesium', mass: 132.905 },
+            'Ba': { name: 'Barium', mass: 137.327 },
+            'La': { name: 'Lanthanum', mass: 138.905 },
+            'Ce': { name: 'Cerium', mass: 140.116 },
+            'Pr': { name: 'Praseodymium', mass: 140.908 },
+            'Nd': { name: 'Neodymium', mass: 144.243 },
+            'Pm': { name: 'Promethium', mass: 145.000 },
+            'Sm': { name: 'Samarium', mass: 150.362 },
+            'Eu': { name: 'Europium', mass: 151.964 },
+            'Gd': { name: 'Gadolinium', mass: 157.250 },
+            'Tb': { name: 'Terbium', mass: 158.925 },
+            'Dy': { name: 'Dysprosium', mass: 162.500 },
+            'Ho': { name: 'Holmium', mass: 164.930 },
+            'Er': { name: 'Erbium', mass: 167.259 },
+            'Tm': { name: 'Thulium', mass: 168.934 },
+            'Yb': { name: 'Ytterbium', mass: 173.045 },
+            'Lu': { name: 'Lutetium', mass: 174.967 },
+            'Hf': { name: 'Hafnium', mass: 178.490 },
+            'Ta': { name: 'Tantalum', mass: 180.948 },
+            'W': { name: 'Tungsten', mass: 183.840 },
+            'Re': { name: 'Rhenium', mass: 186.207 },
+            'Os': { name: 'Osmium', mass: 190.230 },
+            'Ir': { name: 'Iridium', mass: 192.217 },
+            'Pt': { name: 'Platinum', mass: 195.084 },
+            'Au': { name: 'Gold', mass: 196.967 },
+            'Hg': { name: 'Mercury', mass: 200.592 },
+            'Tl': { name: 'Thallium', mass: 204.380 },
+            'Pb': { name: 'Lead', mass: 207.200 },
+            'Bi': { name: 'Bismuth', mass: 208.980 },
+            'Po': { name: 'Polonium', mass: 209.000 },
+            'At': { name: 'Astatine', mass: 210.000 },
+            'Rn': { name: 'Radon', mass: 222.000 },
+            'Fr': { name: 'Francium', mass: 223.000 },
+            'Ra': { name: 'Radium', mass: 226.000 },
+            'Ac': { name: 'Actinium', mass: 227.000 },
+            'Th': { name: 'Thorium', mass: 232.038 },
+            'Pa': { name: 'Protactinium', mass: 231.036 },
+            'U': { name: 'Uranium', mass: 238.029 },
+        };
+
+        function parseFormula(formula) {
+            // Parse a chemical formula into element counts
+            const atoms = {};
+            let i = 0;
+            let currentElement = '';
+            let currentCount = '';
+
+            while (i < formula.length) {
+                const char = formula[i];
+
+                // Check for opening parenthesis (simplified handling)
+                if (char === '(' || char === '[') {
+                    // Find matching closing parenthesis
+                    let depth = 1;
+                    let j = i + 1;
+                    let subFormula = '';
+                    while (j < formula.length && depth > 0) {
+                        if (formula[j] === '(' || formula[j] === '[') depth++;
+                        else if (formula[j] === ')' || formula[j] === ']') depth--;
+                        if (depth > 0) subFormula += formula[j];
+                        j++;
+                    }
+                    
+                    // Get multiplier after the parenthesis
+                    let multiplier = 1;
+                    let multStr = '';
+                    while (j < formula.length && formula[j] >= '0' && formula[j] <= '9') {
+                        multStr += formula[j];
+                        j++;
+                    }
+                    if (multStr) multiplier = parseInt(multStr);
+
+                    // Parse the sub-formula and multiply
+                    const subAtoms = parseFormula(subFormula);
+                    for (const [el, count] of Object.entries(subAtoms)) {
+                        atoms[el] = (atoms[el] || 0) + count * multiplier;
+                    }
+
+                    i = j;
+                    continue;
+                }
+
+                // Check for closing parenthesis (should be handled above)
+                if (char === ')' || char === ']') {
+                    i++;
+                    continue;
+                }
+
+                // Check if character is a capital letter (start of an element)
+                if (char >= 'A' && char <= 'Z') {
+                    // If we have a previous element, save it
+                    if (currentElement) {
+                        const count = currentCount ? parseInt(currentCount) : 1;
+                        atoms[currentElement] = (atoms[currentElement] || 0) + count;
+                        currentElement = '';
+                        currentCount = '';
+                    }
+
+                    // Start new element
+                    currentElement = char;
+                    i++;
+                    
+                    // Check for lowercase second letter
+                    if (i < formula.length && formula[i] >= 'a' && formula[i] <= 'z') {
+                        currentElement += formula[i];
+                        i++;
+                    }
+                } else if (char >= '0' && char <= '9') {
+                    // Build the number
+                    currentCount += char;
+                    i++;
+                } else {
+                    // Skip other characters (like spaces, dots, etc.)
+                    i++;
+                }
+            }
+
+            // Save the last element
+            if (currentElement) {
+                const count = currentCount ? parseInt(currentCount) : 1;
+                atoms[currentElement] = (atoms[currentElement] || 0) + count;
+            }
+
+            return atoms;
+        }
+
+        function calculateMolarMass() {
+            const input = document.getElementById('formulaInput');
+            const formula = input.value.trim();
+
+            // Hide previous results
+            document.getElementById('resultSection').classList.remove('visible');
+            document.getElementById('errorMessage').classList.remove('visible');
+
+            if (!formula) {
+                showError('Please enter a chemical formula.');
+                return;
+            }
+
+            // Remove subscripts formatting (like H₂O -> H2O)
+            let cleanFormula = formula;
+            // Replace subscript numbers with normal numbers
+            cleanFormula = cleanFormula.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, function(match) {
+                const subscripts = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9' };
+                return subscripts[match] || match;
+            });
+
+            // Parse the formula
+            const atoms = parseFormula(cleanFormula);
+            if (Object.keys(atoms).length === 0) {
+                showError('Could not parse the formula. Please check your input.');
+                return;
+            }
+
+            // Calculate total molar mass
+            let totalMass = 0;
+            const breakdown = [];
+
+            for (const [symbol, count] of Object.entries(atoms)) {
+                const element = ELEMENTS[symbol];
+                if (!element) {
+                    showError(`Unknown element: "${symbol}". Please check your formula.`);
+                    return;
+                }
+                const mass = element.mass * count;
+                totalMass += mass;
+                breakdown.push({
+                    symbol: symbol,
+                    name: element.name,
+                    count: count,
+                    mass: mass,
+                    atomicMass: element.mass
+                });
+            }
+
+            // Display results
+            displayResults(formula, totalMass, breakdown);
+        }
+
+        function displayResults(formula, totalMass, breakdown) {
+            const resultSection = document.getElementById('resultSection');
+            const resultFormula = document.getElementById('resultFormula');
+            const resultMass = document.getElementById('resultMass');
+            const resultDetails = document.getElementById('resultDetails');
+            const elementGrid = document.getElementById('elementGrid');
+
+            // Format the formula with subscripts for display
+            let displayFormula = formula;
+            // Convert numbers to subscripts for display
+            displayFormula = displayFormula.replace(/([A-Za-z])(\d+)/g, '$1₀₁₂₃₄₅₆₇₈₉'.slice(0, 10));
+            displayFormula = displayFormula.replace(/0/g, '₀').replace(/1/g, '₁').replace(/2/g, '₂').replace(/3/g, '₃').replace(/4/g, '₄')
+                .replace(/5/g, '₅').replace(/6/g, '₆').replace(/7/g, '₇').replace(/8/g, '₈').replace(/9/g, '₉');
+
+            resultFormula.textContent = displayFormula;
+            resultMass.textContent = totalMass.toFixed(3);
+
+            // Details cards
+            const elementCount = breakdown.length;
+            const totalAtoms = breakdown.reduce((sum, el) => sum + el.count, 0);
+
+            resultDetails.innerHTML = `
+                <div class="detail-card">
+                    <div class="label">Elements</div>
+                    <div class="value">${elementCount}</div>
+                </div>
+                <div class="detail-card">
+                    <div class="label">Total Atoms</div>
+                    <div class="value">${totalAtoms}</div>
+                </div>
+                <div class="detail-card">
+                    <div class="label">Molar Mass</div>
+                    <div class="value">${totalMass.toFixed(3)} g/mol</div>
+                </div>
+            `;
+
+            // Element breakdown
+            let elementHtml = '';
+            breakdown.forEach(el => {
+                const percentage = ((el.mass / totalMass) * 100).toFixed(1);
+                elementHtml += `
+                    <div class="element-item">
+                        <div>
+                            <span class="symbol">${el.symbol}</span>
+                            <span class="name">${el.name}</span>
+                        </div>
+                        <div class="details">
+                            <span class="count">×${el.count}</span>
+                            <span class="mass">${el.mass.toFixed(3)} g</span>
+                            <span style="color:rgba(255,255,255,0.4); font-size:12px;">${percentage}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+            elementGrid.innerHTML = elementHtml;
+
+            resultSection.classList.add('visible');
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            document.getElementById('errorText').textContent = message;
+            errorDiv.classList.add('visible');
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Quick calculate on enter key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.activeElement === document.getElementById('formulaInput')) {
+                calculateMolarMass();
+            }
+        });
+
+        // Initialize with example on load
+        window.addEventListener('load', function() {
+            // Set initial example
+            document.getElementById('formulaInput').value = 'H2O';
+            // Auto-calculate after a short delay
+            setTimeout(calculateMolarMass, 300);
+        });
+    </script>
+</body>
+</html>

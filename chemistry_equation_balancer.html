@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Advanced Chemical Equation Balancer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --chemistry-color: #4ECDC4;
+            --chemistry-light: #7EDDD6;
+            --chemistry-dark: #2d9b94;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%); top: -150px; right: -150px; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%); bottom: -100px; left: -100px; animation-delay: -4s; }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1200px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255, 255, 255, 0.7); }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            color: white;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 44px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.6); letter-spacing: 2px; }
+
+        /* Stats */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            text-align: center;
+        }
+        .stat-card .label { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .value { font-size: 28px; font-weight: 800; color: #4ECDC4; margin-top: 4px; }
+
+        /* Tool */
+        .tool-container {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 32px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .input-section {
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .equation-input {
+            display: flex; flex-wrap: wrap; gap: 12px;
+            align-items: center;
+        }
+        .equation-input label {
+            font-weight: 600; color: rgba(255,255,255,0.8);
+            min-width: 80px;
+            font-size: 16px;
+        }
+        .equation-input input {
+            flex: 1; min-width: 200px;
+            padding: 16px 20px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.06);
+            border: 2px solid var(--glass-border);
+            color: white;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            outline: none;
+            letter-spacing: 0.5px;
+        }
+        .equation-input input:focus {
+            border-color: rgba(78, 205, 196, 0.6);
+            box-shadow: 0 0 30px rgba(78, 205, 196, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .equation-input input::placeholder {
+            color: rgba(255,255,255,0.3);
+            font-size: 16px;
+        }
+
+        .btn-group {
+            display: flex; flex-wrap: wrap; gap: 12px;
+        }
+
+        .btn-primary {
+            padding: 14px 32px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(78, 205, 196, 0.4); }
+        .btn-primary:active { transform: scale(0.95); }
+        .btn-secondary {
+            padding: 14px 32px;
+            border-radius: 14px;
+            border: 2px solid var(--glass-border);
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); }
+        .btn-secondary:active { transform: scale(0.95); }
+        .btn-success {
+            padding: 14px 32px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16,185,129,0.4); }
+
+        .examples-section {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            margin-top: 4px;
+        }
+        .examples-label { color: rgba(255,255,255,0.4); font-size: 13px; display: flex; align-items: center; }
+        .example-chip {
+            padding: 8px 16px;
+            border-radius: 100px;
+            background: rgba(78, 205, 196, 0.12);
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+        .example-chip:hover {
+            background: rgba(78, 205, 196, 0.25);
+            color: white;
+            transform: translateY(-2px);
+            border-color: rgba(78, 205, 196, 0.4);
+        }
+
+        /* Error Message */
+        .error-message {
+            color: #FF6B6B;
+            padding: 12px 20px;
+            background: rgba(255,107,107,0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255,107,107,0.2);
+            display: none;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        .error-message.visible { display: block; }
+
+        /* Results */
+        .result-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+        }
+        .result-section.visible { display: block; }
+
+        .result-header {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+        }
+        .result-header h3 {
+            font-size: 20px; color: #7EDDD6;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .result-status {
+            padding: 6px 16px; border-radius: 100px;
+            font-size: 13px; font-weight: 600;
+        }
+        .result-status.success { background: rgba(16,185,129,0.2); color: #10B981; }
+        .result-status.error { background: rgba(255,107,107,0.2); color: #FF6B6B; }
+
+        .balanced-equation {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            padding: 24px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            color: #7EDDD6;
+            letter-spacing: 1px;
+            word-break: break-all;
+            border: 2px solid rgba(78,205,196,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .balanced-equation::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(78,205,196,0.05), transparent);
+            animation: shimmerEffect 3s infinite;
+        }
+        @keyframes shimmerEffect {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .result-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .detail-card {
+            background: rgba(0,0,0,0.25);
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(78,205,196,0.08);
+        }
+        .detail-card .label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .detail-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #7EDDD6;
+            margin-top: 4px;
+        }
+        .detail-card .value .highlight { color: #4ECDC4; }
+
+        /* Atom Breakdown */
+        .atom-breakdown {
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+        .atom-breakdown h4 {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .atom-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+        }
+        .atom-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: rgba(78, 205, 196, 0.06);
+            border-radius: 8px;
+            font-size: 14px;
+            border-left: 3px solid #4ECDC4;
+            transition: all 0.3s;
+        }
+        .atom-item:hover { background: rgba(78, 205, 196, 0.12); }
+        .atom-item .symbol { color: #7EDDD6; font-weight: 700; }
+        .atom-item .count { color: rgba(255,255,255,0.7); }
+        .atom-item .count.balanced { color: #10B981; }
+        .atom-item .count.unbalanced { color: #FF6B6B; }
+
+        /* Step-by-step */
+        .steps-section {
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+        .steps-section h4 {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .step-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            background: rgba(78,205,196,0.04);
+            border-radius: 8px;
+            border-left: 3px solid rgba(78,205,196,0.3);
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+        }
+        .step-item .step-number {
+            color: #4ECDC4;
+            font-weight: 700;
+            min-width: 24px;
+        }
+        .step-item .step-text { flex: 1; }
+
+        /* Difficulty indicator */
+        .difficulty-bar {
+            display: flex; gap: 4px; margin-top: 4px;
+        }
+        .difficulty-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+        }
+        .difficulty-dot.active { background: #4ECDC4; }
+        .difficulty-dot.hard { background: #FF6B6B; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header h1 { font-size: 32px; }
+            .tool-container { padding: 20px; }
+            .equation-input { flex-direction: column; align-items: stretch; }
+            .equation-input label { min-width: auto; }
+            .balanced-equation { font-size: 20px; padding: 16px; }
+            .btn-primary { justify-content: center; width: 100%; }
+            .btn-secondary { justify-content: center; width: 100%; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+            .main-container { padding: 16px 12px 40px; }
+            .page-header h1 { font-size: 26px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+            .balanced-equation { font-size: 16px; padding: 12px; }
+            .stats-bar { grid-template-columns: 1fr; }
+            .result-details-grid { grid-template-columns: 1fr 1fr; }
+            .atom-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="chemistry_labs.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goHub()">Chemistry</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goLabs()">Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Equation Balancer</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-balance-scale"></i> Balancer</div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>⚖️ Advanced Chemical Equation Balancer</h1>
+            <p class="subtitle">✦ Balance complex chemical equations with step-by-step visualization ✦</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="label">Equations Balanced</div>
+                <div class="value" id="totalBalanced">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Complexity</div>
+                <div class="value" id="complexity">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Elements</div>
+                <div class="value" id="elementCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Status</div>
+                <div class="value" id="statusDisplay" style="font-size:18px;">Ready</div>
+            </div>
+        </div>
+
+        <!-- Tool -->
+        <div class="tool-container">
+            <div class="input-section">
+                <div class="equation-input">
+                    <label><i class="fas fa-arrow-right"></i> Equation</label>
+                    <input type="text" id="equationInput" placeholder="e.g., H2 + O2 -> H2O" 
+                           onkeydown="if(event.key==='Enter') balanceEquation()">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="balanceEquation()">
+                        <i class="fas fa-check"></i> Balance
+                    </button>
+                    <button class="btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-undo"></i> Clear
+                    </button>
+                    <button class="btn-success" onclick="copyResult()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+
+                <div class="examples-section">
+                    <span class="examples-label"><i class="fas fa-lightbulb"></i> Examples:</span>
+                    <span class="example-chip" onclick="setExample('H2 + O2 -> H2O')">H₂ + O₂ → H₂O</span>
+                    <span class="example-chip" onclick="setExample('Fe + O2 -> Fe2O3')">Fe + O₂ → Fe₂O₃</span>
+                    <span class="example-chip" onclick="setExample('Na + Cl2 -> NaCl')">Na + Cl₂ → NaCl</span>
+                    <span class="example-chip" onclick="setExample('CH4 + O2 -> CO2 + H2O')">CH₄ + O₂ → CO₂ + H₂O</span>
+                    <span class="example-chip" onclick="setExample('Al + O2 -> Al2O3')">Al + O₂ → Al₂O₃</span>
+                    <span class="example-chip" onclick="setExample('N2 + H2 -> NH3')">N₂ + H₂ → NH₃</span>
+                    <span class="example-chip" onclick="setExample('KClO3 -> KCl + O2')">KClO₃ → KCl + O₂</span>
+                    <span class="example-chip" onclick="setExample('C2H5OH + O2 -> CO2 + H2O')">C₂H₅OH + O₂ → CO₂ + H₂O</span>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> 
+                <span id="errorText">Invalid equation format. Please check your input.</span>
+            </div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <h3><i class="fas fa-check-circle" style="color:#10B981;"></i> Balanced Equation</h3>
+                    <span class="result-status success" id="resultStatus">✅ Balanced</span>
+                </div>
+
+                <div class="balanced-equation" id="resultEquation"></div>
+
+                <div class="result-details-grid" id="resultDetails">
+                    <div class="detail-card">
+                        <div class="label">Reactants</div>
+                        <div class="value" id="reactantCount">0</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="label">Products</div>
+                        <div class="value" id="productCount">0</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="label">Elements</div>
+                        <div class="value" id="elementCountDisplay">0</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="label">Difficulty</div>
+                        <div class="value" id="difficultyDisplay">Easy</div>
+                    </div>
+                </div>
+
+                <div class="atom-breakdown" id="atomBreakdown">
+                    <h4><i class="fas fa-atom"></i> Atom Count Breakdown</h4>
+                    <div class="atom-grid" id="atomGrid"></div>
+                </div>
+
+                <div class="steps-section" id="stepsSection">
+                    <h4><i class="fas fa-list-ol"></i> Step-by-Step Solution</h4>
+                    <div id="stepsContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        function goHome() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 300);
+        }
+        function goHub() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_hub_landing.html'; }, 300);
+        }
+        function goLabs() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_labs.html'; }, 300);
+        }
+
+        // ============================================================
+        // STATS
+        // ============================================================
+        let totalBalanced = 0;
+
+        function updateStats(elementCount, complexity, status) {
+            document.getElementById('totalBalanced').textContent = totalBalanced;
+            document.getElementById('elementCount').textContent = elementCount;
+            document.getElementById('complexity').textContent = complexity;
+            document.getElementById('statusDisplay').textContent = status;
+        }
+
+        // ============================================================
+        // INPUT HANDLING
+        // ============================================================
+        function setExample(formula) {
+            document.getElementById('equationInput').value = formula;
+            balanceEquation();
+        }
+
+        function clearAll() {
+            document.getElementById('equationInput').value = '';
+            document.getElementById('resultSection').classList.remove('visible');
+            document.getElementById('errorMessage').classList.remove('visible');
+            updateStats(0, '-', 'Ready');
+        }
+
+        function copyResult() {
+            const equation = document.getElementById('resultEquation').textContent;
+            if (equation) {
+                navigator.clipboard.writeText(equation).then(() => {
+                    const btn = document.querySelector('.btn-success');
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => btn.innerHTML = original, 2000);
+                });
+            }
+        }
+
+        // ============================================================
+        // ADVANCED CHEMICAL EQUATION BALANCER ENGINE
+        // ============================================================
+
+        // Periodic table for element validation
+        const VALID_ELEMENTS = [
+            'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
+            'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca',
+            'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn',
+            'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr',
+            'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn',
+            'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd',
+            'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb',
+            'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg',
+            'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th',
+            'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm',
+            'Md', 'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds',
+            'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og'
+        ];
+        const VALID_ELEMENTS_SET = new Set(VALID_ELEMENTS);
+
+        function parseCompound(formula) {
+            const atoms = {};
+            let i = 0;
+            
+            // Handle parentheses and brackets
+            while (i < formula.length) {
+                const char = formula[i];
+                
+                // Handle opening parenthesis
+                if (char === '(' || char === '[') {
+                    let depth = 1;
+                    let j = i + 1;
+                    let subFormula = '';
+                    while (j < formula.length && depth > 0) {
+                        if (formula[j] === '(' || formula[j] === '[') depth++;
+                        else if (formula[j] === ')' || formula[j] === ']') depth--;
+                        if (depth > 0) subFormula += formula[j];
+                        j++;
+                    }
+                    
+                    // Get multiplier after closing parenthesis
+                    let multiplier = 1;
+                    let multStr = '';
+                    while (j < formula.length && formula[j] >= '0' && formula[j] <= '9') {
+                        multStr += formula[j];
+                        j++;
+                    }
+                    if (multStr) multiplier = parseInt(multStr);
+                    
+                    // Parse sub-formula and multiply
+                    const subAtoms = parseCompound(subFormula);
+                    for (const [el, count] of Object.entries(subAtoms)) {
+                        atoms[el] = (atoms[el] || 0) + count * multiplier;
+                    }
+                    i = j;
+                    continue;
+                }
+                
+                // Skip closing parentheses
+                if (char === ')' || char === ']') {
+                    i++;
+                    continue;
+                }
+                
+                // Parse element symbol
+                if (char >= 'A' && char <= 'Z') {
+                    let element = char;
+                    i++;
+                    if (i < formula.length && formula[i] >= 'a' && formula[i] <= 'z') {
+                        element += formula[i];
+                        i++;
+                    }
+                    
+                    // Validate element
+                    if (!VALID_ELEMENTS_SET.has(element)) {
+                        throw new Error(`Unknown element: "${element}"`);
+                    }
+                    
+                    // Parse count
+                    let countStr = '';
+                    while (i < formula.length && formula[i] >= '0' && formula[i] <= '9') {
+                        countStr += formula[i];
+                        i++;
+                    }
+                    const count = countStr ? parseInt(countStr) : 1;
+                    atoms[element] = (atoms[element] || 0) + count;
+                    continue;
+                }
+                
+                // Skip other characters
+                i++;
+            }
+            
+            return atoms;
+        }
+
+        function parseEquation(equation) {
+            // Replace arrow symbols with ->
+            equation = equation.replace(/→|=>/g, '->');
+            
+            // Split into reactants and products
+            const parts = equation.split('->');
+            if (parts.length !== 2) {
+                throw new Error('Equation must contain "->" separating reactants and products');
+            }
+            
+            const reactantsStr = parts[0].trim();
+            const productsStr = parts[1].trim();
+            
+            if (!reactantsStr || !productsStr) {
+                throw new Error('Both reactants and products must be present');
+            }
+            
+            // Split by + (handle spaces)
+            const reactants = reactantsStr.split('+').map(s => s.trim()).filter(s => s);
+            const products = productsStr.split('+').map(s => s.trim()).filter(s => s);
+            
+            if (reactants.length === 0 || products.length === 0) {
+                throw new Error('At least one reactant and one product required');
+            }
+            
+            // Parse each compound
+            const reactantCompounds = reactants.map(formula => ({
+                formula: formula,
+                atoms: parseCompound(formula)
+            }));
+            
+            const productCompounds = products.map(formula => ({
+                formula: formula,
+                atoms: parseCompound(formula)
+            }));
+            
+            return { reactants: reactantCompounds, products: productCompounds };
+        }
+
+        function getUniqueElements(compounds) {
+            const elements = new Set();
+            compounds.forEach(c => {
+                Object.keys(c.atoms).forEach(el => elements.add(el));
+            });
+            return Array.from(elements);
+        }
+
+        function getCoefficients(equation) {
+            const allCompounds = [...equation.reactants, ...equation.products];
+            const elements = getUniqueElements(allCompounds);
+            const n = allCompounds.length;
+            const m = elements.length;
+            
+            // Special case: if only 1 compound on each side
+            if (equation.reactants.length === 1 && equation.products.length === 1) {
+                const rAtoms = equation.reactants[0].atoms;
+                const pAtoms = equation.products[0].atoms;
+                let isBalanced = true;
+                for (const el of Object.keys(rAtoms)) {
+                    if ((rAtoms[el] || 0) !== (pAtoms[el] || 0)) {
+                        isBalanced = false;
+                        break;
+                    }
+                }
+                if (isBalanced) return [1, 1];
+            }
+            
+            // For equations with 2 reactants and 2 products (common case)
+            if (equation.reactants.length === 2 && equation.products.length === 2) {
+                const r1 = equation.reactants[0].atoms;
+                const r2 = equation.reactants[1].atoms;
+                const p1 = equation.products[0].atoms;
+                const p2 = equation.products[1].atoms;
+                
+                const el = elements[0];
+                if (!el) return null;
+                
+                const r1c = r1[el] || 0, r2c = r2[el] || 0;
+                const p1c = p1[el] || 0, p2c = p2[el] || 0;
+                
+                // Try to find coefficients
+                for (let c1 = 1; c1 <= 20; c1++) {
+                    for (let c2 = 1; c2 <= 20; c2++) {
+                        for (let c3 = 1; c3 <= 20; c3++) {
+                            // Calculate c4 from first element
+                            const left = r1c * c1 + r2c * c2;
+                            const rightBase = p1c * c3;
+                            if (p2c === 0) {
+                                if (left === rightBase) {
+                                    return [c1, c2, c3, 1];
+                                }
+                                continue;
+                            }
+                            if ((left - rightBase) % p2c !== 0) continue;
+                            const c4 = (left - rightBase) / p2c;
+                            if (c4 < 1 || c4 > 20 || !Number.isInteger(c4)) continue;
+                            
+                            // Verify all elements
+                            let valid = true;
+                            for (const element of elements) {
+                                const leftSum = (r1[element] || 0) * c1 + (r2[element] || 0) * c2;
+                                const rightSum = (p1[element] || 0) * c3 + (p2[element] || 0) * c4;
+                                if (leftSum !== rightSum) { valid = false; break; }
+                            }
+                            if (valid) {
+                                // Simplify coefficients
+                                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                                let g = c1;
+                                g = gcd(g, c2);
+                                g = gcd(g, c3);
+                                g = gcd(g, c4);
+                                return [c1/g, c2/g, c3/g, c4/g];
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // For equations with 1 reactant and 2 products
+            if (equation.reactants.length === 1 && equation.products.length === 2) {
+                const r1 = equation.reactants[0].atoms;
+                const p1 = equation.products[0].atoms;
+                const p2 = equation.products[1].atoms;
+                
+                for (let c1 = 1; c1 <= 20; c1++) {
+                    for (let c2 = 1; c2 <= 20; c2++) {
+                        let valid = true;
+                        for (const el of elements) {
+                            const left = (r1[el] || 0) * c1;
+                            const right = (p1[el] || 0) * 1 + (p2[el] || 0) * c2;
+                            if (left !== right) { valid = false; break; }
+                        }
+                        if (valid) {
+                            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                            let g = c1;
+                            g = gcd(g, 1);
+                            g = gcd(g, c2);
+                            return [c1/g, 1/g, c2/g];
+                        }
+                    }
+                }
+            }
+            
+            // For equations with 2 reactants and 1 product
+            if (equation.reactants.length === 2 && equation.products.length === 1) {
+                const r1 = equation.reactants[0].atoms;
+                const r2 = equation.reactants[1].atoms;
+                const p1 = equation.products[0].atoms;
+                
+                for (let c1 = 1; c1 <= 20; c1++) {
+                    for (let c2 = 1; c2 <= 20; c2++) {
+                        let valid = true;
+                        for (const el of elements) {
+                            const left = (r1[el] || 0) * c1 + (r2[el] || 0) * c2;
+                            const right = (p1[el] || 0) * 1;
+                            if (left !== right) { valid = false; break; }
+                        }
+                        if (valid) {
+                            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                            let g = c1;
+                            g = gcd(g, c2);
+                            g = gcd(g, 1);
+                            return [c1/g, c2/g, 1/g];
+                        }
+                    }
+                }
+            }
+            
+            // Generic brute force for small systems
+            const maxCoeff = 15;
+            const numCompounds = allCompounds.length;
+            
+            // Try all combinations
+            function tryCombination(coeffs, index) {
+                if (index === numCompounds) {
+                    // Check if balanced
+                    for (const el of elements) {
+                        let leftSum = 0, rightSum = 0;
+                        for (let i = 0; i < equation.reactants.length; i++) {
+                            leftSum += (equation.reactants[i].atoms[el] || 0) * coeffs[i];
+                        }
+                        for (let i = 0; i < equation.products.length; i++) {
+                            rightSum += (equation.products[i].atoms[el] || 0) * coeffs[equation.reactants.length + i];
+                        }
+                        if (leftSum !== rightSum) return null;
+                    }
+                    // Check all coefficients positive
+                    for (const c of coeffs) {
+                        if (c < 1) return null;
+                    }
+                    return coeffs;
+                }
+                
+                for (let c = 1; c <= maxCoeff; c++) {
+                    coeffs[index] = c;
+                    const result = tryCombination(coeffs, index + 1);
+                    if (result) return result;
+                }
+                return null;
+            }
+            
+            return tryCombination(new Array(numCompounds), 0);
+        }
+
+        function gcd(a, b) {
+            a = Math.abs(a);
+            b = Math.abs(b);
+            while (b) { [a, b] = [b, a % b]; }
+            return a;
+        }
+
+        function balanceEquation() {
+            const input = document.getElementById('equationInput');
+            const equationStr = input.value.trim();
+            
+            document.getElementById('resultSection').classList.remove('visible');
+            document.getElementById('errorMessage').classList.remove('visible');
+            
+            if (!equationStr) {
+                showError('Please enter a chemical equation.');
+                return;
+            }
+            
+            try {
+                // Parse the equation
+                const equation = parseEquation(equationStr);
+                const allCompounds = [...equation.reactants, ...equation.products];
+                const elements = getUniqueElements(allCompounds);
+                
+                // Find coefficients
+                const coeffs = getCoefficients(equation);
+                if (!coeffs) {
+                    showError('Could not balance this equation. Please check the formula.');
+                    return;
+                }
+                
+                // Verify coefficients are integers
+                for (const c of coeffs) {
+                    if (!Number.isInteger(c) || c < 1) {
+                        showError('Unable to find integer coefficients.');
+                        return;
+                    }
+                }
+                
+                // Display results
+                displayResults(equation, coeffs, elements);
+                totalBalanced++;
+                updateStats(elements.length, getComplexity(coeffs), '✅ Balanced');
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function getComplexity(coeffs) {
+            const avg = coeffs.reduce((a, b) => a + b, 0) / coeffs.length;
+            if (avg <= 2) return 'Easy';
+            if (avg <= 5) return 'Medium';
+            return 'Complex';
+        }
+
+        function displayResults(equation, coeffs, elements) {
+            const resultSection = document.getElementById('resultSection');
+            const resultEq = document.getElementById('resultEquation');
+            const atomGrid = document.getElementById('atomGrid');
+            const stepsContainer = document.getElementById('stepsContainer');
+            
+            // Build balanced equation
+            let balancedStr = '';
+            const reactantCount = equation.reactants.length;
+            
+            equation.reactants.forEach((c, i) => {
+                const coeff = coeffs[i] || 1;
+                balancedStr += (coeff > 1 ? coeff : '') + c.formula;
+                if (i < reactantCount - 1) balancedStr += ' + ';
+            });
+            
+            balancedStr += ' → ';
+            
+            equation.products.forEach((c, i) => {
+                const idx = reactantCount + i;
+                const coeff = coeffs[idx] || 1;
+                balancedStr += (coeff > 1 ? coeff : '') + c.formula;
+                if (i < equation.products.length - 1) balancedStr += ' + ';
+            });
+            
+            // Format with subscripts for display
+            let displayStr = balancedStr;
+            displayStr = displayStr.replace(/([A-Za-z])(\d+)/g, (match, letter, num) => {
+                const subscripts = '₀₁₂₃₄₅₆₇₈₉';
+                let result = letter;
+                for (const digit of num) {
+                    result += subscripts[parseInt(digit)] || digit;
+                }
+                return result;
+            });
+            resultEq.textContent = displayStr;
+            
+            // Atom breakdown
+            let leftAtoms = {};
+            let rightAtoms = {};
+            
+            equation.reactants.forEach((c, i) => {
+                const coeff = coeffs[i] || 1;
+                for (const [el, count] of Object.entries(c.atoms)) {
+                    leftAtoms[el] = (leftAtoms[el] || 0) + count * coeff;
+                }
+            });
+            
+            equation.products.forEach((c, i) => {
+                const idx = reactantCount + i;
+                const coeff = coeffs[idx] || 1;
+                for (const [el, count] of Object.entries(c.atoms)) {
+                    rightAtoms[el] = (rightAtoms[el] || 0) + count * coeff;
+                }
+            });
+            
+            const allElements = new Set([...Object.keys(leftAtoms), ...Object.keys(rightAtoms)]);
+            let atomHtml = '';
+            let allBalanced = true;
+            allElements.forEach(el => {
+                const left = leftAtoms[el] || 0;
+                const right = rightAtoms[el] || 0;
+                const balanced = left === right;
+                if (!balanced) allBalanced = false;
+                atomHtml += `
+                    <div class="atom-item">
+                        <span class="symbol">${el}</span>
+                        <span class="count ${balanced ? 'balanced' : 'unbalanced'}">${left} → ${right} ${balanced ? '✅' : '❌'}</span>
+                    </div>
+                `;
+            });
+            atomGrid.innerHTML = atomHtml;
+            
+            // Update details
+            document.getElementById('reactantCount').textContent = equation.reactants.length;
+            document.getElementById('productCount').textContent = equation.products.length;
+            document.getElementById('elementCountDisplay').textContent = allElements.size;
+            document.getElementById('difficultyDisplay').textContent = getComplexity(coeffs);
+            
+            // Update status
+            const status = document.getElementById('resultStatus');
+            if (allBalanced) {
+                status.textContent = '✅ Balanced';
+                status.className = 'result-status success';
+            } else {
+                status.textContent = '⚠️ Not Balanced';
+                status.className = 'result-status error';
+            }
+            
+            // Generate steps
+            let stepsHtml = '';
+            const stepNumber = 1;
+            
+            stepsHtml += `
+                <div class="step-item">
+                    <span class="step-number">${stepNumber}.</span>
+                    <span class="step-text">Identify all elements: ${Array.from(allElements).join(', ')}</span>
+                </div>
+            `;
+            
+            stepsHtml += `
+                <div class="step-item">
+                    <span class="step-number">${stepNumber + 1}.</span>
+                    <span class="step-text">Count atoms on each side and find coefficients</span>
+                </div>
+            `;
+            
+            const coeffStr = coeffs.map((c, i) => {
+                const compound = allCompounds[i];
+                return `${c > 1 ? c : ''}${compound.formula}`;
+            }).join(' + ');
+            stepsHtml += `
+                <div class="step-item">
+                    <span class="step-number">${stepNumber + 2}.</span>
+                    <span class="step-text">Balance with coefficients: ${coeffStr}</span>
+                </div>
+            `;
+            
+            stepsHtml += `
+                <div class="step-item">
+                    <span class="step-number">${stepNumber + 3}.</span>
+                    <span class="step-text">✅ Equation balanced successfully!</span>
+                </div>
+            `;
+            
+            stepsContainer.innerHTML = stepsHtml;
+            
+            resultSection.classList.add('visible');
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Update status display
+            document.getElementById('statusDisplay').textContent = '✅ Balanced';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            document.getElementById('errorText').textContent = message;
+            errorDiv.classList.add('visible');
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('statusDisplay').textContent = '❌ Error';
+        }
+
+        // Quick balance on enter key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.activeElement === document.getElementById('equationInput')) {
+                balanceEquation();
+            }
+        });
+
+        // Initialize with example
+        window.addEventListener('load', function() {
+            document.getElementById('equationInput').value = 'H2 + O2 -> H2O';
+            setTimeout(balanceEquation, 500);
+        });
+    </script>
+</body>
+</html>
