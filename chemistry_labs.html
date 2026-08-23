@@ -7,32 +7,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         :root {
-            --chemistry-color: #4ECDC4;
-            --chemistry-light: #7EDDD6;
-            --chemistry-dark: #2d9b94;
-            --glass: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.15);
+            --chemistry-color: #FBBF24;
+            --chemistry-light: #FCD34D;
+            --chemistry-dark: #d97706;
+            --chemistry-glow: rgba(251, 191, 36, 0.3);
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 20px 60px rgba(251, 191, 36, 0.25);
             --radius: 28px;
-            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 30%, #0d1a2d 60%, #150a20 100%);
             min-height: 100vh;
             color: white;
             position: relative;
+            overflow-x: hidden;
         }
 
         .bg-grid {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 0;
-            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-image: 
+                linear-gradient(rgba(251, 191, 36, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(251, 191, 36, 0.03) 1px, transparent 1px);
             background-size: 60px 60px;
             animation: gridMove 25s linear infinite;
         }
@@ -43,15 +46,52 @@
         }
 
         .orb {
-            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
             animation: orbFloat 12s ease-in-out infinite;
         }
-        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%); top: -150px; right: -150px; }
-        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%); bottom: -100px; left: -100px; animation-delay: -4s; }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.2), transparent 70%);
+            top: -150px; right: -150px; animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 450px; height: 450px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.15), transparent 70%);
+            bottom: -150px; left: -150px; animation-delay: -4s;
+        }
+        .orb-3 {
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.1), transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            animation-delay: -8s;
+        }
 
         @keyframes orbFloat {
             0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(50px, -50px) scale(1.2); }
+            25% { transform: translate(80px, -60px) scale(1.15); }
+            50% { transform: translate(-40px, -100px) scale(0.9); }
+            75% { transform: translate(-80px, 40px) scale(1.1); }
+        }
+
+        .particles-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(251, 191, 36, 0.3);
+            border-radius: 50%;
+            animation: particleFloat 12s linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(110vh) translateX(0) scale(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) translateX(100px) scale(1.5); opacity: 0; }
         }
 
         .main-container {
@@ -62,123 +102,595 @@
         /* Navigation */
         .nav-bar {
             display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
-            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+            flex-wrap: wrap;
+            animation: slideDown 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-30px); }
+            from { opacity: 0; transform: translateY(-40px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
         .back-btn {
-            width: 48px; height: 48px; border-radius: 16px;
-            background: var(--glass); backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); color: white;
-            font-size: 20px; cursor: pointer; transition: all 0.3s;
-            display: flex; align-items: center; justify-content: center;
-            text-decoration: none;
-        }
-        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
-        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255, 255, 255, 0.7); }
-        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
-        .breadcrumb span:hover { color: white; }
-        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
-        .subject-badge {
-            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
-            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
-            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
             color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .back-btn::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, #FBBF24, #d97706, #FBBF24);
+            background-size: 200% 200%;
+            opacity: 0;
+            border-radius: 16px;
+            transition: opacity 0.3s;
+            z-index: -1;
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .back-btn:hover::before { opacity: 1; }
+        .back-btn:hover { transform: translateX(-4px) scale(1.02); color: #FBBF24; }
+        .back-btn:active { transform: scale(0.95); }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .breadcrumb span {
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .breadcrumb span:hover { color: white; background: rgba(255,255,255,0.05); }
+        .breadcrumb .current {
+            color: #FBBF24;
+            font-weight: 600;
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .subject-badge {
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            padding: 8px 22px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-left: auto;
+            box-shadow: 0 4px 25px rgba(251, 191, 36, 0.3);
+            color: #1a1a2e;
+            animation: badgePulse 3s ease-in-out infinite;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subject-badge::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+            animation: shimmer 4s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 4px 25px rgba(251, 191, 36, 0.3); }
+            50% { box-shadow: 0 8px 45px rgba(251, 191, 36, 0.5); }
         }
 
         /* Header */
         .page-header {
-            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInUp 0.8s ease-out;
         }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(40px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .page-header h1 {
-            font-size: 48px; font-weight: 900;
-            background: linear-gradient(135deg, #fff, #7EDDD6);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; margin-bottom: 8px;
-        }
-        .page-header .subtitle { font-size: 18px; color: rgba(255, 255, 255, 0.6); letter-spacing: 3px; }
 
-        /* Lab Cards */
+        .page-header h1 {
+            font-size: 52px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, #FBBF24 40%, #FCD34D 70%, #fff 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            animation: gradientShift 4s ease-in-out infinite;
+            letter-spacing: -2px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .page-header .subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        /* Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 18px 24px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #FBBF24, transparent);
+            animation: statLine 3s ease-in-out infinite;
+        }
+
+        @keyframes statLine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(251, 191, 36, 0.3);
+            box-shadow: 0 12px 40px rgba(251, 191, 36, 0.1);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 24px;
+            color: #FBBF24;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #FCD34D;
+            display: block;
+        }
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        /* Labs Grid */
         .labs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 30px;
-            animation: cardsEntrance 1.2s ease-out 0.4s both;
+            animation: cardsEntrance 1s ease-out 0.4s both;
         }
+
         @keyframes cardsEntrance {
-            0% { opacity: 0; transform: translateY(60px); }
-            100% { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(60px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .lab-card {
-            background: var(--glass); backdrop-filter: blur(30px);
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
             border: 1.5px solid var(--glass-border);
             border-radius: var(--radius);
-            padding: 32px 24px;
+            padding: 32px 28px;
             cursor: pointer;
             transition: all var(--transition);
             position: relative;
             overflow: hidden;
-            text-align: center;
-            min-height: 280px;
-            text-decoration: none;
-            color: white;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            min-height: 320px;
+            text-decoration: none;
+            color: white;
+            animation: cardAppear 0.6s ease-out both;
         }
-        .lab-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            border-color: rgba(78, 205, 196, 0.5);
-            box-shadow: var(--shadow-hover);
+
+        .lab-card:nth-child(1) { animation-delay: 0.1s; }
+        .lab-card:nth-child(2) { animation-delay: 0.2s; }
+        .lab-card:nth-child(3) { animation-delay: 0.3s; }
+        .lab-card:nth-child(4) { animation-delay: 0.4s; }
+        .lab-card:nth-child(5) { animation-delay: 0.5s; }
+        .lab-card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(40px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
+
         .lab-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #4ECDC4, #7EDDD6, #4ECDC4);
+            background: linear-gradient(90deg, #FBBF24, #FCD34D, #FBBF24);
             background-size: 200% 100%;
             animation: gradientSlide 3s linear infinite;
+            transition: all 0.5s;
         }
+
         @keyframes gradientSlide {
             0% { background-position: 0% 50%; }
             100% { background-position: 200% 50%; }
         }
-        .lab-icon {
-            font-size: 48px; color: #4ECDC4; margin-bottom: 16px;
+
+        .lab-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.08), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s;
+            pointer-events: none;
         }
+
+        .lab-card:hover::after {
+            opacity: 1;
+        }
+
+        .lab-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: rgba(251, 191, 36, 0.4);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .lab-card:active {
+            transform: scale(0.97);
+            transition: transform 0.1s;
+        }
+
+        /* Card Glow Ring */
+        .lab-card .glow-ring {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.03), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s;
+            pointer-events: none;
+        }
+
+        .lab-card:hover .glow-ring {
+            opacity: 1;
+            animation: ringPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .lab-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            transition: all var(--transition);
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 8px 30px rgba(251, 191, 36, 0.3);
+        }
+
+        .lab-card:hover .lab-icon-wrapper {
+            transform: scale(1.15) rotate(-8deg);
+            border-radius: 32px;
+            box-shadow: 0 12px 50px rgba(251, 191, 36, 0.5);
+        }
+
         .lab-title {
-            font-size: 22px; font-weight: 700; margin-bottom: 8px;
-            color: #7EDDD6;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
         }
-        .lab-desc {
-            font-size: 14px; color: rgba(255, 255, 255, 0.7); line-height: 1.6;
+
+        .lab-title .highlight {
+            background: linear-gradient(135deg, #FBBF24, #FCD34D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .lab-chapter {
+            font-size: 12px;
+            color: #FBBF24;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            position: relative;
+            z-index: 1;
+            font-weight: 600;
+        }
+
+        .lab-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.7;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 1;
             flex: 1;
         }
-        .lab-status {
-            margin-top: 16px; padding: 6px 16px; border-radius: 100px;
-            font-size: 12px; font-weight: 600; display: inline-block;
-        }
-        .lab-status.ready { background: rgba(78, 205, 196, 0.2); color: #4ECDC4; }
-        .lab-status.coming { background: rgba(255, 165, 0, 0.2); color: #FBBF24; }
 
-        /* Periodic Table Styles */
+        .lab-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-tag {
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(251, 191, 36, 0.12);
+            border: 1px solid rgba(251, 191, 36, 0.15);
+            color: #FCD34D;
+            transition: all 0.3s;
+        }
+
+        .lab-card:hover .feature-tag {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: rgba(251, 191, 36, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .lab-status {
+            margin-top: 4px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            align-self: flex-start;
+            transition: all 0.3s;
+        }
+
+        .lab-status.ready {
+            background: rgba(251, 191, 36, 0.2);
+            color: #FBBF24;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .lab-status.coming {
+            background: rgba(255, 165, 0, 0.15);
+            color: #FFA500;
+            border: 1px solid rgba(255, 165, 0, 0.15);
+        }
+
+        .lab-card:hover .lab-status.ready {
+            background: rgba(251, 191, 36, 0.3);
+            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+        }
+
+        /* Launch Button */
+        .launch-btn {
+            padding: 14px 24px;
+            border-radius: 100px;
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            border: none;
+            color: #1a1a2e;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 48px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: inherit;
+            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.2);
+            overflow: hidden;
+        }
+
+        .launch-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #FCD34D, #FBBF24);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .launch-btn:hover::before {
+            opacity: 1;
+        }
+
+        .launch-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(251, 191, 36, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .launch-btn:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+
+        .launch-btn i {
+            transition: transform 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .launch-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .launch-btn:hover i {
+            transform: translateX(6px) scale(1.1);
+        }
+
+        /* Card particles */
+        .card-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .lab-card:hover .card-particles {
+            opacity: 1;
+        }
+
+        .card-particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(251, 191, 36, 0.4);
+            border-radius: 50%;
+            animation: particleRise 3s ease-out infinite;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes particleRise {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-120px) scale(0); opacity: 0; }
+        }
+
+        /* Periodic Table Container */
         .periodic-table-container {
-            background: var(--glass); backdrop-filter: blur(30px);
+            margin-top: 40px;
+            background: var(--glass);
+            backdrop-filter: blur(30px);
             border: 1.5px solid var(--glass-border);
             border-radius: var(--radius);
             padding: 24px;
-            margin-top: 30px;
             display: none;
             animation: fadeInUp 0.6s ease-out;
             overflow-x: auto;
         }
-        .periodic-table-container.active { display: block; }
+
+        .periodic-table-container.active {
+            display: block;
+        }
+
+        .pt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .pt-header h3 {
+            font-size: 22px;
+            color: #FCD34D;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pt-header h3 i {
+            color: #FBBF24;
+        }
+
+        .pt-close-btn {
+            padding: 8px 20px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--glass-border);
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+        }
+
+        .pt-close-btn:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: rgba(251, 191, 36, 0.4);
+            color: white;
+        }
 
         .element-grid {
             display: grid;
@@ -186,6 +698,7 @@
             gap: 3px;
             min-width: 800px;
         }
+
         .element-cell {
             aspect-ratio: 1;
             padding: 2px;
@@ -201,24 +714,45 @@
             border: 1px solid rgba(255,255,255,0.1);
             text-align: center;
         }
+
         .element-cell:hover { 
             transform: scale(1.3); 
             z-index: 10; 
             box-shadow: 0 8px 25px rgba(0,0,0,0.8);
-            border-color: rgba(255,255,255,0.5);
+            border-color: rgba(251, 191, 36, 0.6);
         }
-        .element-cell .symbol { font-weight: 700; font-size: 12px; line-height: 1; }
-        .element-cell .number { font-size: 7px; opacity: 0.7; line-height: 1; }
-        .element-cell .name { font-size: 6px; opacity: 0.6; line-height: 1; display: none; }
+
+        .element-cell .symbol { 
+            font-weight: 700; 
+            font-size: 12px; 
+            line-height: 1; 
+        }
+
+        .element-cell .number { 
+            font-size: 7px; 
+            opacity: 0.7; 
+            line-height: 1; 
+        }
+
+        .element-cell .name { 
+            font-size: 6px; 
+            opacity: 0.6; 
+            line-height: 1; 
+            display: none; 
+        }
 
         .element-cell.empty { 
             background: transparent !important; 
             border: none !important; 
             cursor: default;
         }
-        .element-cell.empty:hover { transform: none; box-shadow: none; }
 
-        /* Element categories - all 118 elements */
+        .element-cell.empty:hover { 
+            transform: none; 
+            box-shadow: none; 
+        }
+
+        /* Element categories */
         .nonmetal { background: rgba(78, 205, 196, 0.35); border-color: rgba(78, 205, 196, 0.3); }
         .noble-gas { background: rgba(167, 139, 250, 0.35); border-color: rgba(167, 139, 250, 0.3); }
         .alkali-metal { background: rgba(255, 107, 107, 0.35); border-color: rgba(255, 107, 107, 0.3); }
@@ -235,9 +769,13 @@
             background: rgba(0,0,0,0.4);
             border-radius: 16px;
             display: none;
-            border: 1px solid rgba(78,205,196,0.2);
+            border: 1px solid rgba(251, 191, 36, 0.15);
         }
-        .element-detail.active { display: block; }
+
+        .element-detail.active { 
+            display: block; 
+            animation: fadeInUp 0.4s ease-out;
+        }
 
         .close-detail {
             float: right;
@@ -247,6 +785,7 @@
             font-size: 24px;
             cursor: pointer;
         }
+
         .close-detail:hover { color: white; }
 
         /* Legend */
@@ -259,6 +798,7 @@
             background: rgba(0,0,0,0.2);
             border-radius: 12px;
         }
+
         .legend-item {
             display: flex;
             align-items: center;
@@ -266,6 +806,7 @@
             font-size: 11px;
             color: rgba(255,255,255,0.7);
         }
+
         .legend-item .color-box {
             width: 16px;
             height: 16px;
@@ -273,72 +814,40 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Coming Soon Modal */
-        .coming-soon-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-        .coming-soon-overlay.active { display: flex; }
-
-        .coming-soon-modal {
-            background: rgba(20,20,40,0.95);
-            border: 2px solid rgba(78,205,196,0.3);
-            border-radius: 28px;
-            padding: 40px 50px;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-            animation: modalPop 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes modalPop {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .coming-soon-modal .icon { font-size: 64px; margin-bottom: 16px; }
-        .coming-soon-modal h2 {
-            font-size: 28px; margin-bottom: 8px;
-            background: linear-gradient(135deg, #4ECDC4, #7EDDD6);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .coming-soon-modal p {
-            color: rgba(255,255,255,0.7);
-            font-size: 16px;
-            line-height: 1.6;
-        }
-        .coming-soon-modal .close-btn {
-            margin-top: 20px;
-            padding: 12px 32px;
-            border-radius: 100px;
-            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
-            border: none;
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .coming-soon-modal .close-btn:hover { transform: scale(1.05); }
-
         /* Responsive */
+        @media (max-width: 1024px) {
+            .labs-grid {
+                grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            }
+        }
+
         @media (max-width: 768px) {
+            .labs-grid {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+                margin: 0 auto;
+            }
             .page-header h1 { font-size: 36px; }
+            .stat-card .stat-value { font-size: 22px; }
+            .subject-badge { font-size: 12px; padding: 6px 16px; margin-left: 0; }
             .element-grid { gap: 2px; min-width: 600px; }
             .element-cell { font-size: 7px; min-width: 22px; padding: 1px; }
             .element-cell .symbol { font-size: 9px; }
-            .labs-grid { grid-template-columns: 1fr; }
-            .coming-soon-modal { padding: 30px 24px; }
-            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
         }
+
         @media (max-width: 500px) {
-            .main-container { padding: 16px 10px 40px; }
+            .main-container { padding: 16px 12px 40px; }
             .page-header h1 { font-size: 28px; }
+            .lab-card { padding: 24px 18px; min-height: auto; }
+            .lab-icon-wrapper {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+                border-radius: 18px;
+            }
+            .lab-title { font-size: 18px; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .breadcrumb { font-size: 12px; }
             .element-grid { min-width: 480px; gap: 1px; }
             .element-cell { min-width: 18px; padding: 1px; }
             .element-cell .symbol { font-size: 7px; }
@@ -351,11 +860,15 @@
     <div class="bg-grid"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="particles-container" id="particles"></div>
 
     <div class="main-container">
         <!-- Navigation -->
         <div class="nav-bar">
-            <a href="chemistry_hub_landing.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <a href="chemistry_hub_landing.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
             <div class="breadcrumb">
                 <span onclick="goHome()">Home</span>
                 <i class="fas fa-chevron-right" style="font-size:12px;"></i>
@@ -363,7 +876,9 @@
                 <i class="fas fa-chevron-right" style="font-size:12px;"></i>
                 <span class="current">Labs</span>
             </div>
-            <div class="subject-badge"><i class="fas fa-vial"></i> Interactive Labs</div>
+            <div class="subject-badge">
+                <i class="fas fa-vial"></i> Interactive Labs
+            </div>
         </div>
 
         <!-- Header -->
@@ -372,62 +887,140 @@
             <p class="subtitle">✦ Interactive Tools for Chemistry Learning ✦</p>
         </div>
 
-        <!-- Lab Cards -->
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <span class="stat-icon">🧪</span>
+                <span class="stat-value">6</span>
+                <span class="stat-label">Total Labs</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">✅</span>
+                <span class="stat-value" style="color: #10B981;">6</span>
+                <span class="stat-label">Ready to Use</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🎯</span>
+                <span class="stat-value">100+</span>
+                <span class="stat-label">Interactive Elements</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📚</span>
+                <span class="stat-value">NCERT</span>
+                <span class="stat-label">Aligned Content</span>
+            </div>
+        </div>
+
+        <!-- Labs Grid -->
         <div class="labs-grid">
-            <!-- Periodic Table Card -->
+            <!-- Lab 1: Periodic Table -->
             <div class="lab-card" onclick="toggleTable()">
-                <div class="lab-icon"><i class="fas fa-table"></i></div>
-                <div class="lab-title">Interactive Periodic Table</div>
-                <div class="lab-desc">Explore all 118 elements with properties, electron configurations, and 3D atom models</div>
+                <div class="glow-ring"></div>
+                <div class="card-particles" id="particles1"></div>
+                <div class="lab-icon-wrapper"><i class="fas fa-table"></i></div>
+                <div class="lab-title">Interactive <span class="highlight">Periodic Table</span></div>
+                <div class="lab-chapter">📖 118 Elements</div>
+                <div class="lab-description">Explore all 118 elements with properties, electron configurations, and interactive 3D atom models.</div>
+                <div class="lab-features">
+                    <span class="feature-tag">🧪 All Elements</span>
+                    <span class="feature-tag">⚛️ Electron Config</span>
+                    <span class="feature-tag">📊 Properties</span>
+                </div>
+                <button class="launch-btn"><span>Open Table</span> <i class="fas fa-arrow-right"></i></button>
                 <span class="lab-status ready">✅ Ready</span>
             </div>
 
-            <!-- Equation Balancer Card -->
-            <a href="chemistry_equation_balancer.html" class="lab-card">
-                <div class="lab-icon"><i class="fas fa-balance-scale"></i></div>
-                <div class="lab-title">Chemical Equation Balancer</div>
-                <div class="lab-desc">Balance complex chemical equations automatically with visual stoichiometry feedback</div>
+            <!-- Lab 2: Equation Balancer -->
+            <div class="lab-card" onclick="window.location.href='chemistry_equation_balancer.html'">
+                <div class="glow-ring"></div>
+                <div class="card-particles" id="particles2"></div>
+                <div class="lab-icon-wrapper"><i class="fas fa-balance-scale"></i></div>
+                <div class="lab-title">Chemical <span class="highlight">Equation Balancer</span></div>
+                <div class="lab-chapter">⚖️ Stoichiometry</div>
+                <div class="lab-description">Balance complex chemical equations automatically with step-by-step visual stoichiometry feedback.</div>
+                <div class="lab-features">
+                    <span class="feature-tag">⚖️ Auto Balance</span>
+                    <span class="feature-tag">📝 Step-by-Step</span>
+                    <span class="feature-tag">🎯 Visual Feedback</span>
+                </div>
+                <button class="launch-btn"><span>Balance Now</span> <i class="fas fa-arrow-right"></i></button>
                 <span class="lab-status ready">✅ Ready</span>
-            </a>
-
-            <!-- Molar Mass Calculator Card -->
-            <a href="chemistry_molar_mass_calculator.html" class="lab-card">
-                <div class="lab-icon"><i class="fas fa-calculator"></i></div>
-                <div class="lab-title">Molar Mass Calculator</div>
-                <div class="lab-desc">Compute molecular weights with detailed element-by-element mass breakdown</div>
-                <span class="lab-status ready">✅ Ready</span>
-            </a>
-
-            <!-- Virtual Lab Card -->
-            <div class="lab-card" onclick="showComingSoon('Virtual Lab')">
-                <div class="lab-icon"><i class="fas fa-flask"></i></div>
-                <div class="lab-title">Virtual Lab Simulation</div>
-                <div class="lab-desc">Interactive lab scene with beakers, particles, and real-time reactions</div>
-                <span class="lab-status coming">⏳ Coming Soon</span>
             </div>
 
-            <!-- SPDF Orbital Atlas Card -->
-            <div class="lab-card" onclick="showComingSoon('SPDF Orbital Atlas')">
-                <div class="lab-icon"><i class="fas fa-atom"></i></div>
-                <div class="lab-title">SPDF Orbital Atlas</div>
-                <div class="lab-desc">Explore all 16 atomic orbital shapes with interactive 3D probability-density models</div>
-                <span class="lab-status coming">⏳ Coming Soon</span>
+            <!-- Lab 3: Molar Mass Calculator -->
+            <div class="lab-card" onclick="window.location.href='chemistry_molar_mass_calculator.html'">
+                <div class="glow-ring"></div>
+                <div class="card-particles" id="particles3"></div>
+                <div class="lab-icon-wrapper"><i class="fas fa-calculator"></i></div>
+                <div class="lab-title">Molar Mass <span class="highlight">Calculator</span></div>
+                <div class="lab-chapter">🧮 Molecular Weight</div>
+                <div class="lab-description">Compute molecular weights with detailed element-by-element mass breakdown and percentage composition.</div>
+                <div class="lab-features">
+                    <span class="feature-tag">📊 Element Breakdown</span>
+                    <span class="feature-tag">🎯 Accurate</span>
+                    <span class="feature-tag">⚡ Instant Results</span>
+                </div>
+                <button class="launch-btn"><span>Calculate</span> <i class="fas fa-arrow-right"></i></button>
+                <span class="lab-status ready">✅ Ready</span>
             </div>
 
-            <!-- Solubility Table Card -->
-            <div class="lab-card" onclick="showComingSoon('Solubility Table')">
-                <div class="lab-icon"><i class="fas fa-droplet"></i></div>
-                <div class="lab-title">Solubility Table</div>
-                <div class="lab-desc">Quickly reference interactive charts and rules for ionic compound solubilities</div>
-                <span class="lab-status coming">⏳ Coming Soon</span>
+            <!-- Lab 4: Virtual Lab -->
+            <div class="lab-card" onclick="window.location.href='chemistry_virtual_lab.html'">
+                <div class="glow-ring"></div>
+                <div class="card-particles" id="particles4"></div>
+                <div class="lab-icon-wrapper"><i class="fas fa-flask"></i></div>
+                <div class="lab-title">Virtual Lab <span class="highlight">Simulation</span></div>
+                <div class="lab-chapter">🧪 Experiments</div>
+                <div class="lab-description">Interactive lab scene with beakers, chemicals, and real-time reactions. Mix chemicals and observe results!</div>
+                <div class="lab-features">
+                    <span class="feature-tag">🧪 Mix Chemicals</span>
+                    <span class="feature-tag">🔥 Real Reactions</span>
+                    <span class="feature-tag">🎨 Visual Effects</span>
+                </div>
+                <button class="launch-btn"><span>Start Experiment</span> <i class="fas fa-arrow-right"></i></button>
+                <span class="lab-status ready">✅ Ready</span>
+            </div>
+
+            <!-- Lab 5: SPDF Orbital Atlas -->
+            <div class="lab-card" onclick="window.location.href='chemistry_spdf_orbital_atlas.html'">
+                <div class="glow-ring"></div>
+                <div class="card-particles" id="particles5"></div>
+                <div class="lab-icon-wrapper"><i class="fas fa-atom"></i></div>
+                <div class="lab-title">SPDF <span class="highlight">Orbital Atlas</span></div>
+                <div class="lab-chapter">⚛️ Atomic Orbitals</div>
+                <div class="lab-description">Explore all 16 atomic orbital shapes with interactive 3D probability-density models and visualizations.</div>
+                <div class="lab-features">
+                    <span class="feature-tag">⚛️ 16 Orbitals</span>
+                    <span class="feature-tag">🌐 3D Views</span>
+                    <span class="feature-tag">🎯 Interactive</span>
+                </div>
+                <button class="launch-btn"><span>Explore Orbitals</span> <i class="fas fa-arrow-right"></i></button>
+                <span class="lab-status ready">✅ Ready</span>
+            </div>
+
+            <!-- Lab 6: Solubility Table -->
+            <div class="lab-card" onclick="window.location.href='chemistry_solubility_table.html'">
+                <div class="glow-ring"></div>
+                <div class="card-particles" id="particles6"></div>
+                <div class="lab-icon-wrapper"><i class="fas fa-droplet"></i></div>
+                <div class="lab-title">Solubility <span class="highlight">Table</span></div>
+                <div class="lab-chapter">📊 Ionic Compounds</div>
+                <div class="lab-description">Quickly reference interactive charts and rules for ionic compound solubilities with search and filter.</div>
+                <div class="lab-features">
+                    <span class="feature-tag">📋 50+ Compounds</span>
+                    <span class="feature-tag">🔍 Search</span>
+                    <span class="feature-tag">📊 Filter</span>
+                </div>
+                <button class="launch-btn"><span>View Table</span> <i class="fas fa-arrow-right"></i></button>
+                <span class="lab-status ready">✅ Ready</span>
             </div>
         </div>
 
         <!-- Periodic Table Container -->
         <div class="periodic-table-container" id="ptContainer">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-                <h3 style="color:#7EDDD6;"><i class="fas fa-table"></i> Periodic Table of Elements</h3>
-                <button onclick="toggleTable()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:8px 16px; border-radius:100px; cursor:pointer;">✕ Close</button>
+            <div class="pt-header">
+                <h3><i class="fas fa-table"></i> Periodic Table of Elements</h3>
+                <button class="pt-close-btn" onclick="toggleTable()">✕ Close</button>
             </div>
             <div class="element-grid" id="periodicTable"></div>
             
@@ -451,53 +1044,53 @@
         </div>
     </div>
 
-    <!-- Coming Soon Overlay -->
-    <div class="coming-soon-overlay" id="comingSoonOverlay">
-        <div class="coming-soon-modal">
-            <div class="icon" id="csIcon">🧪</div>
-            <h2 id="csTitle">Coming Soon!</h2>
-            <p id="csDesc">This lab is under development. Check back soon for interactive chemistry experiments!</p>
-            <button class="close-btn" onclick="closeComingSoon()">Got it!</button>
-        </div>
-    </div>
-
     <script>
+        // Navigation Functions
         function goHome() {
             document.body.style.transition = 'opacity 0.3s';
             document.body.style.opacity = '0';
             setTimeout(() => { window.location.href = 'index.html'; }, 300);
         }
+
         function goHub() {
             document.body.style.transition = 'opacity 0.3s';
             document.body.style.opacity = '0';
             setTimeout(() => { window.location.href = 'chemistry_hub_landing.html'; }, 300);
         }
 
-        // ============================================================
-        // COMING SOON MODAL
-        // ============================================================
-        function showComingSoon(name) {
-            const overlay = document.getElementById('comingSoonOverlay');
-            document.getElementById('csTitle').textContent = name;
-            document.getElementById('csDesc').textContent = 
-                `"${name}" is under development. Check back soon for interactive chemistry experiments!`;
-            overlay.classList.add('active');
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 60; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 12 + 8) + 's';
+                particle.style.animationDelay = (Math.random() * 10) + 's';
+                const size = Math.random() * 4 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.opacity = Math.random() * 0.3 + 0.1;
+                container.appendChild(particle);
+            }
         }
 
-        function closeComingSoon() {
-            document.getElementById('comingSoonOverlay').classList.remove('active');
+        // Create card particles
+        function createCardParticles(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            for (let i = 0; i < 12; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'card-particle';
+                dot.style.left = Math.random() * 90 + '%';
+                dot.style.top = Math.random() * 80 + 20 + '%';
+                dot.style.setProperty('--delay', Math.random() * 3 + 's');
+                container.appendChild(dot);
+            }
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeComingSoon();
-        });
-
-        document.getElementById('comingSoonOverlay').addEventListener('click', function(e) {
-            if (e.target === this) closeComingSoon();
-        });
-
         // ============================================================
-        // COMPLETE PERIODIC TABLE - ALL 118 ELEMENTS
+        // PERIODIC TABLE - ALL 118 ELEMENTS
         // ============================================================
 
         const elements = [
@@ -634,27 +1227,19 @@
             { symbol: 'Og', name: 'Oganesson', number: 118, mass: 294.000, category: 'noble-gas' }
         ];
 
-        // Position mapping for all 118 elements
         function getElementPosition(number) {
             const positions = {
-                // Period 1
                 1: 1, 2: 18,
-                // Period 2
                 3: 1, 4: 2, 5: 13, 6: 14, 7: 15, 8: 16, 9: 17, 10: 18,
-                // Period 3
                 11: 1, 12: 2, 13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18,
-                // Period 4
                 19: 1, 20: 2, 21: 3, 22: 4, 23: 5, 24: 6, 25: 7, 26: 8, 27: 9, 28: 10,
                 29: 11, 30: 12, 31: 13, 32: 14, 33: 15, 34: 16, 35: 17, 36: 18,
-                // Period 5
                 37: 1, 38: 2, 39: 3, 40: 4, 41: 5, 42: 6, 43: 7, 44: 8, 45: 9, 46: 10,
                 47: 11, 48: 12, 49: 13, 50: 14, 51: 15, 52: 16, 53: 17, 54: 18,
-                // Period 6
                 55: 1, 56: 2, 57: 3, 58: 4, 59: 5, 60: 6, 61: 7, 62: 8, 63: 9, 64: 10,
                 65: 11, 66: 12, 67: 13, 68: 14, 69: 15, 70: 16, 71: 17, 72: 4, 73: 5,
                 74: 6, 75: 7, 76: 8, 77: 9, 78: 10, 79: 11, 80: 12, 81: 13, 82: 14,
                 83: 15, 84: 16, 85: 17, 86: 18,
-                // Period 7
                 87: 1, 88: 2, 89: 3, 90: 4, 91: 5, 92: 6, 93: 7, 94: 8, 95: 9, 96: 10,
                 97: 11, 98: 12, 99: 13, 100: 14, 101: 15, 102: 16, 103: 17, 104: 4,
                 105: 5, 106: 6, 107: 7, 108: 8, 109: 9, 110: 10, 111: 11, 112: 12,
@@ -667,19 +1252,13 @@
             const grid = document.getElementById('periodicTable');
             grid.innerHTML = '';
             
-            // Total grid: 7 rows × 18 columns = 126 cells (118 elements + 8 empty cells)
-            // We'll build row by row
-            const rows = [];
             const elementsByRow = {};
-            
-            // Group elements by period (row)
             elements.forEach(el => {
                 const row = Math.ceil(el.number / 18);
                 if (!elementsByRow[row]) elementsByRow[row] = [];
                 elementsByRow[row].push(el);
             });
             
-            // For each row, place elements in correct columns
             for (let row = 1; row <= 7; row++) {
                 const rowElements = elementsByRow[row] || [];
                 const rowCells = new Array(18).fill(null);
@@ -691,12 +1270,7 @@
                     }
                 });
                 
-                rows.push(rowCells);
-            }
-            
-            // Render the grid
-            rows.forEach(row => {
-                row.forEach(cell => {
+                rowCells.forEach(cell => {
                     const div = document.createElement('div');
                     if (cell) {
                         const category = cell.category || 'nonmetal';
@@ -713,14 +1287,13 @@
                     }
                     grid.appendChild(div);
                 });
-            });
+            }
         }
 
         function showElementDetail(el) {
             const detail = document.getElementById('elementDetail');
             const info = document.getElementById('elementInfo');
             
-            // Get color based on category
             const categoryColors = {
                 'nonmetal': '#4ECDC4',
                 'noble-gas': '#A78BFA',
@@ -762,7 +1335,7 @@
                 </div>
                 <div style="margin-top:16px; padding:12px; background:rgba(0,0,0,0.2); border-radius:12px;">
                     <div style="font-size:12px; color:rgba(255,255,255,0.5);">Electron Configuration</div>
-                    <div style="font-size:16px; font-weight:600; color:#4ECDC4; font-family:'Courier New',monospace; margin-top:4px;">
+                    <div style="font-size:16px; font-weight:600; color:#FBBF24; font-family:'Courier New',monospace; margin-top:4px;">
                         ${getElectronConfig(el.number)}
                     </div>
                 </div>
@@ -772,7 +1345,6 @@
         }
 
         function getElectronConfig(atomicNumber) {
-            // Simplified electron configurations for all 118 elements
             const configs = {
                 1: '1s¹', 2: '1s²',
                 3: '1s² 2s¹', 4: '1s² 2s²',
@@ -790,24 +1362,13 @@
                 33: '1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p³', 34: '1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁴',
                 35: '1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁵', 36: '1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶',
             };
-            
-            // For elements beyond 36, return a generic configuration
-            if (configs[atomicNumber]) {
-                return configs[atomicNumber];
-            } else {
-                // Generate a generic config for heavy elements
-                let config = '1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶';
-                if (atomicNumber >= 37 && atomicNumber <= 48) {
-                    config += ' 4d¹⁰ 5s²';
-                } else if (atomicNumber >= 49 && atomicNumber <= 54) {
-                    config += ' 4d¹⁰ 5s² 5p⁶';
-                } else if (atomicNumber >= 55 && atomicNumber <= 86) {
-                    config += ' 4d¹⁰ 5s² 5p⁶ 4f¹⁴ 5d¹⁰ 6s² 6p⁶';
-                } else {
-                    config += ' 4d¹⁰ 5s² 5p⁶ 4f¹⁴ 5d¹⁰ 6s² 6p⁶ 5f¹⁴ 6d¹⁰ 7s²';
-                }
-                return config;
-            }
+            if (configs[atomicNumber]) return configs[atomicNumber];
+            let config = '1s² 2s² 2p⁶ 3s² 3p⁶ 3d¹⁰ 4s² 4p⁶';
+            if (atomicNumber >= 37 && atomicNumber <= 48) config += ' 4d¹⁰ 5s²';
+            else if (atomicNumber >= 49 && atomicNumber <= 54) config += ' 4d¹⁰ 5s² 5p⁶';
+            else if (atomicNumber >= 55 && atomicNumber <= 86) config += ' 4d¹⁰ 5s² 5p⁶ 4f¹⁴ 5d¹⁰ 6s² 6p⁶';
+            else config += ' 4d¹⁰ 5s² 5p⁶ 4f¹⁴ 5d¹⁰ 6s² 6p⁶ 5f¹⁴ 6d¹⁰ 7s²';
+            return config;
         }
 
         function closeDetail() {
@@ -834,13 +1395,19 @@
 
         // Initialize
         window.addEventListener('load', function() {
+            createParticles();
+            createCardParticles('particles1');
+            createCardParticles('particles2');
+            createCardParticles('particles3');
+            createCardParticles('particles4');
+            createCardParticles('particles5');
+            createCardParticles('particles6');
             renderPeriodicTable();
         });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeComingSoon();
                 closeDetail();
                 document.getElementById('ptContainer').classList.remove('active');
             }

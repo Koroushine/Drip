@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Virtual Chemistry Lab</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --chemistry-color: #4ECDC4;
+            --chemistry-light: #7EDDD6;
+            --chemistry-dark: #2d9b94;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%); top: -150px; right: -150px; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%); bottom: -100px; left: -100px; animation-delay: -4s; }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255, 255, 255, 0.7); }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            color: white;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 44px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.6); letter-spacing: 2px; }
+
+        /* Lab Container */
+        .lab-container {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 32px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        /* Lab Bench */
+        .lab-bench {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 20px;
+            min-height: 500px;
+            position: relative;
+            border: 2px solid rgba(78, 205, 196, 0.1);
+        }
+
+        .lab-bench-title {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        /* Canvas Container */
+        .canvas-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            max-height: 480px;
+            background: radial-gradient(ellipse at center, rgba(20,30,50,0.8), rgba(5,10,20,0.95));
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(78, 205, 196, 0.15);
+        }
+
+        .canvas-wrapper canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Controls */
+        .lab-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-group {
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            padding: 16px 20px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,0.15);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4ECDC4;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .slider-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #7EDDD6;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .lab-btn {
+            padding: 10px 18px;
+            border-radius: 100px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 40px;
+        }
+
+        .lab-btn-primary {
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            color: white;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .lab-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+        }
+
+        .lab-btn-danger {
+            background: linear-gradient(135deg, #FF6B6B, #e05555);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+        }
+
+        .lab-btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255,107,107,0.4);
+        }
+
+        .lab-btn-success {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+        }
+
+        .lab-btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16,185,129,0.4);
+        }
+
+        .lab-btn-warning {
+            background: linear-gradient(135deg, #FBBF24, #d97706);
+            color: white;
+            box-shadow: 0 4px 15px rgba(251,191,36,0.3);
+        }
+
+        .lab-btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(251,191,36,0.4);
+        }
+
+        .lab-btn:active {
+            transform: scale(0.95);
+        }
+
+        .reaction-info {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .reaction-info .info-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reaction-info .info-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #7EDDD6;
+            margin-top: 4px;
+        }
+
+        .reaction-info .info-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 4px;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 100px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.idle { background: #9CA3AF; }
+        .status-dot.mixing { background: #FBBF24; animation: pulse 1s infinite; }
+        .status-dot.reacting { background: #FF6B6B; animation: pulse 0.5s infinite; }
+        .status-dot.done { background: #10B981; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        @media (max-width: 1024px) {
+            .lab-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main-container { padding: 16px 12px 40px; }
+            .page-header h1 { font-size: 28px; }
+            .lab-container { padding: 16px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+            .btn-group { flex-direction: column; }
+            .lab-btn { justify-content: center; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="chemistry_labs.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goHub()">Chemistry</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goLabs()">Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Virtual Lab</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-flask"></i> Virtual Lab</div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🧪 Virtual Chemistry Lab</h1>
+            <p class="subtitle">✦ Mix chemicals, observe reactions, and explore real-time simulations ✦</p>
+        </div>
+
+        <!-- Lab -->
+        <div class="lab-container">
+            <div class="lab-layout">
+                <!-- Lab Bench -->
+                <div class="lab-bench">
+                    <div class="lab-bench-title">🔬 Experiment Bench</div>
+                    <div class="canvas-wrapper">
+                        <canvas id="labCanvas"></canvas>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
+                        <div class="status-indicator">
+                            <span class="status-dot idle" id="statusDot"></span>
+                            <span id="statusText">Ready</span>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="lab-btn lab-btn-danger" onclick="clearBeaker()">
+                                <i class="fas fa-trash"></i> Empty
+                            </button>
+                            <button class="lab-btn lab-btn-primary" onclick="mixChemicals()">
+                                <i class="fas fa-mix"></i> Mix
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="lab-controls">
+                    <div class="control-group">
+                        <label><i class="fas fa-droplet"></i> Chemical A</label>
+                        <div class="slider-row">
+                            <input type="range" id="chemicalA" min="0" max="100" value="50" oninput="updateChemicals()">
+                            <span class="slider-value" id="chemAValue">50</span>
+                        </div>
+                        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                            <button class="lab-btn lab-btn-primary" style="padding:4px 12px; font-size:11px;" onclick="setChemical('A', 'H2O')">💧 Water</button>
+                            <button class="lab-btn lab-btn-success" style="padding:4px 12px; font-size:11px;" onclick="setChemical('A', 'HCl')">🧪 HCl</button>
+                            <button class="lab-btn lab-btn-warning" style="padding:4px 12px; font-size:11px;" onclick="setChemical('A', 'NaOH')">🧪 NaOH</button>
+                            <button class="lab-btn lab-btn-danger" style="padding:4px 12px; font-size:11px;" onclick="setChemical('A', 'H2SO4')">🧪 H₂SO₄</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label><i class="fas fa-droplet"></i> Chemical B</label>
+                        <div class="slider-row">
+                            <input type="range" id="chemicalB" min="0" max="100" value="50" oninput="updateChemicals()">
+                            <span class="slider-value" id="chemBValue">50</span>
+                        </div>
+                        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                            <button class="lab-btn lab-btn-primary" style="padding:4px 12px; font-size:11px;" onclick="setChemical('B', 'H2O')">💧 Water</button>
+                            <button class="lab-btn lab-btn-success" style="padding:4px 12px; font-size:11px;" onclick="setChemical('B', 'NaCl')">🧪 NaCl</button>
+                            <button class="lab-btn lab-btn-warning" style="padding:4px 12px; font-size:11px;" onclick="setChemical('B', 'CuSO4')">🧪 CuSO₄</button>
+                            <button class="lab-btn lab-btn-danger" style="padding:4px 12px; font-size:11px;" onclick="setChemical('B', 'CaCO3')">🧪 CaCO₃</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label><i class="fas fa-temperature-high"></i> Temperature</label>
+                        <div class="slider-row">
+                            <input type="range" id="temperature" min="0" max="100" value="25" oninput="updateChemicals()">
+                            <span class="slider-value" id="tempValue">25°C</span>
+                        </div>
+                        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                            <button class="lab-btn lab-btn-warning" style="padding:4px 12px; font-size:11px;" onclick="setTemperature(25)">🌡️ Room</button>
+                            <button class="lab-btn lab-btn-danger" style="padding:4px 12px; font-size:11px;" onclick="setTemperature(50)">🔥 Heat</button>
+                            <button class="lab-btn lab-btn-primary" style="padding:4px 12px; font-size:11px;" onclick="setTemperature(10)">❄️ Cool</button>
+                            <button class="lab-btn lab-btn-success" style="padding:4px 12px; font-size:11px;" onclick="setTemperature(100)">♨️ Boil</button>
+                        </div>
+                    </div>
+
+                    <div class="reaction-info">
+                        <div class="info-label">Reaction Status</div>
+                        <div class="info-value" id="reactionStatus">⏳ Waiting for mix</div>
+                        <div class="info-desc" id="reactionDesc">Add chemicals and click Mix to start the experiment!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goHome() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 300);
+        }
+        function goHub() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_hub_landing.html'; }, 300);
+        }
+        function goLabs() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_labs.html'; }, 300);
+        }
+
+        // ============================================================
+        // CHEMISTRY LAB ENGINE
+        // ============================================================
+
+        const canvas = document.getElementById('labCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Chemical data
+        const chemicals = {
+            'H2O': { name: 'Water', color: '#4FC3F7', emoji: '💧', density: 1.0 },
+            'HCl': { name: 'Hydrochloric Acid', color: '#FFD54F', emoji: '🧪', density: 1.18 },
+            'NaOH': { name: 'Sodium Hydroxide', color: '#E0E0E0', emoji: '🧪', density: 1.5 },
+            'H2SO4': { name: 'Sulfuric Acid', color: '#FF8A65', emoji: '🧪', density: 1.84 },
+            'NaCl': { name: 'Sodium Chloride', color: '#B0BEC5', emoji: '🧂', density: 1.2 },
+            'CuSO4': { name: 'Copper Sulfate', color: '#4DD0E1', emoji: '🔵', density: 1.4 },
+            'CaCO3': { name: 'Calcium Carbonate', color: '#EEEEEE', emoji: '🪨', density: 1.6 },
+        };
+
+        let chemA = { id: 'H2O', amount: 50 };
+        let chemB = { id: 'H2O', amount: 50 };
+        let temperature = 25;
+        let isMixing = false;
+        let mixProgress = 0;
+        let particles = [];
+        let reactionActive = false;
+        let reactionType = null;
+        let animationId = null;
+
+        // Chemical reactions
+        const reactions = {
+            'HCl+NaOH': {
+                name: 'Neutralization',
+                desc: 'Acid + Base → Salt + Water',
+                equation: 'HCl + NaOH → NaCl + H₂O',
+                color: '#81C784',
+                effect: 'neutral',
+                emoji: '⚡'
+            },
+            'HCl+NaCl': {
+                name: 'No Reaction',
+                desc: 'No observable reaction',
+                equation: 'HCl + NaCl → No Reaction',
+                color: '#90A4AE',
+                effect: 'none',
+                emoji: '➖'
+            },
+            'H2SO4+NaOH': {
+                name: 'Acid-Base Reaction',
+                desc: 'Strong acid + Base → Salt + Water',
+                equation: 'H₂SO₄ + 2NaOH → Na₂SO₄ + 2H₂O',
+                color: '#FFB74D',
+                effect: 'exothermic',
+                emoji: '🔥'
+            },
+            'H2SO4+CuSO4': {
+                name: 'Double Displacement',
+                desc: 'No visible reaction',
+                equation: 'No Reaction',
+                color: '#90A4AE',
+                effect: 'none',
+                emoji: '➖'
+            },
+            'HCl+CaCO3': {
+                name: 'Gas Evolution',
+                desc: 'Acid + Carbonate → Salt + CO₂ + Water',
+                equation: '2HCl + CaCO₃ → CaCl₂ + CO₂ + H₂O',
+                color: '#FFAB91',
+                effect: 'gas',
+                emoji: '💨'
+            },
+            'H2SO4+CaCO3': {
+                name: 'Gas Evolution',
+                desc: 'Acid + Carbonate → Salt + CO₂ + Water',
+                equation: 'H₂SO₄ + CaCO₃ → CaSO₄ + CO₂ + H₂O',
+                color: '#FFAB91',
+                effect: 'gas',
+                emoji: '💨'
+            },
+            'CuSO4+NaOH': {
+                name: 'Precipitation',
+                desc: 'Forms copper hydroxide precipitate',
+                equation: 'CuSO₄ + 2NaOH → Cu(OH)₂ + Na₂SO₄',
+                color: '#4DD0E1',
+                effect: 'precipitate',
+                emoji: '🔄'
+            },
+            'CuSO4+NaCl': {
+                name: 'No Reaction',
+                desc: 'No observable reaction',
+                equation: 'No Reaction',
+                color: '#90A4AE',
+                effect: 'none',
+                emoji: '➖'
+            }
+        };
+
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            canvas.width = wrapper.clientWidth;
+            canvas.height = wrapper.clientHeight;
+            drawLab();
+        }
+
+        function updateChemicals() {
+            const aVal = parseInt(document.getElementById('chemicalA').value);
+            const bVal = parseInt(document.getElementById('chemicalB').value);
+            document.getElementById('chemAValue').textContent = aVal;
+            document.getElementById('chemBValue').textContent = bVal;
+            chemA.amount = aVal;
+            chemB.amount = bVal;
+            drawLab();
+        }
+
+        function setChemical(side, id) {
+            if (side === 'A') {
+                chemA.id = id;
+                document.getElementById('chemicalA').value = 50;
+                chemA.amount = 50;
+                document.getElementById('chemAValue').textContent = '50';
+            } else {
+                chemB.id = id;
+                document.getElementById('chemicalB').value = 50;
+                chemB.amount = 50;
+                document.getElementById('chemBValue').textContent = '50';
+            }
+            drawLab();
+        }
+
+        function setTemperature(temp) {
+            temperature = temp;
+            document.getElementById('temperature').value = temp;
+            document.getElementById('tempValue').textContent = temp + '°C';
+            drawLab();
+        }
+
+        function clearBeaker() {
+            chemA.amount = 0;
+            chemB.amount = 0;
+            document.getElementById('chemicalA').value = 0;
+            document.getElementById('chemicalB').value = 0;
+            document.getElementById('chemAValue').textContent = '0';
+            document.getElementById('chemBValue').textContent = '0';
+            particles = [];
+            reactionActive = false;
+            isMixing = false;
+            mixProgress = 0;
+            document.getElementById('statusDot').className = 'status-dot idle';
+            document.getElementById('statusText').textContent = 'Ready';
+            document.getElementById('reactionStatus').textContent = '⏳ Beaker empty';
+            document.getElementById('reactionDesc').textContent = 'Add chemicals and click Mix to start the experiment!';
+            drawLab();
+        }
+
+        function mixChemicals() {
+            if (isMixing) return;
+            if (chemA.amount === 0 && chemB.amount === 0) {
+                document.getElementById('reactionStatus').textContent = '⚠️ No chemicals to mix';
+                document.getElementById('reactionDesc').textContent = 'Please add some chemicals first!';
+                return;
+            }
+
+            isMixing = true;
+            mixProgress = 0;
+            reactionActive = false;
+            document.getElementById('statusDot').className = 'status-dot mixing';
+            document.getElementById('statusText').textContent = 'Mixing...';
+            document.getElementById('reactionStatus').textContent = '🔄 Mixing chemicals...';
+
+            // Determine reaction
+            const key1 = chemA.id + '+' + chemB.id;
+            const key2 = chemB.id + '+' + chemA.id;
+            let reaction = reactions[key1] || reactions[key2] || null;
+
+            // If no reaction, check if it's just water
+            if (!reaction && chemA.id === 'H2O' && chemB.id === 'H2O') {
+                reaction = {
+                    name: 'Just Water',
+                    desc: 'No reaction - just water',
+                    equation: 'H₂O + H₂O → H₂O',
+                    color: '#4FC3F7',
+                    effect: 'none',
+                    emoji: '💧'
+                };
+            }
+
+            // Simulate mixing animation
+            let progress = 0;
+            const mixInterval = setInterval(() => {
+                progress += 0.02;
+                mixProgress = progress;
+                drawLab();
+
+                if (progress >= 1) {
+                    clearInterval(mixInterval);
+                    isMixing = false;
+                    reactionActive = true;
+                    
+                    if (reaction) {
+                        reactionType = reaction;
+                        document.getElementById('statusDot').className = 'status-dot reacting';
+                        document.getElementById('statusText').textContent = 'Reacting!';
+                        document.getElementById('reactionStatus').textContent = `⚡ ${reaction.emoji} ${reaction.name}`;
+                        document.getElementById('reactionDesc').textContent = `${reaction.equation} - ${reaction.desc}`;
+                        
+                        // Create particles for reaction effects
+                        createReactionParticles(reaction);
+                    } else {
+                        reactionType = null;
+                        document.getElementById('statusDot').className = 'status-dot idle';
+                        document.getElementById('statusText').textContent = 'No Reaction';
+                        document.getElementById('reactionStatus').textContent = '➖ No Reaction';
+                        document.getElementById('reactionDesc').textContent = 'These chemicals do not react with each other.';
+                    }
+                    
+                    drawLab();
+                }
+            }, 30);
+
+            // Start particle animation
+            if (!animationId) animateLab();
+        }
+
+        function createReactionParticles(reaction) {
+            const count = reaction.effect === 'gas' ? 80 : reaction.effect === 'precipitate' ? 60 : 40;
+            const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#FF8A65', '#81C784'];
+            
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height * 0.3 + Math.random() * canvas.height * 0.4,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4 - 2,
+                    size: Math.random() * 6 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: 0.005 + Math.random() * 0.01,
+                    type: reaction.effect || 'normal'
+                });
+            }
+        }
+
+        function animateLab() {
+            if (!reactionActive && particles.length === 0) {
+                animationId = null;
+                return;
+            }
+
+            // Update particles
+            let activeParticles = 0;
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.05;
+                p.vx *= 0.99;
+                p.life -= p.decay;
+                if (p.life > 0) activeParticles++;
+            });
+            
+            particles = particles.filter(p => p.life > 0);
+            
+            if (activeParticles === 0) {
+                document.getElementById('statusDot').className = 'status-dot done';
+                document.getElementById('statusText').textContent = 'Done';
+                if (reactionType) {
+                    document.getElementById('reactionStatus').textContent = `✅ ${reactionType.emoji} ${reactionType.name} Complete`;
+                }
+            }
+
+            drawLab();
+            animationId = requestAnimationFrame(animateLab);
+        }
+
+        function drawLab() {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw bench surface
+            const benchY = h * 0.85;
+            ctx.fillStyle = 'rgba(40,50,70,0.5)';
+            ctx.fillRect(0, benchY, w, h - benchY);
+            
+            // Bench line
+            ctx.strokeStyle = 'rgba(78,205,196,0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, benchY);
+            ctx.lineTo(w, benchY);
+            ctx.stroke();
+
+            // Draw beaker
+            const beakerX = w * 0.3;
+            const beakerY = benchY * 0.7;
+            const beakerW = w * 0.4;
+            const beakerH = benchY * 0.6;
+
+            // Beaker shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetY = 10;
+
+            // Beaker body
+            const grad = ctx.createLinearGradient(0, beakerY, 0, beakerY + beakerH);
+            grad.addColorStop(0, 'rgba(200,220,255,0.05)');
+            grad.addColorStop(0.5, 'rgba(200,220,255,0.1)');
+            grad.addColorStop(1, 'rgba(200,220,255,0.02)');
+            
+            ctx.fillStyle = grad;
+            ctx.strokeStyle = 'rgba(200,220,255,0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(beakerX, beakerY);
+            ctx.lineTo(beakerX + 10, beakerY - 10);
+            ctx.lineTo(beakerX + beakerW - 10, beakerY - 10);
+            ctx.lineTo(beakerX + beakerW, beakerY);
+            ctx.lineTo(beakerX + beakerW, beakerY + beakerH);
+            ctx.lineTo(beakerX, beakerY + beakerH);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Beaker rim
+            ctx.strokeStyle = 'rgba(200,220,255,0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(beakerX + 2, beakerY);
+            ctx.lineTo(beakerX + beakerW - 2, beakerY);
+            ctx.stroke();
+
+            // Calculate liquid level
+            const totalAmount = chemA.amount + chemB.amount;
+            const maxAmount = 100;
+            const liquidHeight = Math.min(totalAmount / maxAmount, 0.85) * beakerH;
+            const liquidY = beakerY + beakerH - liquidHeight;
+
+            // Draw liquid
+            if (totalAmount > 0 && !isMixing) {
+                // Get color based on chemicals
+                let liquidColor = '#4FC3F7';
+                let liquidName = 'Water';
+                
+                if (chemA.id !== 'H2O' && chemA.amount > 0) {
+                    liquidColor = chemicals[chemA.id].color;
+                    liquidName = chemicals[chemA.id].name;
+                }
+                if (chemB.id !== 'H2O' && chemB.amount > 0) {
+                    const bColor = chemicals[chemB.id].color;
+                    liquidColor = blendColors(liquidColor, bColor);
+                    liquidName += ' + ' + chemicals[chemB.id].name;
+                }
+
+                // If reaction happened, use reaction color
+                if (reactionActive && reactionType && reactionType !== 'no-reaction' && reactionType !== 'Just Water') {
+                    liquidColor = reactionType.color || liquidColor;
+                }
+
+                // Liquid gradient
+                const liqGrad = ctx.createLinearGradient(0, liquidY, 0, beakerY + beakerH);
+                liqGrad.addColorStop(0, liquidColor + '80');
+                liqGrad.addColorStop(0.5, liquidColor + '60');
+                liqGrad.addColorStop(1, liquidColor + '40');
+                
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = liqGrad;
+                ctx.beginPath();
+                ctx.moveTo(beakerX + 4, liquidY);
+                // Liquid surface (slight curve)
+                ctx.quadraticCurveTo(beakerX + beakerW/2, liquidY - 4, beakerX + beakerW - 4, liquidY);
+                ctx.lineTo(beakerX + beakerW - 4, beakerY + beakerH - 4);
+                ctx.lineTo(beakerX + 4, beakerY + beakerH - 4);
+                ctx.closePath();
+                ctx.fill();
+
+                // Liquid surface shine
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.beginPath();
+                ctx.ellipse(beakerX + beakerW/2, liquidY, beakerW/2 - 10, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Chemical labels
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.font = '12px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`🧪 ${liquidName}`, beakerX + beakerW/2, beakerY + beakerH + 20);
+                
+                // Amount indicator
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.fillText(`${totalAmount}mL`, beakerX + beakerW/2, beakerY + beakerH + 38);
+            }
+
+            // Draw mixing animation
+            if (isMixing) {
+                ctx.shadowBlur = 0;
+                const waveCount = 5;
+                for (let i = 0; i < waveCount; i++) {
+                    const waveY = liquidY + (i / waveCount) * liquidHeight;
+                    const waveX = beakerX + beakerW/2 + Math.sin(Date.now() / 200 + i * 1.5) * 20 * (1 - i/waveCount);
+                    ctx.fillStyle = `rgba(78,205,196,${0.1 * (1 - i/waveCount)})`;
+                    ctx.beginPath();
+                    ctx.arc(waveX, waveY, 15 * (1 - i/waveCount), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Draw reaction particles
+            particles.forEach(p => {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color + '50';
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                if (p.type === 'gas') {
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                } else if (p.type === 'precipitate') {
+                    ctx.rect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+                    ctx.rotate(p.life * 0.5);
+                } else {
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                }
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw temperature indicator
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            const tempColor = temperature > 50 ? '#FF6B6B' : temperature < 15 ? '#4FC3F7' : '#4ECDC4';
+            ctx.fillStyle = tempColor;
+            ctx.fillText(`🌡️ ${temperature}°C`, 10, 20);
+
+            // Draw chemical names
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`A: ${chemicals[chemA.id].name} (${chemA.amount}%)`, 10, 40);
+            ctx.fillText(`B: ${chemicals[chemB.id].name} (${chemB.amount}%)`, 10, 55);
+
+            // Draw reaction status on canvas
+            if (reactionActive && reactionType && reactionType !== 'no-reaction') {
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(`⚡ ${reactionType.emoji} ${reactionType.name}`, w - 10, 20);
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.fillText(reactionType.equation, w - 10, 38);
+            }
+        }
+
+        function blendColors(c1, c2) {
+            // Simple color blending
+            const r1 = parseInt(c1.slice(1,3), 16);
+            const g1 = parseInt(c1.slice(3,5), 16);
+            const b1 = parseInt(c1.slice(5,7), 16);
+            const r2 = parseInt(c2.slice(1,3), 16);
+            const g2 = parseInt(c2.slice(3,5), 16);
+            const b2 = parseInt(c2.slice(5,7), 16);
+            
+            const r = Math.round((r1 + r2) / 2);
+            const g = Math.round((g1 + g2) / 2);
+            const b = Math.round((b1 + b2) / 2);
+            
+            return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        window.addEventListener('load', function() {
+            resizeCanvas();
+            drawLab();
+            
+            // Set initial chemicals
+            chemA.id = 'HCl';
+            chemB.id = 'NaOH';
+            document.getElementById('chemicalA').value = 50;
+            document.getElementById('chemicalB').value = 50;
+            chemA.amount = 50;
+            chemB.amount = 50;
+            document.getElementById('chemAValue').textContent = '50';
+            document.getElementById('chemBValue').textContent = '50';
+            drawLab();
+        });
+
+        window.addEventListener('resize', function() {
+            resizeCanvas();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'm' || e.key === 'M') mixChemicals();
+            if (e.key === 'c' || e.key === 'C') clearBeaker();
+        });
+    </script>
+</body>
+</html>

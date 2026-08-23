@@ -416,7 +416,7 @@
             <div class="subject-card" onclick="navigateTo('biology', event)">
                 <div class="card-icon-wrapper"><i class="fas fa-dna"></i></div>
                 <div class="card-title">Biology</div>
-                <div class="card-subtitle">🧬 Coming Soon</div>
+                <div class="card-subtitle">🧬 Interactive Labs</div>
                 <div class="topics-list">
                     <span class="topic-chip">Cell Structure</span>
                     <span class="topic-chip">Microorganisms</span>
@@ -447,6 +447,22 @@
     </div>
 
     <script>
+        // ============================================================
+        // FIX: Determine if we're on the AI server port
+        // ============================================================
+        function getBaseUrl() {
+            // If we're on localhost:5000 (AI server), use that
+            if (window.location.port === '5000') {
+                return '';
+            }
+            // If we're on port 8000 (web server), use the AI server URL
+            if (window.location.port === '8000') {
+                return 'http://localhost:5000';
+            }
+            // Default fallback
+            return '';
+        }
+
         // Create floating particles
         function createParticles() {
             const container = document.getElementById('particles');
@@ -477,7 +493,7 @@
             ripple.addEventListener('animationend', () => ripple.remove());
         }
 
-        // Navigation function
+        // Navigation function - FIXED for chatbot
         function navigateTo(subject, event) {
             const card = event.currentTarget;
             createRipple(event, card);
@@ -492,12 +508,16 @@
                 document.body.style.transform = 'scale(0.97)';
                 
                 setTimeout(() => {
+                    // Get the base URL for the AI server
+                    const baseUrl = getBaseUrl();
+                    
                     const pages = {
                         'physics': 'physics_hub.html',
                         'chemistry': 'chemistry_hub_landing.html',
                         'biology': 'biology_hub.html',
-                        'chatbot': 'chatbot.html'
+                        'chatbot': baseUrl + '/chatbot.html'  // FIX: Use the AI server URL
                     };
+                    
                     window.location.href = pages[subject];
                 }, 500);
             }, 300);

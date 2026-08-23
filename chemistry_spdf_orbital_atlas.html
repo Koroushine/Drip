@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - SPDF Orbital Atlas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --chemistry-color: #4ECDC4;
+            --chemistry-light: #7EDDD6;
+            --chemistry-dark: #2d9b94;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%); top: -150px; right: -150px; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%); bottom: -100px; left: -100px; animation-delay: -4s; }
+        .orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(167, 139, 250, 0.2), transparent 70%); top: 20%; left: 10%; animation-delay: -8s; }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255, 255, 255, 0.7); }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            color: white;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 44px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.6); letter-spacing: 2px; }
+
+        /* Atlas Layout */
+        .atlas-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 30px;
+        }
+
+        /* Sidebar */
+        .atlas-sidebar {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .atlas-sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .atlas-sidebar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+        .atlas-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(78, 205, 196, 0.4);
+            border-radius: 10px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #7EDDD6;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .orbital-group {
+            margin-bottom: 16px;
+        }
+
+        .orbital-group-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: rgba(78, 205, 196, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #4ECDC4;
+        }
+
+        .orbital-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            margin-bottom: 4px;
+        }
+
+        .orbital-btn:hover {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: rgba(78, 205, 196, 0.2);
+            color: white;
+        }
+
+        .orbital-btn.active {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: rgba(78, 205, 196, 0.5);
+            color: #7EDDD6;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.1);
+        }
+
+        .orbital-btn .orbital-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(78, 205, 196, 0.2);
+            color: #7EDDD6;
+        }
+
+        .orbital-btn .orbital-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Main Display */
+        .atlas-display {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            max-height: 600px;
+            background: radial-gradient(ellipse at center, rgba(10,15,30,0.8), rgba(5,10,20,0.95));
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(78, 205, 196, 0.1);
+        }
+
+        .canvas-wrapper canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .orbital-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-item .info-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-item .info-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #7EDDD6;
+            margin-top: 2px;
+        }
+
+        .info-item .info-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 2px;
+        }
+
+        .orbital-desc {
+            margin-top: 12px;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.7;
+            border-left: 3px solid #4ECDC4;
+        }
+
+        .orbital-desc strong {
+            color: #7EDDD6;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .view-btn:hover {
+            background: rgba(78, 205, 196, 0.15);
+            border-color: rgba(78, 205, 196, 0.3);
+            color: white;
+        }
+
+        .view-btn.active-view {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: rgba(78, 205, 196, 0.5);
+            color: #7EDDD6;
+        }
+
+        @media (max-width: 1024px) {
+            .atlas-container {
+                grid-template-columns: 1fr;
+            }
+            .atlas-sidebar {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main-container { padding: 16px 12px 40px; }
+            .page-header h1 { font-size: 28px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+            .orbital-info { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="chemistry_labs.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goHub()">Chemistry</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goLabs()">Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">SPDF Orbital Atlas</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-atom"></i> SPDF Orbital Atlas</div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>⚛️ SPDF Orbital Atlas</h1>
+            <p class="subtitle">✦ Explore all 16 atomic orbital shapes with interactive 3D visualizations ✦</p>
+        </div>
+
+        <!-- Atlas -->
+        <div class="atlas-container">
+            <!-- Sidebar -->
+            <div class="atlas-sidebar">
+                <div class="sidebar-title">
+                    <i class="fas fa-list"></i> Orbitals
+                </div>
+
+                <!-- S Orbitals -->
+                <div class="orbital-group">
+                    <div class="orbital-group-title">s Orbitals</div>
+                    <button class="orbital-btn active" onclick="selectOrbital('1s', this)">
+                        <span class="orbital-dot" style="background:#4ECDC4;"></span>
+                        1s <span class="orbital-badge">1 orbital</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('2s', this)">
+                        <span class="orbital-dot" style="background:#4ECDC4;"></span>
+                        2s <span class="orbital-badge">1 orbital</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3s', this)">
+                        <span class="orbital-dot" style="background:#4ECDC4;"></span>
+                        3s <span class="orbital-badge">1 orbital</span>
+                    </button>
+                </div>
+
+                <!-- P Orbitals -->
+                <div class="orbital-group">
+                    <div class="orbital-group-title">p Orbitals</div>
+                    <button class="orbital-btn" onclick="selectOrbital('2p_x', this)">
+                        <span class="orbital-dot" style="background:#FF6B6B;"></span>
+                        2p<sub>x</sub> <span class="orbital-badge">dumbbell</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('2p_y', this)">
+                        <span class="orbital-dot" style="background:#FF6B6B;"></span>
+                        2p<sub>y</sub> <span class="orbital-badge">dumbbell</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('2p_z', this)">
+                        <span class="orbital-dot" style="background:#FF6B6B;"></span>
+                        2p<sub>z</sub> <span class="orbital-badge">dumbbell</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3p_x', this)">
+                        <span class="orbital-dot" style="background:#FF8E8E;"></span>
+                        3p<sub>x</sub> <span class="orbital-badge">dumbbell</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3p_y', this)">
+                        <span class="orbital-dot" style="background:#FF8E8E;"></span>
+                        3p<sub>y</sub> <span class="orbital-badge">dumbbell</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3p_z', this)">
+                        <span class="orbital-dot" style="background:#FF8E8E;"></span>
+                        3p<sub>z</sub> <span class="orbital-badge">dumbbell</span>
+                    </button>
+                </div>
+
+                <!-- D Orbitals -->
+                <div class="orbital-group">
+                    <div class="orbital-group-title">d Orbitals</div>
+                    <button class="orbital-btn" onclick="selectOrbital('3d_z2', this)">
+                        <span class="orbital-dot" style="background:#FBBF24;"></span>
+                        3d<sub>z²</sub> <span class="orbital-badge">complex</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3d_xz', this)">
+                        <span class="orbital-dot" style="background:#FBBF24;"></span>
+                        3d<sub>xz</sub> <span class="orbital-badge">clover</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3d_yz', this)">
+                        <span class="orbital-dot" style="background:#FBBF24;"></span>
+                        3d<sub>yz</sub> <span class="orbital-badge">clover</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3d_xy', this)">
+                        <span class="orbital-dot" style="background:#FBBF24;"></span>
+                        3d<sub>xy</sub> <span class="orbital-badge">clover</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('3d_x2y2', this)">
+                        <span class="orbital-dot" style="background:#FBBF24;"></span>
+                        3d<sub>x²-y²</sub> <span class="orbital-badge">clover</span>
+                    </button>
+                </div>
+
+                <!-- F Orbitals -->
+                <div class="orbital-group">
+                    <div class="orbital-group-title">f Orbitals</div>
+                    <button class="orbital-btn" onclick="selectOrbital('4f_z3', this)">
+                        <span class="orbital-dot" style="background:#A78BFA;"></span>
+                        4f<sub>z³</sub> <span class="orbital-badge">complex</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('4f_xz2', this)">
+                        <span class="orbital-dot" style="background:#A78BFA;"></span>
+                        4f<sub>xz²</sub> <span class="orbital-badge">complex</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('4f_yz2', this)">
+                        <span class="orbital-dot" style="background:#A78BFA;"></span>
+                        4f<sub>yz²</sub> <span class="orbital-badge">complex</span>
+                    </button>
+                    <button class="orbital-btn" onclick="selectOrbital('4f_xyz', this)">
+                        <span class="orbital-dot" style="background:#A78BFA;"></span>
+                        4f<sub>xyz</sub> <span class="orbital-badge">complex</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display -->
+            <div class="atlas-display">
+                <div class="canvas-wrapper">
+                    <canvas id="orbitalCanvas"></canvas>
+                </div>
+
+                <div class="orbital-info">
+                    <div class="info-item">
+                        <div class="info-label">Orbital</div>
+                        <div class="info-value" id="orbitalName">1s</div>
+                        <div class="info-desc">Type: s</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Shape</div>
+                        <div class="info-value" id="orbitalShape">Spherical</div>
+                        <div class="info-desc">3D</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Electrons</div>
+                        <div class="info-value" id="orbitalElectrons">2</div>
+                        <div class="info-desc">Max capacity</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Node</div>
+                        <div class="info-value" id="orbitalNodes">0</div>
+                        <div class="info-desc">Angular nodes</div>
+                    </div>
+                </div>
+
+                <div class="orbital-desc" id="orbitalDescription">
+                    <strong>1s Orbital</strong> — The simplest orbital. Spherical shape with no nodes. The 1s orbital is the lowest energy level and can hold a maximum of 2 electrons. It is the ground state for hydrogen and helium.
+                </div>
+
+                <div class="controls-row">
+                    <button class="view-btn active-view" onclick="setView('3d')">🌐 3D View</button>
+                    <button class="view-btn" onclick="setView('top')">⬆ Top View</button>
+                    <button class="view-btn" onclick="setView('side')">📐 Side View</button>
+                    <button class="view-btn" onclick="setView('wireframe')">📏 Wireframe</button>
+                    <button class="view-btn" onclick="toggleRotation()">🔄 Toggle Rotation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goHome() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 300);
+        }
+        function goHub() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_hub_landing.html'; }, 300);
+        }
+        function goLabs() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_labs.html'; }, 300);
+        }
+
+        // ============================================================
+        // ORBITAL ATLAS ENGINE
+        // ============================================================
+
+        const canvas = document.getElementById('orbitalCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentOrbital = '1s';
+        let currentView = '3d';
+        let rotationAngle = 0;
+        let isRotating = true;
+        let animId = null;
+
+        // Orbital data
+        const orbitalData = {
+            '1s': {
+                name: '1s',
+                shape: 'Spherical',
+                electrons: 2,
+                nodes: 0,
+                type: 's',
+                color: '#4ECDC4',
+                desc: 'The simplest orbital. Spherical shape with no nodes. The 1s orbital is the lowest energy level and can hold a maximum of 2 electrons. It is the ground state for hydrogen and helium.'
+            },
+            '2s': {
+                name: '2s',
+                shape: 'Spherical (larger)',
+                electrons: 2,
+                nodes: 1,
+                type: 's',
+                color: '#4ECDC4',
+                desc: 'Similar to 1s but larger with one spherical node (radial node). The electron is more likely to be found outside the node region.'
+            },
+            '3s': {
+                name: '3s',
+                shape: 'Spherical (largest)',
+                electrons: 2,
+                nodes: 2,
+                type: 's',
+                color: '#4ECDC4',
+                desc: 'Even larger s orbital with two radial nodes. The probability distribution shows alternating regions of high and low electron density.'
+            },
+            '2p_x': {
+                name: '2pₓ',
+                shape: 'Dumbbell',
+                electrons: 6,
+                nodes: 1,
+                type: 'p',
+                color: '#FF6B6B',
+                desc: 'Dumbbell shape along the x-axis. Has one angular node (the plane between the two lobes). The p orbitals are oriented perpendicular to each other.'
+            },
+            '2p_y': {
+                name: '2pᵧ',
+                shape: 'Dumbbell',
+                electrons: 6,
+                nodes: 1,
+                type: 'p',
+                color: '#FF6B6B',
+                desc: 'Dumbbell shape along the y-axis. Similar to 2pₓ but oriented differently. Together, the three p orbitals (x, y, z) are mutually perpendicular.'
+            },
+            '2p_z': {
+                name: '2p_z',
+                shape: 'Dumbbell',
+                electrons: 6,
+                nodes: 1,
+                type: 'p',
+                color: '#FF6B6B',
+                desc: 'Dumbbell shape along the z-axis. The three p orbitals are equivalent in energy but different in orientation.'
+            },
+            '3p_x': {
+                name: '3pₓ',
+                shape: 'Dumbbell (larger)',
+                electrons: 6,
+                nodes: 2,
+                type: 'p',
+                color: '#FF8E8E',
+                desc: 'Larger p orbital with more complex structure. Has one angular node and one radial node.'
+            },
+            '3p_y': {
+                name: '3pᵧ',
+                shape: 'Dumbbell (larger)',
+                electrons: 6,
+                nodes: 2,
+                type: 'p',
+                color: '#FF8E8E',
+                desc: 'Larger p orbital oriented along y-axis. More electron density farther from the nucleus.'
+            },
+            '3p_z': {
+                name: '3p_z',
+                shape: 'Dumbbell (larger)',
+                electrons: 6,
+                nodes: 2,
+                type: 'p',
+                color: '#FF8E8E',
+                desc: 'Larger p orbital along z-axis. Shows more complex nodal structure than 2p.'
+            },
+            '3d_z2': {
+                name: '3d_z²',
+                shape: 'Complex (donut + lobes)',
+                electrons: 10,
+                nodes: 2,
+                type: 'd',
+                color: '#FBBF24',
+                desc: 'Unique d orbital with a donut-shaped ring around the center and two lobes along the z-axis. Has two angular nodes.'
+            },
+            '3d_xz': {
+                name: '3d_xz',
+                shape: 'Clover (4 lobes)',
+                electrons: 10,
+                nodes: 2,
+                type: 'd',
+                color: '#FBBF24',
+                desc: 'Four-lobed clover shape in the xz-plane. The lobes are oriented between the axes.'
+            },
+            '3d_yz': {
+                name: '3d_yz',
+                shape: 'Clover (4 lobes)',
+                electrons: 10,
+                nodes: 2,
+                type: 'd',
+                color: '#FBBF24',
+                desc: 'Four-lobed clover shape in the yz-plane. Similar to 3d_xz but oriented differently.'
+            },
+            '3d_xy': {
+                name: '3d_xy',
+                shape: 'Clover (4 lobes)',
+                electrons: 10,
+                nodes: 2,
+                type: 'd',
+                color: '#FBBF24',
+                desc: 'Four-lobed clover shape in the xy-plane. The lobes point between the x and y axes.'
+            },
+            '3d_x2y2': {
+                name: '3d_x²-y²',
+                shape: 'Clover (4 lobes)',
+                electrons: 10,
+                nodes: 2,
+                type: 'd',
+                color: '#FBBF24',
+                desc: 'Four-lobed clover shape oriented along the x and y axes. The lobes point directly along the axes.'
+            },
+            '4f_z3': {
+                name: '4f_z³',
+                shape: 'Complex (8 lobes)',
+                electrons: 14,
+                nodes: 3,
+                type: 'f',
+                color: '#A78BFA',
+                desc: 'Complex f orbital with 8 lobes arranged along the z-axis with a donut ring. f orbitals are very complex with multiple nodal surfaces.'
+            },
+            '4f_xz2': {
+                name: '4f_xz²',
+                shape: 'Complex (8 lobes)',
+                electrons: 14,
+                nodes: 3,
+                type: 'f',
+                color: '#A78BFA',
+                desc: 'Complex f orbital with lobes arranged in the xz-plane. One of the seven f orbitals with unique shapes.'
+            },
+            '4f_yz2': {
+                name: '4f_yz²',
+                shape: 'Complex (8 lobes)',
+                electrons: 14,
+                nodes: 3,
+                type: 'f',
+                color: '#A78BFA',
+                desc: 'Complex f orbital with lobes arranged in the yz-plane. f orbitals are important in lanthanide and actinide chemistry.'
+            },
+            '4f_xyz': {
+                name: '4f_xyz',
+                shape: 'Complex (8 lobes)',
+                electrons: 14,
+                nodes: 3,
+                type: 'f',
+                color: '#A78BFA',
+                desc: 'Complex f orbital with lobes oriented along the xyz directions. The most complex of the f orbitals.'
+            }
+        };
+
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            canvas.width = wrapper.clientWidth;
+            canvas.height = wrapper.clientHeight;
+            drawOrbital();
+        }
+
+        function selectOrbital(orbital, btn) {
+            currentOrbital = orbital;
+            document.querySelectorAll('.orbital-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            
+            const data = orbitalData[orbital];
+            document.getElementById('orbitalName').textContent = data.name;
+            document.getElementById('orbitalShape').textContent = data.shape;
+            document.getElementById('orbitalElectrons').textContent = data.electrons;
+            document.getElementById('orbitalNodes').textContent = data.nodes;
+            document.getElementById('orbitalDescription').innerHTML = `<strong>${data.name} Orbital</strong> — ${data.desc}`;
+            
+            drawOrbital();
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active-view'));
+            document.querySelector(`.view-btn[onclick*="${view}"]`)?.classList.add('active-view');
+            drawOrbital();
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            if (isRotating) animateOrbital();
+        }
+
+        function drawOrbital() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const size = Math.min(w, h) * 0.35;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Background glow
+            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 1.5);
+            grad.addColorStop(0, 'rgba(78,205,196,0.02)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            const data = orbitalData[currentOrbital];
+            const color = data.color;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            // Rotate based on view
+            let rotX = rotationAngle;
+            let rotY = rotationAngle * 0.3;
+            
+            if (currentView === 'top') {
+                rotX = 0;
+                rotY = 0;
+            } else if (currentView === 'side') {
+                rotX = Math.PI / 2;
+                rotY = 0;
+            } else if (currentView === 'wireframe') {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]);
+            }
+
+            // Draw axes
+            if (currentView !== 'top' && currentView !== 'wireframe') {
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 4]);
+                
+                // X axis
+                ctx.beginPath();
+                ctx.moveTo(-size * 1.4, 0);
+                ctx.lineTo(size * 1.4, 0);
+                ctx.stroke();
+                
+                // Y axis
+                ctx.beginPath();
+                ctx.moveTo(0, -size * 1.4);
+                ctx.lineTo(0, size * 1.4);
+                ctx.stroke();
+                
+                // Z axis (diagonal)
+                ctx.beginPath();
+                ctx.moveTo(-size * 1.0, -size * 1.0);
+                ctx.lineTo(size * 1.0, size * 1.0);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+                
+                // Labels
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('x', size * 1.45, 4);
+                ctx.fillText('y', 4, -size * 1.45 + 4);
+                ctx.fillText('z', size * 1.05, size * 1.05 + 4);
+            }
+
+            // Draw orbital based on type
+            const type = data.type;
+            
+            if (type === 's') {
+                drawSOrbital(size, color, rotX, rotY);
+            } else if (type === 'p') {
+                drawPOrbital(size, color, rotX, rotY);
+            } else if (type === 'd') {
+                drawDOrbital(size, color, rotX, rotY);
+            } else if (type === 'f') {
+                drawFOrbital(size, color, rotX, rotY);
+            }
+
+            ctx.restore();
+
+            // Wireframe overlay
+            if (currentView === 'wireframe') {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([]);
+                
+                // Draw grid sphere
+                const gridR = size * 0.9;
+                for (let lat = 0; lat < Math.PI; lat += Math.PI / 6) {
+                    ctx.beginPath();
+                    for (let lon = 0; lon < Math.PI * 2; lon += 0.05) {
+                        const x = gridR * Math.sin(lat) * Math.cos(lon + rotationAngle * 0.2);
+                        const y = gridR * Math.cos(lat);
+                        const z = gridR * Math.sin(lat) * Math.sin(lon + rotationAngle * 0.2);
+                        if (lon === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+                
+                for (let lon = 0; lon < Math.PI * 2; lon += Math.PI / 6) {
+                    ctx.beginPath();
+                    for (let lat = 0; lat < Math.PI; lat += 0.05) {
+                        const x = gridR * Math.sin(lat) * Math.cos(lon + rotationAngle * 0.2);
+                        const y = gridR * Math.cos(lat);
+                        const z = gridR * Math.sin(lat) * Math.sin(lon + rotationAngle * 0.2);
+                        if (lat === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        function drawSOrbital(size, color, rotX, rotY) {
+            // S orbital - spherical with radial nodes
+            const layers = currentOrbital === '1s' ? 1 : currentOrbital === '2s' ? 2 : 3;
+            
+            for (let i = 0; i < layers; i++) {
+                const scale = (i + 1) / layers;
+                const r = size * 0.9 * scale;
+                const alpha = 0.7 - i * 0.2;
+                
+                // Orbital cloud
+                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+                grad.addColorStop(0, color + '60');
+                grad.addColorStop(0.5, color + '40');
+                grad.addColorStop(1, color + '10');
+                
+                ctx.shadowColor = color + '40';
+                ctx.shadowBlur = 30;
+                ctx.fillStyle = grad;
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Node ring
+                if (i > 0) {
+                    const nodeR = r * 0.6;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 6]);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, nodeR, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+
+        function drawPOrbital(size, color, rotX, rotY) {
+            // P orbital - dumbbell shape
+            const lobeLength = size * 1.2;
+            const lobeRadius = size * 0.3;
+            
+            // Determine orientation based on orbital name
+            const orientation = currentOrbital.includes('x') ? 'x' : 
+                               currentOrbital.includes('y') ? 'y' : 'z';
+            
+            // Two lobes
+            const positions = [
+                { dx: 1, dy: 0, dz: 0 },
+                { dx: -1, dy: 0, dz: 0 }
+            ];
+            
+            positions.forEach((pos, i) => {
+                const x = pos.dx * lobeLength * 0.6;
+                const y = pos.dy * lobeLength * 0.6;
+                const z = pos.dz * lobeLength * 0.6;
+                
+                // Rotate based on orientation
+                let rx = x, ry = y, rz = z;
+                if (orientation === 'x') { rx = x; ry = y; rz = z; }
+                else if (orientation === 'y') { rx = y; ry = z; rz = x; }
+                else { rx = z; ry = y; rz = x; }
+                
+                const alpha = i === 0 ? 0.8 : 0.5;
+                const lobeColor = i === 0 ? color : color + '80';
+                
+                // Glow
+                ctx.shadowColor = color + '40';
+                ctx.shadowBlur = 30;
+                
+                // Main lobe
+                const grad = ctx.createRadialGradient(rx, ry, 0, rx, ry, lobeRadius);
+                grad.addColorStop(0, lobeColor);
+                grad.addColorStop(0.7, lobeColor + '60');
+                grad.addColorStop(1, lobeColor + '10');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(rx, ry, lobeRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Label
+            ctx.fillStyle = color;
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            const labelPos = orientation === 'x' ? size * 1.1 : orientation === 'y' ? size * 0.8 : 0;
+            ctx.fillText(orientation, labelPos, 0);
+        }
+
+        function drawDOrbital(size, color, rotX, rotY) {
+            // D orbital - four-lobed clover
+            const lobeLength = size * 0.9;
+            const lobeRadius = size * 0.2;
+            
+            const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+            const alpha = 0.7;
+            
+            angles.forEach((angle, i) => {
+                const x = Math.cos(angle) * lobeLength;
+                const y = Math.sin(angle) * lobeLength;
+                
+                ctx.shadowColor = color + '40';
+                ctx.shadowBlur = 25;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, lobeRadius);
+                grad.addColorStop(0, color);
+                grad.addColorStop(0.6, color + '60');
+                grad.addColorStop(1, color + '10');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, lobeRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Special case for dz2 - add donut ring
+            if (currentOrbital === '3d_z2') {
+                ctx.strokeStyle = color + '60';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, size * 0.45, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.strokeStyle = color + '30';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, size * 0.65, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Label
+                ctx.fillStyle = color;
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('z²', 0, -size * 0.7);
+            }
+        }
+
+        function drawFOrbital(size, color, rotX, rotY) {
+            // F orbital - eight-lobed complex
+            const lobeLength = size * 0.8;
+            const lobeRadius = size * 0.15;
+            
+            const angles = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
+            
+            // Inner ring
+            angles.forEach((angle, i) => {
+                const r = lobeLength * 0.5;
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
+                
+                ctx.shadowColor = color + '40';
+                ctx.shadowBlur = 20;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, lobeRadius);
+                grad.addColorStop(0, color);
+                grad.addColorStop(0.5, color + '50');
+                grad.addColorStop(1, color + '10');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, lobeRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Outer ring
+            angles.forEach((angle, i) => {
+                const r = lobeLength * 0.9;
+                const x = Math.cos(angle + Math.PI/6) * r;
+                const y = Math.sin(angle + Math.PI/6) * r;
+                
+                ctx.shadowColor = color + '30';
+                ctx.shadowBlur = 15;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, lobeRadius * 0.8);
+                grad.addColorStop(0, color + '80');
+                grad.addColorStop(0.5, color + '40');
+                grad.addColorStop(1, color + '10');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, lobeRadius * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Label
+            ctx.fillStyle = color;
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('f', 0, -size * 0.9);
+        }
+
+        function animateOrbital() {
+            if (isRotating) {
+                rotationAngle += 0.008;
+            }
+            drawOrbital();
+            animId = requestAnimationFrame(animateOrbital);
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        window.addEventListener('load', function() {
+            resizeCanvas();
+            selectOrbital('1s', document.querySelector('.orbital-btn.active'));
+            animateOrbital();
+        });
+
+        window.addEventListener('resize', function() {
+            resizeCanvas();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Drip - Solubility Table</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --chemistry-color: #4ECDC4;
+            --chemistry-light: #7EDDD6;
+            --chemistry-dark: #2d9b94;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --radius: 24px;
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1a2d 30%, #0a1a1a 60%, #150a20 100%);
+            min-height: 100vh;
+            color: white;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(78, 205, 196, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(78, 205, 196, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orbFloat 12s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(78, 205, 196, 0.3), transparent 70%); top: -150px; right: -150px; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(126, 221, 214, 0.25), transparent 70%); bottom: -100px; left: -100px; animation-delay: -4s; }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .main-container {
+            position: relative; z-index: 2; min-height: 100vh;
+            padding: 30px 24px 50px; max-width: 1400px; margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 30px;
+            flex-wrap: wrap; animation: slideDown 0.6s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .back-btn {
+            width: 48px; height: 48px; border-radius: 16px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); color: white;
+            font-size: 20px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }
+        .back-btn:hover { background: rgba(78, 205, 196, 0.3); transform: translateX(-4px); }
+        .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 15px; color: rgba(255, 255, 255, 0.7); }
+        .breadcrumb span { color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s; }
+        .breadcrumb span:hover { color: white; }
+        .breadcrumb .current { color: #4ECDC4; font-weight: 600; }
+        .subject-badge {
+            background: linear-gradient(135deg, #4ECDC4, #2d9b94);
+            padding: 8px 20px; border-radius: 100px; font-weight: 700; font-size: 14px;
+            margin-left: auto; box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+            color: white;
+        }
+
+        /* Header */
+        .page-header {
+            text-align: center; margin-bottom: 40px; animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-header h1 {
+            font-size: 44px; font-weight: 900;
+            background: linear-gradient(135deg, #fff, #7EDDD6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .page-header .subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.6); letter-spacing: 2px; }
+
+        /* Search Bar */
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 14px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid var(--glass-border);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .search-bar input:focus {
+            border-color: rgba(78, 205, 196, 0.6);
+            box-shadow: 0 8px 30px rgba(78, 205, 196, 0.1);
+        }
+        .search-bar input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .search-bar .filter-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 10px 18px;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .filter-btn:hover {
+            background: rgba(78, 205, 196, 0.15);
+            border-color: rgba(78, 205, 196, 0.3);
+            color: white;
+        }
+        .filter-btn.active-filter {
+            background: rgba(78, 205, 196, 0.2);
+            border-color: rgba(78, 205, 196, 0.5);
+            color: #7EDDD6;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: var(--glass); backdrop-filter: blur(30px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .solubility-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .solubility-table th {
+            padding: 12px 16px;
+            text-align: left;
+            background: rgba(78, 205, 196, 0.15);
+            color: #7EDDD6;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 11px;
+            border-bottom: 2px solid rgba(78, 205, 196, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .solubility-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s;
+        }
+
+        .solubility-table tr:hover td {
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .solubility-table .ion-cell {
+            font-weight: 600;
+            color: #7EDDD6;
+            white-space: nowrap;
+        }
+
+        .solubility-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .solubility-badge.soluble {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .solubility-badge.insoluble {
+            background: rgba(255, 107, 107, 0.2);
+            color: #FF6B6B;
+        }
+
+        .solubility-badge.partial {
+            background: rgba(251, 191, 36, 0.2);
+            color: #FBBF24;
+        }
+
+        .solubility-badge.unknown {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-box .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #7EDDD6;
+        }
+
+        .stat-box .stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .main-container { padding: 16px 12px 40px; }
+            .page-header h1 { font-size: 28px; }
+            .subject-badge { font-size: 12px; padding: 6px 14px; margin-left: 0; }
+            .search-bar { flex-direction: column; }
+            .solubility-table { font-size: 11px; }
+            .solubility-table th,
+            .solubility-table td { padding: 6px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="main-container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="chemistry_labs.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div class="breadcrumb">
+                <span onclick="goHome()">Home</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goHub()">Chemistry</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span onclick="goLabs()">Labs</span>
+                <i class="fas fa-chevron-right" style="font-size:12px;"></i>
+                <span class="current">Solubility Table</span>
+            </div>
+            <div class="subject-badge"><i class="fas fa-droplet"></i> Solubility Table</div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>🧪 Solubility Table</h1>
+            <p class="subtitle">✦ Interactive reference for ionic compound solubilities ✦</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-value" id="totalCompounds">0</div>
+                <div class="stat-label">Total Compounds</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="solubleCount">0</div>
+                <div class="stat-label">Soluble</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="insolubleCount">0</div>
+                <div class="stat-label">Insoluble</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="partialCount">0</div>
+                <div class="stat-label">Partially Soluble</div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search compound or ion (e.g., NaCl, Cl-)..." oninput="filterTable()">
+            <div class="filter-btns">
+                <button class="filter-btn active-filter" onclick="setFilter('all', this)">📋 All</button>
+                <button class="filter-btn" onclick="setFilter('soluble', this)">✅ Soluble</button>
+                <button class="filter-btn" onclick="setFilter('insoluble', this)">❌ Insoluble</button>
+                <button class="filter-btn" onclick="setFilter('partial', this)">🟡 Partial</button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table class="solubility-table" id="solubilityTable">
+                    <thead>
+                        <tr>
+                            <th>Compound</th>
+                            <th>Ions</th>
+                            <th>Solubility</th>
+                            <th>Rule</th>
+                            <th>Exceptions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goHome() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'index.html'; }, 300);
+        }
+        function goHub() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_hub_landing.html'; }, 300);
+        }
+        function goLabs() {
+            document.body.style.transition = 'opacity 0.3s';
+            document.body.style.opacity = '0';
+            setTimeout(() => { window.location.href = 'chemistry_labs.html'; }, 300);
+        }
+
+        // ============================================================
+        // SOLUBILITY DATA
+        // ============================================================
+        const solubilityData = [
+            // Sodium salts - all soluble
+            { compound: 'NaCl', ions: 'Na⁺, Cl⁻', solubility: 'soluble', rule: 'All sodium salts are soluble', exceptions: 'None' },
+            { compound: 'NaOH', ions: 'Na⁺, OH⁻', solubility: 'soluble', rule: 'All sodium salts are soluble', exceptions: 'None' },
+            { compound: 'Na₂CO₃', ions: 'Na⁺, CO₃²⁻', solubility: 'soluble', rule: 'All sodium salts are soluble', exceptions: 'None' },
+            { compound: 'Na₂SO₄', ions: 'Na⁺, SO₄²⁻', solubility: 'soluble', rule: 'All sodium salts are soluble', exceptions: 'None' },
+            { compound: 'NaNO₃', ions: 'Na⁺, NO₃⁻', solubility: 'soluble', rule: 'All sodium salts are soluble', exceptions: 'None' },
+            { compound: 'NaHCO₃', ions: 'Na⁺, HCO₃⁻', solubility: 'soluble', rule: 'All sodium salts are soluble', exceptions: 'None' },
+
+            // Potassium salts - all soluble
+            { compound: 'KCl', ions: 'K⁺, Cl⁻', solubility: 'soluble', rule: 'All potassium salts are soluble', exceptions: 'None' },
+            { compound: 'KOH', ions: 'K⁺, OH⁻', solubility: 'soluble', rule: 'All potassium salts are soluble', exceptions: 'None' },
+            { compound: 'K₂CO₃', ions: 'K⁺, CO₃²⁻', solubility: 'soluble', rule: 'All potassium salts are soluble', exceptions: 'None' },
+            { compound: 'K₂SO₄', ions: 'K⁺, SO₄²⁻', solubility: 'soluble', rule: 'All potassium salts are soluble', exceptions: 'None' },
+            { compound: 'KNO₃', ions: 'K⁺, NO₃⁻', solubility: 'soluble', rule: 'All potassium salts are soluble', exceptions: 'None' },
+
+            // Ammonium salts - all soluble
+            { compound: 'NH₄Cl', ions: 'NH₄⁺, Cl⁻', solubility: 'soluble', rule: 'All ammonium salts are soluble', exceptions: 'None' },
+            { compound: '(NH₄)₂CO₃', ions: 'NH₄⁺, CO₃²⁻', solubility: 'soluble', rule: 'All ammonium salts are soluble', exceptions: 'None' },
+            { compound: 'NH₄NO₃', ions: 'NH₄⁺, NO₃⁻', solubility: 'soluble', rule: 'All ammonium salts are soluble', exceptions: 'None' },
+            { compound: '(NH₄)₂SO₄', ions: 'NH₄⁺, SO₄²⁻', solubility: 'soluble', rule: 'All ammonium salts are soluble', exceptions: 'None' },
+
+            // Nitrates - all soluble
+            { compound: 'Cu(NO₃)₂', ions: 'Cu²⁺, NO₃⁻', solubility: 'soluble', rule: 'All nitrates are soluble', exceptions: 'None' },
+            { compound: 'AgNO₃', ions: 'Ag⁺, NO₃⁻', solubility: 'soluble', rule: 'All nitrates are soluble', exceptions: 'None' },
+            { compound: 'Pb(NO₃)₂', ions: 'Pb²⁺, NO₃⁻', solubility: 'soluble', rule: 'All nitrates are soluble', exceptions: 'None' },
+            { compound: 'Ba(NO₃)₂', ions: 'Ba²⁺, NO₃⁻', solubility: 'soluble', rule: 'All nitrates are soluble', exceptions: 'None' },
+
+            // Chlorides - mostly soluble
+            { compound: 'AgCl', ions: 'Ag⁺, Cl⁻', solubility: 'insoluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+            { compound: 'PbCl₂', ions: 'Pb²⁺, Cl⁻', solubility: 'insoluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+            { compound: 'Hg₂Cl₂', ions: 'Hg₂²⁺, Cl⁻', solubility: 'insoluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+            { compound: 'NaCl', ions: 'Na⁺, Cl⁻', solubility: 'soluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+            { compound: 'KCl', ions: 'K⁺, Cl⁻', solubility: 'soluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+            { compound: 'BaCl₂', ions: 'Ba²⁺, Cl⁻', solubility: 'soluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+
+            // Sulfates - mostly soluble
+            { compound: 'BaSO₄', ions: 'Ba²⁺, SO₄²⁻', solubility: 'insoluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'PbSO₄', ions: 'Pb²⁺, SO₄²⁻', solubility: 'insoluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'CaSO₄', ions: 'Ca²⁺, SO₄²⁻', solubility: 'partial', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'SrSO₄', ions: 'Sr²⁺, SO₄²⁻', solubility: 'insoluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'Na₂SO₄', ions: 'Na⁺, SO₄²⁻', solubility: 'soluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'CuSO₄', ions: 'Cu²⁺, SO₄²⁻', solubility: 'soluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'ZnSO₄', ions: 'Zn²⁺, SO₄²⁻', solubility: 'soluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+
+            // Carbonates - mostly insoluble
+            { compound: 'Na₂CO₃', ions: 'Na⁺, CO₃²⁻', solubility: 'soluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+            { compound: 'K₂CO₃', ions: 'K⁺, CO₃²⁻', solubility: 'soluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+            { compound: '(NH₄)₂CO₃', ions: 'NH₄⁺, CO₃²⁻', solubility: 'soluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+            { compound: 'CaCO₃', ions: 'Ca²⁺, CO₃²⁻', solubility: 'insoluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+            { compound: 'MgCO₃', ions: 'Mg²⁺, CO₃²⁻', solubility: 'insoluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+            { compound: 'BaCO₃', ions: 'Ba²⁺, CO₃²⁻', solubility: 'insoluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+            { compound: 'CuCO₃', ions: 'Cu²⁺, CO₃²⁻', solubility: 'insoluble', rule: 'Most carbonates are insoluble', exceptions: 'Na₂CO₃, K₂CO₃, (NH₄)₂CO₃ are soluble' },
+
+            // Hydroxides - mostly insoluble
+            { compound: 'NaOH', ions: 'Na⁺, OH⁻', solubility: 'soluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'KOH', ions: 'K⁺, OH⁻', solubility: 'soluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'Ba(OH)₂', ions: 'Ba²⁺, OH⁻', solubility: 'soluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'Ca(OH)₂', ions: 'Ca²⁺, OH⁻', solubility: 'partial', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'Mg(OH)₂', ions: 'Mg²⁺, OH⁻', solubility: 'insoluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'Fe(OH)₂', ions: 'Fe²⁺, OH⁻', solubility: 'insoluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'Cu(OH)₂', ions: 'Cu²⁺, OH⁻', solubility: 'insoluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+            { compound: 'Al(OH)₃', ions: 'Al³⁺, OH⁻', solubility: 'insoluble', rule: 'Most hydroxides are insoluble', exceptions: 'NaOH, KOH, Ba(OH)₂, Ca(OH)₂ are soluble' },
+
+            // Phosphates - mostly insoluble
+            { compound: 'Na₃PO₄', ions: 'Na⁺, PO₄³⁻', solubility: 'soluble', rule: 'Most phosphates are insoluble', exceptions: 'Na₃PO₄, K₃PO₄ are soluble' },
+            { compound: 'K₃PO₄', ions: 'K⁺, PO₄³⁻', solubility: 'soluble', rule: 'Most phosphates are insoluble', exceptions: 'Na₃PO₄, K₃PO₄ are soluble' },
+            { compound: 'Ca₃(PO₄)₂', ions: 'Ca²⁺, PO₄³⁻', solubility: 'insoluble', rule: 'Most phosphates are insoluble', exceptions: 'Na₃PO₄, K₃PO₄ are soluble' },
+            { compound: 'FePO₄', ions: 'Fe³⁺, PO₄³⁻', solubility: 'insoluble', rule: 'Most phosphates are insoluble', exceptions: 'Na₃PO₄, K₃PO₄ are soluble' },
+
+            // Other common compounds
+            { compound: 'FeCl₃', ions: 'Fe³⁺, Cl⁻', solubility: 'soluble', rule: 'Most chlorides are soluble', exceptions: 'AgCl, PbCl₂, Hg₂Cl₂ are insoluble' },
+            { compound: 'Al₂(SO₄)₃', ions: 'Al³⁺, SO₄²⁻', solubility: 'soluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+            { compound: 'Fe₂(SO₄)₃', ions: 'Fe³⁺, SO₄²⁻', solubility: 'soluble', rule: 'Most sulfates are soluble', exceptions: 'BaSO₄, PbSO₄, CaSO₄, SrSO₄ are insoluble' },
+        ];
+
+        let currentFilter = 'all';
+        let currentSearch = '';
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const badgeClass = item.solubility;
+                const badgeLabel = item.solubility.charAt(0).toUpperCase() + item.solubility.slice(1);
+                
+                tr.innerHTML = `
+                    <td class="ion-cell">${item.compound}</td>
+                    <td>${item.ions}</td>
+                    <td><span class="solubility-badge ${badgeClass}">${badgeLabel}</span></td>
+                    <td style="font-size:12px;color:rgba(255,255,255,0.5);">${item.rule}</td>
+                    <td style="font-size:12px;color:rgba(255,255,255,0.4);">${item.exceptions}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+            
+            // Update stats
+            const total = solubilityData.length;
+            const soluble = solubilityData.filter(d => d.solubility === 'soluble').length;
+            const insoluble = solubilityData.filter(d => d.solubility === 'insoluble').length;
+            const partial = solubilityData.filter(d => d.solubility === 'partial').length;
+            
+            document.getElementById('totalCompounds').textContent = total;
+            document.getElementById('solubleCount').textContent = soluble;
+            document.getElementById('insolubleCount').textContent = insoluble;
+            document.getElementById('partialCount').textContent = partial;
+        }
+
+        function filterTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            currentSearch = search;
+            
+            let filtered = solubilityData;
+            
+            // Filter by search
+            if (search) {
+                filtered = filtered.filter(item => 
+                    item.compound.toLowerCase().includes(search) ||
+                    item.ions.toLowerCase().includes(search) ||
+                    item.rule.toLowerCase().includes(search)
+                );
+            }
+            
+            // Filter by solubility type
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(item => item.solubility === currentFilter);
+            }
+            
+            renderTable(filtered);
+        }
+
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-filter'));
+            if (btn) btn.classList.add('active-filter');
+            filterTable();
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        window.addEventListener('load', function() {
+            renderTable(solubilityData);
+        });
+    </script>
+</body>
+</html>
