@@ -137,42 +137,6 @@
             -webkit-text-fill-color: rgba(255,255,255,0.5);
         }
 
-        /* Server Status Badge */
-        .server-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            padding: 6px 14px;
-            border-radius: 100px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.5);
-            transition: all 0.3s;
-        }
-        .server-status.online {
-            color: #4CAF50;
-            border-color: rgba(76,175,80,0.3);
-            background: rgba(76,175,80,0.1);
-        }
-        .server-status.offline {
-            color: #FF9800;
-            border-color: rgba(255,152,0,0.3);
-            background: rgba(255,152,0,0.1);
-        }
-        .server-status .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            background: currentColor;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
         /* Chat Container */
         .chat-container {
             flex: 1;
@@ -484,7 +448,6 @@
             .message .bubble { max-width: 90%; font-size: 14px; }
             .input-area { flex-direction: column; }
             .input-area .send-btn { justify-content: center; }
-            .server-status { font-size: 10px; padding: 4px 10px; }
         }
 
         @media (max-width: 500px) {
@@ -516,10 +479,7 @@
                     <div class="subtitle">Powered by RAG &amp; NCERT Textbooks</div>
                 </div>
             </div>
-            <div class="server-status" id="serverStatus">
-                <span class="status-dot"></span>
-                <span id="statusText">Checking...</span>
-            </div>
+            <div style="width: 120px;"></div> <!-- Spacer -->
         </div>
 
         <!-- Chat Container -->
@@ -563,7 +523,7 @@
 
     <script>
         // ============================================================
-        // FIX: Get base URL for navigation back to main site
+        // NAVIGATION FIX: Go back to port 8000
         // ============================================================
         function getWebsiteBaseUrl() {
             // If we're on port 5000 (AI server), go back to port 8000
@@ -578,9 +538,6 @@
             return 'http://localhost:8000';
         }
 
-        // ============================================================
-        // Navigation - FIXED to go back to port 8000
-        // ============================================================
         function goBack() {
             const baseUrl = getWebsiteBaseUrl();
             document.body.style.transition = 'opacity 0.4s, transform 0.4s';
@@ -614,113 +571,13 @@
         });
 
         // ============================================================
-        // API Configuration & State
+        // API Configuration
         // ============================================================
         const API_URL = 'http://localhost:5000/api/chat';
-        const HEALTH_URL = 'http://localhost:5000/api/health';
         let isProcessing = false;
-        let serverAvailable = false;
-        let serverChecked = false;
-        let isFirstMessage = true;
 
         // ============================================================
-        // Server Status Management
-        // ============================================================
-        async function checkServerAvailability(showMessage = false) {
-            const statusEl = document.getElementById('serverStatus');
-            const statusText = document.getElementById('statusText');
-            
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-                
-                const response = await fetch(HEALTH_URL, {
-                    method: 'GET',
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    serverAvailable = true;
-                    statusEl.className = 'server-status online';
-                    statusText.textContent = data.knowledge_loaded ? 'AI Online' : 'Loading...';
-                    
-                    if (showMessage && !data.knowledge_loaded) {
-                        addMessage('📚 The AI knowledge base is still loading. You can still ask questions - I\'ll use my offline knowledge!', 'bot');
-                    }
-                } else {
-                    serverAvailable = false;
-                    statusEl.className = 'server-status offline';
-                    statusText.textContent = 'Offline Mode';
-                    
-                    if (showMessage) {
-                        addMessage('📡 AI server is not available. I\'ll use my offline knowledge base to help you!', 'bot');
-                    }
-                }
-            } catch (error) {
-                serverAvailable = false;
-                statusEl.className = 'server-status offline';
-                statusText.textContent = 'Offline Mode';
-                
-                if (showMessage) {
-                    addMessage('📡 AI server is not running. I\'ll help with my offline knowledge base!', 'bot');
-                }
-            }
-            
-            serverChecked = true;
-        }
-
-        // ============================================================
-        // Local Knowledge Base (Offline Mode)
-        // ============================================================
-        const LOCAL_KNOWLEDGE = {
-            'photosynthesis': '🌿 Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to create oxygen and energy in the form of sugar.\n\nEquation: 6CO₂ + 6H₂O + Light → C₆H₁₂O₆ + 6O₂',
-            'newton': "⚡ Newton's three laws of motion:\n\n1. Inertia: An object at rest stays at rest, and an object in motion stays in motion, unless acted upon by a force.\n2. F = ma: Force equals mass times acceleration.\n3. Action-Reaction: For every action, there is an equal and opposite reaction.",
-            'acid': '🧪 An acid is a substance that donates hydrogen ions (H+) in aqueous solution. Acids have a pH less than 7.\n\nExamples: HCl (Hydrochloric acid), H₂SO₄ (Sulfuric acid), Citric acid (in lemons)',
-            'base': '🧪 A base is a substance that accepts hydrogen ions or releases hydroxide ions (OH-). Bases have a pH greater than 7.\n\nExamples: NaOH (Sodium hydroxide), NH₃ (Ammonia), Baking soda',
-            'cell': '🧬 Cells are the basic building blocks of all living things. They provide structure, take in nutrients, and carry out important functions.\n\nTypes: Plant cells (with cell wall), Animal cells (no cell wall)',
-            'force': '💪 Force is a push or pull that can change the motion of an object. Measured in Newtons (N).\n\nTypes: Contact forces (friction, tension) and Non-contact forces (gravity, magnetic)',
-            'friction': '🔧 Friction is a force that opposes motion between two surfaces in contact.\n\nTypes: Static (at rest), Sliding (moving), Rolling (rolling objects)\n\nDepends on: Surface roughness and normal force',
-            'light': '💡 Light is electromagnetic radiation visible to the human eye.\n\nSpeed: 299,792,458 m/s (3×10⁸ m/s)\n\nProperties: Travels in straight lines, can be reflected and refracted',
-            'sound': '🔊 Sound is a vibration that travels through a medium (air, water, solids) as waves.\n\nSpeed in air: ~343 m/s\n\nCharacteristics: Frequency (pitch), Amplitude (loudness)',
-            'electricity': '⚡ Electricity is the flow of electric charge (electrons) through a conductor.\n\nKey concepts:\n• Current (I) - Amperes\n• Voltage (V) - Volts\n• Resistance (R) - Ohms\n• Ohm\'s Law: V = I × R',
-            'magnet': '🧲 Magnetism is a force that attracts or repels certain materials (like iron).\n\nProperties: Like poles repel, opposite poles attract\n\nApplications: Motors, generators, speakers',
-            'atom': '⚛️ Atoms are the basic building blocks of matter. They consist of protons, neutrons, and electrons.\n\nParts:\n• Proton (Positive)\n• Neutron (Neutral)\n• Electron (Negative)',
-            'compound': '🧪 A compound is a substance made of two or more elements chemically bonded together.\n\nExamples: H₂O (Water), NaCl (Salt), CO₂ (Carbon dioxide)',
-            'element': '🔬 An element is a pure substance that cannot be broken down into simpler substances.\n\nExamples: Oxygen (O), Carbon (C), Gold (Au), Iron (Fe)',
-            'reproduction': '🌱 Reproduction is the biological process by which new individual organisms are produced.\n\nTypes: Asexual (single parent), Sexual (two parents)',
-            'heredity': '🧬 Heredity is the passing of traits from parents to offspring through genes.\n\nKey terms: DNA, Genes, Chromosomes, Alleles',
-            'ecosystem': '🌍 An ecosystem is a community of living organisms interacting with their non-living environment.\n\nComponents: Biotic (living) and Abiotic (non-living)\n\nTypes: Terrestrial, Aquatic',
-            'dna': '🧬 DNA (Deoxyribonucleic Acid) carries genetic information in all living organisms.\n\nStructure: Double helix\n\nBases: A (Adenine), T (Thymine), G (Guanine), C (Cytosine)',
-            'biology': '🧬 Biology is the study of living organisms and their interactions with the environment.\n\nBranches: Botany (plants), Zoology (animals), Microbiology (microorganisms)',
-            'chemistry': '🧪 Chemistry is the study of matter, its properties, composition, and changes.\n\nBranches: Organic, Inorganic, Physical, Analytical',
-            'physics': '⚡ Physics is the study of matter, energy, and their interactions.\n\nBranches: Mechanics, Thermodynamics, Optics, Electromagnetism'
-        };
-
-        function generateLocalResponse(message) {
-            const messageLower = message.toLowerCase();
-            
-            for (const [key, value] of Object.entries(LOCAL_KNOWLEDGE)) {
-                if (messageLower.includes(key)) {
-                    return value + "\n\n📚 Is there anything else you'd like to know about this topic?";
-                }
-            }
-            
-            if (messageLower.includes('physics') || messageLower.includes('force') || messageLower.includes('energy') || messageLower.includes('motion')) {
-                return "⚡ Physics topics I can help with:\n\n• Force & Pressure\n• Friction\n• Light & Optics\n• Sound\n• Electricity & Magnetism\n• Solar System\n\nWhat specific physics topic would you like to learn about?";
-            } else if (messageLower.includes('chemistry') || messageLower.includes('acid') || messageLower.includes('base') || messageLower.includes('metal')) {
-                return "🧪 Chemistry topics I can help with:\n\n• Acids, Bases & Salts\n• Metals & Non-metals\n• Chemical Reactions\n• Carbon & its Compounds\n• Synthetic Fibres\n• Materials\n\nAsk me about any of these!";
-            } else if (messageLower.includes('biology') || messageLower.includes('cell') || messageLower.includes('body') || messageLower.includes('plant')) {
-                return "🧬 Biology topics I can help with:\n\n• Cell Structure & Function\n• Microorganisms\n• Human Body Systems\n• Plants & Photosynthesis\n• Ecosystems & Food Chains\n• Genetics & Heredity\n\nWhat would you like to explore?";
-            }
-            
-            return "🤖 I'm your AI Science Tutor! I can help you with:\n\n🔬 **Physics** - Force, Light, Sound, Electricity, Friction\n🧪 **Chemistry** - Acids, Metals, Reactions, Compounds\n🧬 **Biology** - Cells, Human Body, Plants, Ecosystems\n\nWhat would you like to learn about today? Just ask me any science question!";
-        }
-
-        // ============================================================
-        // Send Message
+        // Send message
         // ============================================================
         async function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -728,30 +585,18 @@
             
             if (!message || isProcessing) return;
             
+            // Clear input
             input.value = '';
+            
+            // Add user message
             addMessage(message, 'user');
+            
+            // Show typing indicator
             showTyping(true);
             isProcessing = true;
             document.getElementById('sendBtn').disabled = true;
             
-            if (!serverChecked) {
-                await checkServerAvailability(true);
-            }
-            
             try {
-                if (!serverAvailable) {
-                    showTyping(false);
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    const localResponse = generateLocalResponse(message);
-                    addMessage(localResponse + '\n\n📡 (Offline mode)', 'bot');
-                    isProcessing = false;
-                    document.getElementById('sendBtn').disabled = false;
-                    return;
-                }
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
@@ -760,26 +605,24 @@
                     body: JSON.stringify({
                         message: message,
                         student_id: 'default'
-                    }),
-                    signal: controller.signal
+                    })
                 });
                 
-                clearTimeout(timeoutId);
                 const data = await response.json();
+                
+                // Hide typing indicator
                 showTyping(false);
                 
                 if (data.success) {
                     addMessage(data.response, 'bot');
                 } else {
-                    const localResponse = generateLocalResponse(message);
-                    addMessage(localResponse + '\n\n⚠️ (AI server error - using offline mode)', 'bot');
-                    console.error('Server error:', data.error);
+                    addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                    console.error('Error:', data.error);
                 }
             } catch (error) {
                 showTyping(false);
-                console.log('Server error:', error);
-                const localResponse = generateLocalResponse(message);
-                addMessage(localResponse + '\n\n📡 (Offline mode - AI server not available)', 'bot');
+                addMessage('⚠️ Unable to connect to the AI tutor. Please make sure the server is running.', 'bot');
+                console.error('Connection error:', error);
             } finally {
                 isProcessing = false;
                 document.getElementById('sendBtn').disabled = false;
@@ -797,6 +640,7 @@
             const now = new Date();
             const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            // Render markdown for bot messages, plain text for user messages
             let content = text;
             if (sender === 'bot') {
                 try {
@@ -848,19 +692,12 @@
         // ============================================================
         // Handle offline/online status
         // ============================================================
-        window.addEventListener('online', function() {
-            addMessage('🔄 Connection restored! Checking AI server...', 'bot');
-            serverChecked = false;
-            setTimeout(() => checkServerAvailability(true), 1000);
+        window.addEventListener('online', () => {
+            addMessage('🔄 Connection restored! You can continue asking questions.', 'bot');
         });
 
-        window.addEventListener('offline', function() {
-            serverAvailable = false;
-            serverChecked = true;
-            const statusEl = document.getElementById('serverStatus');
-            statusEl.className = 'server-status offline';
-            document.getElementById('statusText').textContent = 'Offline';
-            addMessage('⚠️ You are offline. I\'ll use my offline knowledge base.', 'bot');
+        window.addEventListener('offline', () => {
+            addMessage('⚠️ You are offline. Please check your internet connection.', 'bot');
         });
 
         // ============================================================
@@ -872,12 +709,10 @@
                 const text = initialBubble.textContent.replace('Just now', '').trim();
                 try {
                     initialBubble.innerHTML = marked.parse(text) + '<span class="timestamp">Just now</span>';
-                } catch (e) {}
+                } catch (e) {
+                    // Keep as is if parsing fails
+                }
             }
-            
-            setTimeout(() => {
-                checkServerAvailability(false);
-            }, 1500);
         });
     </script>
 </body>
