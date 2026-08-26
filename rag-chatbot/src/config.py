@@ -49,7 +49,7 @@ RESULTS_FOLDER = "./results"
 # ============================================================
 
 # Enable ChromaDB persistence (set to False to disable)
-USE_CHROMA = True
+USE_CHROMA = False
 
 # Path where ChromaDB stores data (persistent across restarts)
 CHROMA_PATH = "./chroma_db"
